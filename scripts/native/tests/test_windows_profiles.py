@@ -128,10 +128,11 @@ class WindowsProfileLockTests(unittest.TestCase):
             encoding="utf-8"
         )
         self.assertIn("if(MSVC AND LINGUUM_INTGEMM_BASELINE_ONLY)", cmake)
-        self.assertIn("add_compile_definitions(_USE_STD_VECTOR_ALGORITHMS=0)", cmake)
+        self.assertIn("_USE_STD_VECTOR_ALGORITHMS=0", cmake)
+        self.assertIn("LINGUUM_MSVC_BASELINE=1", cmake)
         self.assertIn("add_compile_options(/Oi-)", cmake)
         self.assertIn("TARGET_DIRECTORY marian", cmake)
-        self.assertIn('PROPERTIES COMPILE_OPTIONS "/Od;/Oi-;/GL-"', cmake)
+        self.assertIn('PROPERTIES COMPILE_OPTIONS "/Oi-;/GL-"', cmake)
         self.assertIn("baseline_runtime_shims.c", cmake)
         self.assertIn("/Od /Oi- /GL- /W4 /WX", cmake)
         self.assertIn("/NODEFAULTLIB:libucrt.lib", cmake)
@@ -158,6 +159,13 @@ class WindowsProfileLockTests(unittest.TestCase):
         self.assertIn("baseline-runtime-shims", (
             ROOT / "native" / "runtime-build" / "CMakeLists.txt"
         ).read_text(encoding="utf-8"))
+
+    def test_external_patch_forces_baseline_wmemchr_call(self):
+        patch = (
+            ROOT / "native" / "patches" / "0001-reproducible-flattened-source-build.patch"
+        ).read_text(encoding="utf-8")
+        self.assertIn("defined(LINGUUM_MSVC_BASELINE)", patch)
+        self.assertIn("#pragma function(wmemchr)", patch)
 
     def test_profile_failures_do_not_mask_the_other_locked_profile(self):
         profiles = windows_profiles.profile_map(windows_profiles.load_lock())
@@ -418,7 +426,7 @@ class EvidenceParsingTests(unittest.TestCase):
                     "file": "C:/source/3rd_party/intgemm/intgemm/intgemm.cc",
                 },
                 {
-                    "command": "cl /arch:SSE2 /Oi- /Od /GL- /D_USE_STD_VECTOR_ALGORITHMS=0 /c factored_vocab.cpp",
+                    "command": "cl /arch:SSE2 /Oi- /GL- /DLINGUUM_MSVC_BASELINE=1 /D_USE_STD_VECTOR_ALGORITHMS=0 /c factored_vocab.cpp",
                     "file": "C:/source/marian-fork/src/data/factored_vocab.cpp",
                 },
                 {
@@ -441,7 +449,41 @@ class EvidenceParsingTests(unittest.TestCase):
             self.assertTrue(evidence["vectorizedStlDisabledForAllCpp"])
             self.assertEqual(4, evidence["compilerIntrinsicsDisabledCommandCount"])
             self.assertTrue(evidence["compilerIntrinsicsDisabledForAllCommands"])
-            self.assertTrue(evidence["factoredVocabularyScalarBoundary"])
+            self.assertTrue(evidence["factoredVocabularyExternalSearchBoundary"])
+
+            missing_external_search_boundary = json.loads(commands.read_text())
+            missing_external_search_boundary[1]["command"] = (
+                missing_external_search_boundary[1]["command"].replace(
+                    " /DLINGUUM_MSVC_BASELINE=1", ""
+                )
+            )
+            commands.write_text(json.dumps(missing_external_search_boundary))
+            with self.assertRaisesRegex(
+                windows_profiles.WindowsProfileError,
+                "must force the external search boundary",
+            ):
+                windows_profiles.verify_compile_commands("windows-x64-baseline", root)
+
+            commands.write_text(json.dumps([
+                {
+                    "command": "cl /arch:SSE2 /Oi- /D_USE_STD_VECTOR_ALGORITHMS=0 /c intgemm.cc",
+                    "file": "C:/source/3rd_party/intgemm/intgemm/intgemm.cc",
+                },
+                {
+                    "command": "cl /arch:SSE2 /Oi- /GL- -DLINGUUM_MSVC_BASELINE=1 /D_USE_STD_VECTOR_ALGORITHMS=0 /c factored_vocab.cpp",
+                    "file": "C:/source/marian-fork/src/data/factored_vocab.cpp",
+                },
+                {
+                    "command": "cl /arch:SSE2 /Oi- /D_USE_STD_VECTOR_ALGORITHMS=0 /DUSE_ONNX_SGEMM=1 /c prod.cpp",
+                    "file": "C:/source/marian-fork/src/tensors/cpu/prod.cpp",
+                },
+                {
+                    "command": "cl /arch:SSE2 /Oi- /D_USE_STD_VECTOR_ALGORITHMS=0 /c gemm.cpp",
+                    "file": "C:/source/onnxjs/src/wasm-ops/gemm.cpp",
+                },
+            ]))
+            evidence = windows_profiles.verify_compile_commands("windows-x64-baseline", root)
+            self.assertTrue(evidence["factoredVocabularyExternalSearchBoundary"])
 
             missing_intrinsic_boundary = json.loads(commands.read_text())
             missing_intrinsic_boundary[0]["command"] = missing_intrinsic_boundary[0][
@@ -460,7 +502,7 @@ class EvidenceParsingTests(unittest.TestCase):
                     "file": "C:/source/3rd_party/intgemm/intgemm/intgemm.cc",
                 },
                 {
-                    "command": "cl /arch:SSE2 /Oi- /Od /GL- /D_USE_STD_VECTOR_ALGORITHMS=0 /c factored_vocab.cpp",
+                    "command": "cl /arch:SSE2 /Oi- /GL- /DLINGUUM_MSVC_BASELINE=1 /D_USE_STD_VECTOR_ALGORITHMS=0 /c factored_vocab.cpp",
                     "file": "C:/source/marian-fork/src/data/factored_vocab.cpp",
                 },
                 {

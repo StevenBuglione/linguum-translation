@@ -575,9 +575,25 @@ def verify_compile_commands(profile_id: str, build_directory: Path) -> Dict[str,
         compiler_intrinsics_disabled_pattern.search(text) is not None
         for text in command_texts
     )
-    factored_vocab_scalar_boundary = all(
-        flag in factored_vocab_command_texts[0].casefold()
-        for flag in ("/od", "/oi-", "/gl-")
+    factored_vocab_external_search_boundary = (
+        re.search(
+            r"(?:^|\s)/Oi-(?:\s|$)",
+            factored_vocab_command_texts[0],
+            re.IGNORECASE,
+        )
+        is not None
+        and re.search(
+            r"(?:^|\s)/GL-(?:\s|$)",
+            factored_vocab_command_texts[0],
+            re.IGNORECASE,
+        )
+        is not None
+        and re.search(
+            r"(?:^|\s)(?:/D|-D)LINGUUM_MSVC_BASELINE=1(?:\s|$)",
+            factored_vocab_command_texts[0],
+            re.IGNORECASE,
+        )
+        is not None
     )
     if not has_onnx_sgemm:
         raise WindowsProfileError("native product command must enable the ONNX SGEMM backend")
@@ -611,9 +627,12 @@ def verify_compile_commands(profile_id: str, build_directory: Path) -> Dict[str,
         raise WindowsProfileError(
             "every baseline compiler command must disable intrinsic substitution"
         )
-    if profile_id == "windows-x64-baseline" and not factored_vocab_scalar_boundary:
+    if (
+        profile_id == "windows-x64-baseline"
+        and not factored_vocab_external_search_boundary
+    ):
         raise WindowsProfileError(
-            "baseline factored vocabulary command must disable optimization and LTCG"
+            "baseline factored vocabulary command must force the external search boundary"
         )
     return {
         "compileCommandCount": len(commands),
@@ -626,7 +645,9 @@ def verify_compile_commands(profile_id: str, build_directory: Path) -> Dict[str,
         "hasArchAvx2": has_avx2,
         "hasArchSse2": has_sse2,
         "hasIntgemmAvx2Cap": has_intgemm_avx2_cap,
-        "factoredVocabularyScalarBoundary": factored_vocab_scalar_boundary,
+        "factoredVocabularyExternalSearchBoundary": (
+            factored_vocab_external_search_boundary
+        ),
         "hasOnnxSgemm": has_onnx_sgemm,
         "hasOnnxSgemmImplementation": True,
         "vectorizedStlDisabledCommandCount": vectorized_stl_disabled_count,

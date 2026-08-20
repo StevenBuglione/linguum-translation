@@ -268,3 +268,12 @@ diff --git a/inference/marian-fork/src/3rd_party/onnxjs/CMakeLists.txt b/inferen
    # Eigen is a dependency for enabling sgemm support
 +  set(BUILD_TESTING OFF)
    add_subdirectory(deps/eigen)
+diff --git a/inference/marian-fork/src/data/factored_vocab.cpp b/inference/marian-fork/src/data/factored_vocab.cpp
+--- a/inference/marian-fork/src/data/factored_vocab.cpp
++++ b/inference/marian-fork/src/data/factored_vocab.cpp
+@@ -3,0 +4,5 @@
++#if defined(_MSC_VER) && defined(LINGUUM_MSVC_BASELINE)
++#include <wchar.h>
++#pragma function(wmemchr)
++#endif
++

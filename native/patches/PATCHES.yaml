@@ -26,6 +26,7 @@
     "inference/marian-fork/cmake/TargetArch.cmake",
     "inference/marian-fork/CMakeLists.txt",
     "inference/marian-fork/src/CMakeLists.txt",
+    "inference/marian-fork/src/data/factored_vocab.cpp",
     "inference/marian-fork/src/3rd_party/intgemm/CMakeLists.txt",
     "inference/marian-fork/src/3rd_party/intgemm/intgemm/intgemm.cc",
     "inference/marian-fork/src/3rd_party/intgemm/intgemm/intgemm.h",
@@ -44,5 +45,5 @@
   "license": "MPL-2.0",
   "approvedBy": "Steven Buglione",
   "approvalReference": "Repository-owner standing delivery and patch authorization in Codex task 01a01dba-bb5f-7272-b179-7a6e6db206f3 on 2026-08-20",
-  "patchSha256": "1267088d05daa031c6b61e9e6d4d4f30a75f8d85cfe0b9af66bb3f29572edcf9"
+  "patchSha256": "0edd2b08f0e333aefc1775098326fd85c9cb4cd52e024fbce42dbde6f1cdf551"
 }

@@ -39,7 +39,10 @@ if(MSVC AND LINGUUM_INTGEMM_BASELINE_ONLY)
   # intrinsic substitution, so explicitly disable it before any upstream
   # targets are created; otherwise MSVC can synthesize AVX2 wmemchr code even
   # when /arch:SSE2 is selected.
-  add_compile_definitions(_USE_STD_VECTOR_ALGORITHMS=0)
+  add_compile_definitions(
+    _USE_STD_VECTOR_ALGORITHMS=0
+    LINGUUM_MSVC_BASELINE=1
+  )
   add_compile_options(/Oi-)
 endif()
 
@@ -79,14 +82,13 @@ endif()
 add_subdirectory("${LINGUUM_TRANSLATIONS_SOURCE}/inference" upstream SYSTEM)
 
 if(MSVC AND LINGUUM_INTGEMM_BASELINE_ONLY)
-  # The pinned source's wide-character vocabulary search causes MSVC to emit a
-  # local wmemchr implementation. Keep this single proven source boundary
-  # scalar and outside LTCG so the compiler cannot auto-vectorize it above the
-  # requested /arch:SSE2 floor.
+  # The staged source's baseline-only pragma forces its wide-character search
+  # through the Windows system UCRT. Keep that source outside LTCG so the
+  # external call boundary cannot be regenerated during link-time optimization.
   set_source_files_properties(
     "${LINGUUM_TRANSLATIONS_SOURCE}/inference/marian-fork/src/data/factored_vocab.cpp"
     TARGET_DIRECTORY marian
-    PROPERTIES COMPILE_OPTIONS "/Od;/Oi-;/GL-"
+    PROPERTIES COMPILE_OPTIONS "/Oi-;/GL-"
   )
 endif()
 
