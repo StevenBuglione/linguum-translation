@@ -1,0 +1,26 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+LINGUUM_TRANSLATION_1.0 {
+  global:
+    linguum_translation_abi_major;
+    linguum_translation_abi_minor;
+    linguum_translation_error_code;
+    linguum_translation_error_destroy;
+    linguum_translation_error_message;
+    linguum_translation_model_destroy;
+    linguum_translation_model_load;
+    linguum_translation_result_destroy;
+    linguum_translation_result_text;
+    linguum_translation_runtime_create;
+    linguum_translation_runtime_destroy;
+    linguum_translation_runtime_info_acceleration_profile;
+    linguum_translation_runtime_info_bergamot_version;
+    linguum_translation_runtime_info_create;
+    linguum_translation_runtime_info_destroy;
+    linguum_translation_runtime_info_firefox_revision;
+    linguum_translation_runtime_info_library_version;
+    linguum_translation_translator_create;
+    linguum_translation_translator_destroy;
+    linguum_translation_translator_translate;
+  local:
+    *;
+};

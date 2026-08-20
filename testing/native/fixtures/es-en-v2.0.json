@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "languagePair": "es-en",
+  "modelVersion": "2.0",
+  "source": {
+    "bucket": "main",
+    "collection": "translations-models",
+    "endpoint": "https://firefox.settings.services.mozilla.com",
+    "recordedAtUtc": "2026-08-20T01:03:49Z"
+  },
+  "artifacts": [
+    {
+      "role": "model",
+      "recordId": "81134968-ebdb-41f0-bf23-bf95f796b491",
+      "lastModified": 1758219707362,
+      "fileName": "model.esen.intgemm.alphas.bin",
+      "size": 31561787,
+      "sha256": "4aed7734152ae0045d1a69ae49c86cfda18f53c61f90e95e1d1de1c7c7c3b033",
+      "url": "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/translations-models/d7256ea9-7731-4f15-866c-62998eef93b9.bin"
+    },
+    {
+      "role": "shortlist",
+      "recordId": "521d7a12-4fa0-44cb-8fce-7364046dbdb2",
+      "lastModified": 1758219707330,
+      "fileName": "lex.50.50.esen.s2t.bin",
+      "size": 4636248,
+      "sha256": "e2610211d3b9577d012638fe7e7e74ed7b4b708ce96b9e792e67c282a6492daa",
+      "url": "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/translations-models/a55a9cf2-8a8c-4942-a528-91e93d081746.bin"
+    },
+    {
+      "role": "vocabulary",
+      "recordId": "c5072437-0234-48c1-ac78-dbe50715bcc8",
+      "lastModified": 1758219707257,
+      "fileName": "vocab.esen.spm",
+      "size": 816054,
+      "sha256": "5ae254fa9b15aa182e70fd2a6186b1333c63a29a48043a9224c6aa4fcac058ad",
+      "url": "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/translations-models/8695cc3d-7897-4c29-808b-bc983a93d1cd.spm"
+    }
+  ],
+  "canary": {
+    "input": "¿Qué estás haciendo?",
+    "expected": "What are you doing?"
+  }
+}
