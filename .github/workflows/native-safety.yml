@@ -12,8 +12,8 @@ permissions:
   contents: read
 
 jobs:
-  m0-scaffold:
-    name: Native safety / M0 scaffold
+  milestone-gate:
+    name: Native safety / Milestone gate
     runs-on: ubuntu-22.04
     timeout-minutes: 10
     steps:
