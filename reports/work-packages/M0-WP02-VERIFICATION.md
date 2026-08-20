@@ -17,10 +17,11 @@ Verifier: Codex
 ```text
 Repository: https://github.com/StevenBuglione/linguum-translation
 Base commit: d7b185087ae4d429d359ebf781a42a076c3287e5
-Verified commit: recorded by the following evidence checkpoint
-Local HEAD before commit: d7b185087ae4d429d359ebf781a42a076c3287e5
-Remote branch SHA before commit: d7b185087ae4d429d359ebf781a42a076c3287e5
-Remote SHA matches local before work: YES
+Verified commit: 727893044b939da101186c540b811a405cfb2703
+Local HEAD after push: 727893044b939da101186c540b811a405cfb2703
+Remote branch SHA after push: 727893044b939da101186c540b811a405cfb2703
+Remote SHA matches local: YES
+Working tree clean after push: YES
 Shallow clone: NO
 ```
 
@@ -63,6 +64,9 @@ Shallow clone: NO
 | `./gradlew --version` from default JDK 25 shell | 0 | macOS arm64 | launcher 25; daemon criteria Java 21/Temurin |
 | `./gradlew wrapper --gradle-version=9.5.0 --distribution-type=bin` | 0 | Gradle 9.5 daemon | wrapper JAR upgraded by target Gradle version |
 | final `./gradlew help --warning-mode=fail` | 0 | macOS arm64 | configuration cache reused |
+| `./gradlew verificationGate --warning-mode=fail` | 0 | macOS arm64/JDK 21 daemon | M0-WP02 narrow gate passed |
+| staged secret-pattern scan | 0 | staged files | no credential/private-key patterns matched |
+| branch push plus `git ls-remote` equality test | 0 | GitHub/macOS arm64 | local and remote `7278930...` matched |
 
 ## Tests and quality
 
@@ -94,7 +98,7 @@ Translation/native/platform implementation: NOT INTRODUCED IN M0
 Dependency verification: PASS
 Dynamic/snapshot build versions: absent
 Repository allowlist: Google, Maven Central, Gradle Plugin Portal as scoped
-Secret scan: pending pre-commit rerun
+Secret scan: PASS (no matches)
 Production/runtime dependencies: none introduced
 Translation text/network/native behavior: not introduced
 ```
