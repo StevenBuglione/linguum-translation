@@ -1,9 +1,7 @@
+// SPDX-License-Identifier: Apache-2.0
 plugins {
-    `java-gradle-plugin`
-    id("org.jetbrains.kotlin.jvm") version "2.4.10"
+    id("org.jetbrains.kotlin.jvm")
 }
-
-group = "io.linguum.translation.buildlogic"
 
 java {
     toolchain {
@@ -17,21 +15,8 @@ kotlin {
     jvmToolchain(21)
     compilerOptions {
         allWarningsAsErrors = true
+        explicitApi = org.jetbrains.kotlin.gradle.dsl.ExplicitApiMode.Strict
         jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
-    }
-}
-
-dependencyLocking {
-    lockAllConfigurations()
-    lockMode.set(LockMode.STRICT)
-}
-
-gradlePlugin {
-    plugins {
-        create("architecture") {
-            id = "io.linguum.translation.architecture"
-            implementationClass = "io.linguum.translation.buildlogic.ArchitecturePlugin"
-        }
     }
 }
 

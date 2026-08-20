@@ -21,3 +21,5 @@ dependencyResolutionManagement {
 rootProject.name = "linguum-translation"
 
 includeBuild("build-logic")
+
+include(":testing:architecture")

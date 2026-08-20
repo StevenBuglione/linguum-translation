@@ -7,6 +7,7 @@ import org.gradle.api.tasks.bundling.AbstractArchiveTask
 
 plugins {
     base
+    id("io.linguum.translation.architecture")
     alias(libs.plugins.kotlin.multiplatform) apply false
     alias(libs.plugins.android.kmp.library) apply false
     alias(libs.plugins.detekt) apply false
@@ -72,5 +73,10 @@ val verifyToolchain by tasks.registering {
 tasks.register("verificationGate") {
     group = LifecycleBasePlugin.VERIFICATION_GROUP
     description = "Runs every verification available in the active repository milestone."
-    dependsOn(verifyToolchain)
+    dependsOn(
+        verifyToolchain,
+        tasks.named("architectureCheck"),
+        ":testing:architecture:check",
+        gradle.includedBuild("build-logic").task(":test"),
+    )
 }

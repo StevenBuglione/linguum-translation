@@ -1,0 +1,6 @@
+# Stable Kotlin packages
+io.linguum.translation
+io.linguum.translation.android
+
+# Intentional language facade
+io.linguum.translation.java
