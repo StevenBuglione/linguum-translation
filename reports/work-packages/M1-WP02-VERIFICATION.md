@@ -49,7 +49,7 @@ Shallow clone: NO
 | `testing/native` | internal test harness | C/C++ consumers, fixed canary, model fixture, export baseline | allowed M1 harness; PASS |
 | `scripts/native` | build/evidence tooling | locked tools, safe staging, model fetch, repeatable host gate | build-time only; PASS |
 | `toolchains/*.lock.*` | toolchain policy | locked desktop CMake/Ninja versions and official assets | no production dependency; PASS |
-| CI scope dispatchers/workflow | verification tooling | helper/metadata validation plus a clean Linux host-native build and 100-cycle canary | no module edge; PASS |
+| CI scope dispatchers/workflow | verification tooling | helper/metadata validation plus a clean macOS arm64 build and 100-cycle canary | no module edge; PASS |
 
 ## Commands executed
 

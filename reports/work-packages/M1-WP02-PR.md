@@ -19,7 +19,7 @@
 - actionlint, YAML/JSON parsing, shell syntax, source integrity, and helper safety tests passed.
 
 The standalone native-safety workflow independently rebuilds and runs the same
-100-cycle canary on a Linux x64 GitHub-hosted runner.
+100-cycle canary on a macOS arm64 GitHub-hosted runner.
 
 ## Boundaries
 
