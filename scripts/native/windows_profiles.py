@@ -10,6 +10,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import zipfile
 from pathlib import Path
 from typing import Dict, Iterable, List, Mapping, Sequence, Tuple
@@ -121,6 +122,14 @@ def vswhere_arguments(
     ]
 
 
+def vcvars_script(vcvars: Path, toolchain: Mapping[str, object]) -> str:
+    return (
+        "@call \"{}\" -vcvars_ver=14.44 -winsdk={}\r\n"
+        "@if errorlevel 1 exit /b %errorlevel%\r\n"
+        "@set\r\n"
+    ).format(vcvars, toolchain["windowsSdk"])
+
+
 def activate_msvc(toolchain: Mapping[str, object]) -> Dict[str, str]:
     if os.name != "nt":
         raise WindowsProfileError("MSVC activation requires Windows")
@@ -139,10 +148,10 @@ def activate_msvc(toolchain: Mapping[str, object]) -> Dict[str, str]:
             )
         )
     vcvars = Path(installation) / "VC" / "Auxiliary" / "Build" / "vcvars64.bat"
-    command = 'call "{}" -vcvars_ver=14.44 -winsdk={} >nul && set'.format(
-        vcvars, toolchain["windowsSdk"]
-    )
-    environment = parse_environment(capture(["cmd.exe", "/d", "/s", "/c", command]))
+    with tempfile.TemporaryDirectory(prefix="linguum-msvc-") as temporary:
+        activation = Path(temporary) / "activate.cmd"
+        activation.write_text(vcvars_script(vcvars, toolchain), encoding="utf-8", newline="")
+        environment = parse_environment(capture(["cmd.exe", "/d", "/c", str(activation)]))
     os.environ.update(environment)
     actual_toolset = environment.get("VCToolsVersion", "").rstrip("\\/")
     actual_sdk = environment.get("WindowsSDKVersion", "").rstrip("\\/")

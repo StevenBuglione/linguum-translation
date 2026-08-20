@@ -105,6 +105,16 @@ class EvidenceParsingTests(unittest.TestCase):
         with self.assertRaises(windows_profiles.WindowsProfileError):
             windows_profiles.vswhere_arguments({"visualStudio": "future"})
 
+    def test_vcvars_activation_uses_a_batch_script_not_inline_cmd_quoting(self):
+        script = windows_profiles.vcvars_script(
+            Path("C:/Program Files/Microsoft Visual Studio/18/Enterprise/vcvars64.bat"),
+            {"windowsSdk": "10.0.26100.0"},
+        )
+        self.assertIn('@call "C:', script)
+        self.assertIn("-vcvars_ver=14.44 -winsdk=10.0.26100.0", script)
+        self.assertIn("@if errorlevel 1 exit /b %errorlevel%", script)
+        self.assertTrue(script.endswith("@set\r\n"))
+
     def test_baseline_disassembly_rejects_any_avx_family_instruction(self):
         safe = "  0000000180001000: mov rax,qword ptr [rcx]\n"
         result = windows_profiles.verify_isa("windows-x64-baseline", safe)
