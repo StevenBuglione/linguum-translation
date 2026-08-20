@@ -1,0 +1,326 @@
+# Example of a production config for Taskcluster
+#
+# See the training guide for more information:
+#   https://mozilla.github.io/firefox-translations-training/training-guide.html
+#
+# The defaults for these parameters are available at:
+#   taskcluster/translations_taskgraph/parameters.py
+
+# An "experiment" is an individual training run.
+experiment:
+  # Provide an identifiable name for your experiment.
+  name: baseline
+
+  # The source and target languages. This is the language tag part of the
+  # BCP 47 locale identifier.
+  src: en
+  trg: ru
+
+  # The metric to use for computing the best model validation.
+  #   cross-entropy, ce-mean-words, perplexity, valid-script, translation, bleu,
+  #   bleu-segmented, chrf
+  # See: https://github.com/marian-nmt/marian/blob/65bf82ffce52f4854295d8b98482534f176d494e/src/common/config_parser.cpp#L588-L592
+  best-model: chrf
+
+  # Use the Opus Cleaner tool on the data cleaning step.
+  # https://github.com/hplt-project/OpusCleaner
+  # "custom" to use dataset specific configs, "defaults" to use the same default setting for all datasets
+  opuscleaner-mode: "defaults"
+
+  # Archive corpora from alignments tasks to GCS
+  archive-corpora: true
+
+  # Bicleaner is a tool that aims at detecting noisy sentence pairs in a parallel corpus.
+  # Use sanitized dataset names for compatibility with Taskcluster (replace ".", "/", ":", "[", "]" to "_")
+  # See: docs/bicleaner.md
+  bicleaner:
+    default-threshold: 0.5
+    dataset-thresholds:
+      opus_CCAligned_v1: 0.7
+      opus_LinguaTools-WikiTitles_v2014: 0.7
+      opus_OpenSubtitles_v2018: 0.8           # Example of a higher filtering level (for noisier datasets).
+      opus_ParaCrawl_v9: 0.7
+      opus_WikiMatrix_v1: 0.7
+      opus_bible-uedin_v1: 0.7
+#      opus_ParaCrawl_v9: 0.0                 # Example of disabled filtering (if the corpus is already filtered)
+
+  # Monocleaner filters sentences in monolingual corpus based on language fluency
+  # Use sanitized dataset names for compatibility with Taskcluster (replace ".", "/", ":", "[", "]" to "_")
+  monocleaner:
+    mono-src:
+      # News-crawl is typically clean, enable on dataset by dataset basis
+      default-threshold: 0.0
+      dataset-thresholds:
+        # We already filter it by document score, remove only the noisiest segments
+        hplt_mono_v2_0: 0.5
+        # Filter only garbage from NLLB
+        opus_NLLB_v1: 0.5
+    mono-trg:
+      # News-crawl is typically clean, enable on dataset by dataset basis
+      default-threshold: 0.0
+      dataset-thresholds:
+        # We already filter HPLT by document score, so it's relatively clean,
+        # but let's still apply the default threshold for monocleaner to get more fluent target texts for back-translations
+        hplt_mono_v2_0: 0.7
+        # Sentences for back-translations should be in fluent language, apply even more aggressive threshold for NLLB
+        opus_NLLB_v1: 0.8
+
+  # Limits the maximum sentences use in the monolingual data for both the source and target languages.
+  mono-max-sentences-src:
+    # More data for distillation is better for student quality.
+    total: 100_000_000
+    # Some datasets can be massive (like English NLLB mono has 3 trillion sentences)
+    # Limit the per-dataset to make sure there is good data diversity between datasets.
+    per-dataset: 70_000_000
+  mono-max-sentences-trg:
+    # Limit the number of back-translations
+    total: 100_000_000
+    per-dataset: 70_000_000
+
+  # HPLT provides a document score in the dataset, and we can filter based on it.
+  # 0 is worse and 10 is better.
+  # HPLT 2.0 "clean" is already filtered by the score >5
+  # See the reports for distribution of document scores per language:
+  # https://github.com/hplt-project/data-analytics-tool/tree/main/reports/mono-2.0
+  hplt-min-doc-score:
+    mono-src: 7.0
+    # We previously filtered by 9.0 here, but it is too aggressive for some languages
+    mono-trg: 7.0
+
+  # How many bytes of the corpus are sampled to be used in SentencePiece
+  # tokenization training.
+  spm-sample-size: 10_000_000
+  # The size of the vocabulary
+  spm-vocab-size: 32000
+  # Whether to separate SentencePiece vocabularies for source and target languages (useful when they have different scripts)
+  spm-vocab-split: false
+
+  # Determine how many teachers to train.
+  # See: docs/teacher-ensemble.md
+  teacher-ensemble: 1
+  # Switch to "one-stage" training if back-translations are produced by a high quality model or
+  # the model stops too early on the fine-tuning stage
+  teacher-mode: "two-stage"
+  # Translate with either Marian, or CTranslate2.
+  teacher-decoder: ctranslate2
+  # Choose a model architecture:
+  #   tiny - The original lightning fast model, which may suffer some quality issues.
+  #   base - A bigger model for complex languages. It is much larger in memory.
+  #   base-memory - Similar to base, but optimized for a smaller memory footprint.
+  #
+  # See: pipeline/train/configs/model/student.{student-model}.yml
+  student-model: "base-memory"
+
+# The lists of datasets. Each dataset is defined by a corpus key. This key is formed
+# by "{IMPORTER}_{DATASET}". These datasets and their corpus key can be found through
+# It is possible to add data augmentation in format "{IMPORTER}_{AUGMENTATION}_{DATASET}", for example flores_aug-mix_dev
+# See docs on augmentation: https://mozilla.github.io/translations/opus-trainer.html#evaluation
+#
+# To find datasets run:
+#  poetry run utils/find_corpus.py en ru
+datasets:
+  # The datasets used for validation while training. These should not be the same
+  # ones used in test or train. This is what is used to determine when to stop training.
+  devtest:
+    # Use augmented datasets with the mix of augmentations for validation
+    - flores_aug-mix_dev
+    - sacrebleu_aug-mix_wmt19
+    - sacrebleu_aug-mix_wmt17
+    - sacrebleu_aug-mix_wmt15
+    - sacrebleu_aug-mix_wmt14
+
+  # The datasets used for the final evaluation to determine the quality of the trained
+  # model.
+  test:
+    - flores_devtest
+    - sacrebleu_wmt20
+    - sacrebleu_wmt20
+    - sacrebleu_wmt18
+    - sacrebleu_wmt16
+    - sacrebleu_wmt13
+    # Add augmented datasets to check performance for the specific cases
+    - flores_aug-mix_devtest
+    - flores_aug-title_devtest
+    - flores_aug-upper_devtest
+    - flores_aug-punct_devtest
+    - flores_aug-typos_devtest
+    - flores_aug-noise_devtest
+    - flores_aug-inline-noise_devtest
+
+  # The parallel training data.
+  train:
+    - opus_Books/v1
+    - opus_CCAligned/v1
+    - opus_ELRC-3075-wikipedia_health/v1
+    - opus_ELRC-3855-SWPS_University_Soci/v1
+    - opus_ELRC-5067-SciPar/v1
+    - opus_ELRC-5183-SciPar_Ukraine/v1
+    - opus_ELRC-wikipedia_health/v1
+    - opus_ELRC_2922/v1
+    - opus_EUbookshop/v2
+    - opus_GNOME/v1
+    - opus_GlobalVoices/v2018q4
+    - opus_KDE4/v2
+    - opus_LinguaTools-WikiTitles/v2014
+    - opus_NeuLab-TedTalks/v1
+    - opus_News-Commentary/v16
+    - opus_OpenSubtitles/v2018
+    - opus_PHP/v1
+    - opus_ParaCrawl/v9
+    - opus_QED/v2.0a
+    - opus_TED2013/v1.1
+    - opus_TED2020/v1
+    - opus_Tanzil/v1
+    - opus_Tatoeba/v2023-04-12
+    - opus_TildeMODEL/v2018
+    - opus_UNPC/v1.0
+    - opus_Ubuntu/v14.10
+    - opus_WikiMatrix/v1
+    # direction issue on OPUS: https://github.com/Helsinki-NLP/OPUS/issues/12
+    # - opus_WikiTitles/v3
+    - opus_Wikipedia/v1.0
+    - opus_XLEnt/v1.2
+    - opus_ada83/v1
+    - opus_bible-uedin/v1
+    - opus_infopankki/v1
+    - opus_tico-19/v2020-10-28
+    - opus_tldr-pages/v2023-08-29
+    - opus_wikimedia/v20230407
+    - mtdata_Statmt-commoncrawl_wmt13-1-rus-eng
+    - mtdata_Statmt-news_commentary_wmt18-13-rus-eng
+    - mtdata_Tilde-airbaltic-1-eng-rus
+    - mtdata_Tilde-czechtourism-1-eng-rus
+    - mtdata_Tilde-worldbank-1-eng-rus
+    - mtdata_UN-un_dev-1-eng-rus
+    - mtdata_UN-un_test-1-eng-rus
+
+  # Monolingual data sources for the source language (to be translated by the teacher model).
+  mono-src:
+    - news-crawl_news.2021
+    - news-crawl_news.2020
+    - news-crawl_news.2019
+    - news-crawl_news.2018
+    - news-crawl_news.2017
+    - news-crawl_news.2016
+    - news-crawl_news.2015
+    - news-crawl_news.2014
+    - news-crawl_news.2013
+    - news-crawl_news.2012
+    - news-crawl_news.2011
+    - news-crawl_news.2010
+    - news-crawl_news.2009
+    - news-crawl_news.2008
+    - news-crawl_news.2007
+
+  # Monolingual data sources for the target language
+  # (to be translated by the backward model to augment teacher corpus with back-translations)
+  mono-trg:
+    - news-crawl_news.2021
+    - news-crawl_news.2020
+    - news-crawl_news.2019
+    - news-crawl_news.2018
+    - news-crawl_news.2017
+    - news-crawl_news.2016
+    - news-crawl_news.2015
+    - news-crawl_news.2014
+    - news-crawl_news.2013
+    - news-crawl_news.2012
+    - news-crawl_news.2011
+    - news-crawl_news.2010
+    - news-crawl_news.2009
+    - news-crawl_news.2008
+    - news-crawl_news.2007
+
+# Arguments that are provided to Marian, the underlying machine learning system used
+# to train language.
+# https://marian-nmt.github.io/docs/cmd/marian/
+marian-args:
+  # Decoding arguments are GPU-dependent. See:
+  # https://mozilla.github.io/firefox-translations-training/training-guide.html#decoding-translation
+  decoding-backward:
+    # We usually use smaller s2s or student models for back-translations
+    beam-size: '12'
+    mini-batch-words: '2000'
+  decoding-teacher:
+    # Batch size tuned for four Tesla V100-SXM2-16GB
+    # See: https://github.com/mozilla/translations/issues/931
+    mini-batch-words: '5000'
+    maxi-batch: '10000'
+  # Early stopping can be adjusted to ensure models converge. See:
+  # https://mozilla.github.io/firefox-translations-training/training-guide.html#model-training
+  training-backward:
+    early-stopping: '5'
+  training-teacher:
+    # Set to 30 or 40 if the model stops training too early.
+    # This would likely indicate issues with the training corpus.
+    early-stopping: '20'
+  # Reduce to 15 as student trains for too long due to on-the-fly data augmentation and lower model capacity
+  training-student:
+    early-stopping: '15'
+  training-student-finetuned:
+    early-stopping: '20'
+
+# Run all of the training pipeline with "all-pipeline", or run a specific stage such as
+# "corpus-merge-parallel". For more information see:
+#
+# https://mozilla.github.io/firefox-translations-training/task-cluster.html#running-up-to-a-specific-step
+# Look at the teacher quality first before moving to distillation
+target-stage: evaluate-teacher
+
+# Optional: An array of taskIds of the previous group(s) to use to populate `existing_tasks`.
+# All completed tasks from the specified task groups will be used except for the tasks with `start-task-prefix`
+# labels and their descendants (if `start-task-prefix` is specified).
+# Cache digests are ignored in this case.
+# previous-group-ids: ["QDc7Pm4cSCy70tXhBUW-1w", "B04UrSOnT_iv0WqSw-yShg", "H3zT8CiTRKafIh4C9lba-w"]
+
+# Optional: The label prefix for the tasks to begin with, provided replacements
+# can be found for tasks upstream. Used in conjunction with `previous-group-ids`
+# which allows for specifying task group ids to fetch existing tasks from.
+# start-task-prefix: backtranslations-train-backwards-model
+
+# Enable publication to Weights and Biases
+wandb-publication: true
+
+# Training continuation options, see docs/using-pretrained-models.md
+continuation:
+  models:
+    # Use a student model from an older run as a backward model
+    backwards:
+      url: "https://storage.googleapis.com/releng-translations-dev/models/ru-en/better-teacher/student"
+      mode: use
+      type: default
+
+
+taskcluster:
+  # After the parallel corpora are merged and de-duplicated, the combined file is
+  # then split into an even number of chunks.
+  # Adjust depending on the amount of data to translate
+  split-chunks: 20
+  # The GCS bucket to upload artifacts to. The options are:
+  #   - production
+  #     - GCS bucket is moz-fx-translations-data--303e-prod-translations-data
+  #     - preserves artifacts indefinitely
+  #     - should be used for production training runs
+  #   - development
+  #     - GCS bucket is moz-fx-translations-data--5f91-stage-translations-data 
+  #     - artifacts are deleted after 30 days
+  #     - should be used when artifact retention is not important
+  upload-bucket: production
+  # Worker classes by `kind`, and a default for `kinds` not specified.
+  # Available options are in `taskcluster/translations_taskgraph/actions/train.py`.
+  # By default we like to use `gcp-spot`, which are the cheapest option. To use
+  # standard (non-spot) instances for all training tasks you would configure
+  # as follows:
+  # worker-classes:
+  #   distillation-student-model-finetune: gcp-spot
+  #   backtranslations-train-backwards-model: gcp-spot
+  #   train-teacher-model: gcp-spot
+  #   distillation-student-model-train: gcp-spot
+  #   default: gcp-spot
+  worker-classes:
+    default: gcp-spot
+    # long-running tasks that don't support restarts with continuation like training tasks
+    corpus-align-parallel: gcp-standard
+    corpus-align-backtranslations: gcp-standard
+    corpus-align-distillation: gcp-standard
+    distillation-corpus-build-shortlist: gcp-standard

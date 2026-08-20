@@ -1,0 +1,23 @@
+{
+  "bergamotVersion": "v0.6.0",
+  "firefoxPin": {
+    "path": "toolkit/components/translations/bergamot-translator/moz.yaml",
+    "repository": "mozilla-firefox/firefox",
+    "repositoryUrl": "https://github.com/mozilla-firefox/firefox.git",
+    "revision": "48d55cf7ec80093903e2ef7f58b61a84a22ef716",
+    "sha256": "42b4fcddfd421cfe4959c3a126f93aa2c5b26f5380b337a88be2fe336c2604c4"
+  },
+  "license": "MPL-2.0",
+  "repository": "mozilla/translations",
+  "repositoryUrl": "https://github.com/mozilla/translations.git",
+  "revision": "eea6e5a80aa4ddd86d9cc35ce9a65b79aa3ab96d",
+  "schemaVersion": 1,
+  "snapshot": {
+    "format": "linguum-source-tree-v1",
+    "generatedAt": "2026-08-20T12:53:52Z",
+    "licenseFileCount": 88,
+    "runId": "codex-M1-WP01-initial",
+    "submoduleCount": 31
+  },
+  "sourceTreeSha256": "94e42bbd05187c94dbb8adc04074015faab65d8f648d583b7056e8e4cf59182f"
+}

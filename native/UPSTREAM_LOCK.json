@@ -1,0 +1,639 @@
+{
+  "bergamotVersion": "v0.6.0",
+  "generatedAt": "2026-08-20T12:53:52Z",
+  "generatorRevision": "b1c8345aaecefb5781ec1d57a1132717c2d926d1",
+  "licenses": [
+    {
+      "path": "3rd_party/extract-lex/COPYING",
+      "sha256": "83a9cdbbac61c1fa33b055dafcb6f0b0aa4379d70f7c1ce15b660d1df05b4696",
+      "spdx": "LGPL-2.1-only"
+    },
+    {
+      "path": "3rd_party/fast_align/LICENSE.txt",
+      "sha256": "809fa1ed21450f59827d1e9aec720bbc4b687434fa22283c6cb5dd82a47ab9c0",
+      "spdx": "Apache-2.0"
+    },
+    {
+      "path": "3rd_party/kenlm/COPYING",
+      "sha256": "dc626520dcd53a22f727af3ee42c770e56c97a64fe3adb063799d8ab032fe551",
+      "spdx": "LGPL-2.1-only"
+    },
+    {
+      "path": "3rd_party/kenlm/COPYING.3",
+      "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903",
+      "spdx": "GPL-3.0-only"
+    },
+    {
+      "path": "3rd_party/kenlm/COPYING.LESSER.3",
+      "sha256": "9ccf26cfe845e0eb8bb58053e47366e7ab6b697ae010f7650978d4b71b7d1fc1",
+      "spdx": "LGPL-3.0-only"
+    },
+    {
+      "path": "3rd_party/kenlm/LICENSE",
+      "sha256": "6d9f8894586896ee3b383c962e141f527edeb54f561a6bd189d0eb08380c4cc2",
+      "spdx": "LGPL-2.1-only"
+    },
+    {
+      "path": "3rd_party/kenlm/util/double-conversion/LICENSE",
+      "sha256": "4af93c12062c58058378de2397dc1c92bbff9ddfb1d583a01c84127557ce97ca",
+      "spdx": "BSD-3-Clause"
+    },
+    {
+      "path": "3rd_party/marian-dev/LICENSE.md",
+      "sha256": "fb3e48be2f3c9c85f3acf32d4ff115a803208e51ecab694000415c8bf1dd712b",
+      "spdx": "MIT"
+    },
+    {
+      "path": "3rd_party/marian-dev/examples/LICENSE.md",
+      "sha256": "58fc223092f0276625e5518d484bc9abe9b37429d827fc493f2c1a43174ff5dc",
+      "spdx": "MIT"
+    },
+    {
+      "path": "3rd_party/marian-dev/regression-tests/LICENSE.md",
+      "sha256": "56206dc5d9eb4ad0060114f6ba799897ecd44f551fc1916bd32bcd38ea4d698b",
+      "spdx": "MIT"
+    },
+    {
+      "path": "3rd_party/marian-dev/src/3rd_party/CLI/LICENSE",
+      "sha256": "82b1de8bd2cbd894dc9ef05854e9d8c010d0ae9f6f2dc41370bac498f9bebc7d",
+      "spdx": "BSD-3-Clause"
+    },
+    {
+      "path": "3rd_party/marian-dev/src/3rd_party/SQLiteCpp/LICENSE.txt",
+      "sha256": "048bb978d3a8f5c2c271a47cc3da4ade04d95f1b5348d9f93fcb542513d8eb34",
+      "spdx": "MIT"
+    },
+    {
+      "path": "3rd_party/marian-dev/src/3rd_party/cnpy/LICENSE",
+      "sha256": "1ff6fa94ad29d941ceb3bdd5ebfb260ddba4c3e962c50fb7a66c899e769de1ff",
+      "spdx": "MIT"
+    },
+    {
+      "path": "3rd_party/marian-dev/src/3rd_party/faiss/LICENSE",
+      "sha256": "52412d7bc7ce4157ea628bbaacb8829e0a9cb3c58f57f99176126bc8cf2bfc85",
+      "spdx": "MIT"
+    },
+    {
+      "path": "3rd_party/marian-dev/src/3rd_party/fbgemm/LICENSE",
+      "sha256": "710022ca741ddb581b589dc41493713d171b0031f0600e19feba67c7c023a9b4",
+      "spdx": "BSD-3-Clause"
+    },
+    {
+      "path": "3rd_party/marian-dev/src/3rd_party/fbgemm/third_party/asmjit/LICENSE.md",
+      "sha256": "271fcd58a394f9dc97b64da172bab0f133bedbaebf6e204b0b68732ea90e5b3c",
+      "spdx": "Zlib"
+    },
+    {
+      "path": "3rd_party/marian-dev/src/3rd_party/fbgemm/third_party/cpuinfo/LICENSE",
+      "sha256": "3a1fcacb580eebdadcdaa7c2041acd36e800d88dd249ea71fff1c9f116bccfd9",
+      "spdx": "BSD-2-Clause"
+    },
+    {
+      "path": "3rd_party/marian-dev/src/3rd_party/fbgemm/third_party/cpuinfo/deps/clog/LICENSE",
+      "sha256": "68a14c3e79add023eecd83d611e73f05b8bf1d16852efeb7eb4033a96736da9e",
+      "spdx": "BSD-2-Clause"
+    },
+    {
+      "path": "3rd_party/marian-dev/src/3rd_party/fbgemm/third_party/googletest/LICENSE",
+      "sha256": "9702de7e4117a8e2b20dafab11ffda58c198aede066406496bef670d40a22138",
+      "spdx": "BSD-3-Clause"
+    },
+    {
+      "path": "3rd_party/marian-dev/src/3rd_party/fbgemm/third_party/googletest/googlemock/LICENSE",
+      "sha256": "9702de7e4117a8e2b20dafab11ffda58c198aede066406496bef670d40a22138",
+      "spdx": "BSD-3-Clause"
+    },
+    {
+      "path": "3rd_party/marian-dev/src/3rd_party/fbgemm/third_party/googletest/googlemock/scripts/generator/LICENSE",
+      "sha256": "5e0df8c845c742e76f2f64d2d9ce1b7e74a2422fddbc577ae6a56319083de0bf",
+      "spdx": "Apache-2.0"
+    },
+    {
+      "path": "3rd_party/marian-dev/src/3rd_party/fbgemm/third_party/googletest/googletest/LICENSE",
+      "sha256": "9702de7e4117a8e2b20dafab11ffda58c198aede066406496bef670d40a22138",
+      "spdx": "BSD-3-Clause"
+    },
+    {
+      "path": "3rd_party/marian-dev/src/3rd_party/intgemm/LICENSE",
+      "sha256": "887bd367b44f548d743864cb4322d0895a36b1794c6ad5b5e3a0fac53ccd117b",
+      "spdx": "BSL-1.0"
+    },
+    {
+      "path": "3rd_party/marian-dev/src/3rd_party/intgemm/test/3rd_party/LICENSE_1_0.txt",
+      "sha256": "ea056d2c64294936b226f7360c265e77c52adc4ba171ee61029357f101f439cf",
+      "spdx": "BSL-1.0"
+    },
+    {
+      "path": "3rd_party/marian-dev/src/3rd_party/mio/LICENSE",
+      "sha256": "1a0fe0714e5fc17741dd880bddf445c4b3c579868df1f198f652129a9fa7c3cc",
+      "spdx": "MIT"
+    },
+    {
+      "path": "3rd_party/marian-dev/src/3rd_party/nccl/LICENSE.txt",
+      "sha256": "f769fa2d363213f599366da46e2a8d650c86eaae845aec4d44b2f5fd01d4ec59",
+      "spdx": "BSD-3-Clause"
+    },
+    {
+      "path": "3rd_party/marian-dev/src/3rd_party/pathie-cpp/LICENSE",
+      "sha256": "8515fc938185ff3edb2c38b60b3a2f4a92b93644502de2b73fc32d54077e2a61",
+      "spdx": "BSD-2-Clause"
+    },
+    {
+      "path": "3rd_party/marian-dev/src/3rd_party/phf/LICENSE",
+      "sha256": "3f9e948dcc51aab1299dc37a53f9218bf0414c7ea24ee38e310269f74e2eef72",
+      "spdx": "MIT"
+    },
+    {
+      "path": "3rd_party/marian-dev/src/3rd_party/sentencepiece/LICENSE",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "spdx": "Apache-2.0"
+    },
+    {
+      "path": "3rd_party/marian-dev/src/3rd_party/sentencepiece/third_party/absl/LICENSE",
+      "sha256": "d3e2f59e1d71176dfdb555ece6a41f7a5aa0f52ff21211010ace314f57695f6b",
+      "spdx": "Apache-2.0"
+    },
+    {
+      "path": "3rd_party/marian-dev/src/3rd_party/sentencepiece/third_party/darts_clone/LICENSE",
+      "sha256": "155f59997298ee336602c49f9c1110f268ac394ca2197eb02647a3555935ad52",
+      "spdx": "BSD-3-Clause"
+    },
+    {
+      "path": "3rd_party/marian-dev/src/3rd_party/sentencepiece/third_party/esaxx/LICENSE",
+      "sha256": "7c28553d1d3312d65fe309f76a22ebaf33a3d76c8c1e3b98a88ee4654ecb53db",
+      "spdx": "MIT"
+    },
+    {
+      "path": "3rd_party/marian-dev/src/3rd_party/sentencepiece/third_party/protobuf-lite/LICENSE",
+      "sha256": "6e5e117324afd944dcf67f36cf329843bc1a92229a8cd9bb573d7a83130fea7d",
+      "spdx": "BSD-3-Clause"
+    },
+    {
+      "path": "3rd_party/marian-dev/src/3rd_party/simple-websocket-server/LICENSE",
+      "sha256": "5afa89bf6dbbe8a88b50235dc786d047a7f8c8d4142c9981197cdfa53c76bbf5",
+      "spdx": "MIT"
+    },
+    {
+      "path": "3rd_party/marian-dev/src/3rd_party/spdlog/LICENSE",
+      "sha256": "9eb46fbd9cbdb0793e496ab744aa2e290b4e39825a2da5cba3ba6fa36bb25683",
+      "spdx": "MIT"
+    },
+    {
+      "path": "3rd_party/marian-dev/src/3rd_party/yaml-cpp/LICENSE",
+      "sha256": "aa6fcc27be034e41e21dd832f9175bfe694a48491d9e14ff0fa278e19ad14f1b",
+      "spdx": "MIT"
+    },
+    {
+      "path": "3rd_party/marian-dev/src/3rd_party/zstr/LICENSE",
+      "sha256": "f2b4ae40b0311262960b46f697497994fe35706110ac04f04b3768d9ea7df460",
+      "spdx": "MIT"
+    },
+    {
+      "path": "3rd_party/preprocess/COPYING",
+      "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903",
+      "spdx": "GPL-3.0-only"
+    },
+    {
+      "path": "3rd_party/preprocess/COPYING.LESSER",
+      "sha256": "9ccf26cfe845e0eb8bb58053e47366e7ab6b697ae010f7650978d4b71b7d1fc1",
+      "spdx": "LGPL-3.0-only"
+    },
+    {
+      "path": "3rd_party/preprocess/LICENSE",
+      "sha256": "e8161ba3256e9bb491e58d876e09e1feea5b2a2bf614b7e0773b3ff0b00f13c8",
+      "spdx": "LGPL-3.0-only"
+    },
+    {
+      "path": "3rd_party/preprocess/util/double-conversion/LICENSE",
+      "sha256": "4af93c12062c58058378de2397dc1c92bbff9ddfb1d583a01c84127557ce97ca",
+      "spdx": "BSD-3-Clause"
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "1f256ecad192880510e84ad60474eab7589218784b9a50bc7ceee34c2b91f1d5",
+      "spdx": "MPL-2.0"
+    },
+    {
+      "path": "inference/3rd_party/emsdk/LICENSE",
+      "sha256": "99d9a9616fbde3f5ee22a71d8645799a8522d48526130c5ba6dc27ad15ce01f1",
+      "spdx": "MIT"
+    },
+    {
+      "path": "inference/3rd_party/ssplit-cpp/LICENSE.md",
+      "sha256": "4ced746a9cab1b6b6762bd6c1999c6d65e2d45de0bab19a3902514147bbff16a",
+      "spdx": "Apache-2.0"
+    },
+    {
+      "path": "inference/marian-fork/LICENSE.md",
+      "sha256": "fb3e48be2f3c9c85f3acf32d4ff115a803208e51ecab694000415c8bf1dd712b",
+      "spdx": "MIT"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/CLI/LICENSE",
+      "sha256": "82b1de8bd2cbd894dc9ef05854e9d8c010d0ae9f6f2dc41370bac498f9bebc7d",
+      "spdx": "BSD-3-Clause"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/cnpy/LICENSE",
+      "sha256": "1ff6fa94ad29d941ceb3bdd5ebfb260ddba4c3e962c50fb7a66c899e769de1ff",
+      "spdx": "MIT"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/faiss/LICENSE",
+      "sha256": "52412d7bc7ce4157ea628bbaacb8829e0a9cb3c58f57f99176126bc8cf2bfc85",
+      "spdx": "MIT"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/fbgemm/LICENSE",
+      "sha256": "710022ca741ddb581b589dc41493713d171b0031f0600e19feba67c7c023a9b4",
+      "spdx": "BSD-3-Clause"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/fbgemm/third_party/asmjit/LICENSE.md",
+      "sha256": "271fcd58a394f9dc97b64da172bab0f133bedbaebf6e204b0b68732ea90e5b3c",
+      "spdx": "Zlib"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/fbgemm/third_party/cpuinfo/LICENSE",
+      "sha256": "3a1fcacb580eebdadcdaa7c2041acd36e800d88dd249ea71fff1c9f116bccfd9",
+      "spdx": "BSD-2-Clause"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/fbgemm/third_party/cpuinfo/deps/clog/LICENSE",
+      "sha256": "68a14c3e79add023eecd83d611e73f05b8bf1d16852efeb7eb4033a96736da9e",
+      "spdx": "BSD-2-Clause"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/fbgemm/third_party/googletest/LICENSE",
+      "sha256": "9702de7e4117a8e2b20dafab11ffda58c198aede066406496bef670d40a22138",
+      "spdx": "BSD-3-Clause"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/fbgemm/third_party/googletest/googlemock/LICENSE",
+      "sha256": "9702de7e4117a8e2b20dafab11ffda58c198aede066406496bef670d40a22138",
+      "spdx": "BSD-3-Clause"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/fbgemm/third_party/googletest/googlemock/scripts/generator/LICENSE",
+      "sha256": "5e0df8c845c742e76f2f64d2d9ce1b7e74a2422fddbc577ae6a56319083de0bf",
+      "spdx": "Apache-2.0"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/fbgemm/third_party/googletest/googletest/LICENSE",
+      "sha256": "9702de7e4117a8e2b20dafab11ffda58c198aede066406496bef670d40a22138",
+      "spdx": "BSD-3-Clause"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/intgemm/LICENSE",
+      "sha256": "887bd367b44f548d743864cb4322d0895a36b1794c6ad5b5e3a0fac53ccd117b",
+      "spdx": "BSL-1.0"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/intgemm/test/3rd_party/LICENSE_1_0.txt",
+      "sha256": "ea056d2c64294936b226f7360c265e77c52adc4ba171ee61029357f101f439cf",
+      "spdx": "BSL-1.0"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/mio/LICENSE",
+      "sha256": "1a0fe0714e5fc17741dd880bddf445c4b3c579868df1f198f652129a9fa7c3cc",
+      "spdx": "MIT"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/nccl/LICENSE.txt",
+      "sha256": "3b9e25acfd9b31b238db22cfabb77d69e9e65bf28c31500ce3402c5d6a06475b",
+      "spdx": "BSD-3-Clause"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/onnxjs/LICENSE",
+      "sha256": "122382d4c97c158662034441cd2bd8ef8d0b7bd28c059bb4d716d54fcd4d7e3e",
+      "spdx": "MIT"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/onnxjs/benchmark/LICENSE",
+      "sha256": "b5d0e540c15f27b614eca14ddc71111cfaa8e693cec95452a4a19f325cd42262",
+      "spdx": "NOASSERTION"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/onnxjs/deps/eigen/COPYING.BSD",
+      "sha256": "4f877e5ae4672568ef82cfd0023e2cef4a7cf55d867ab249efc9569a7eb9e5b1",
+      "spdx": "BSD-3-Clause"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/onnxjs/deps/eigen/COPYING.GPL",
+      "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903",
+      "spdx": "GPL-3.0-only"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/onnxjs/deps/eigen/COPYING.LGPL",
+      "sha256": "dc626520dcd53a22f727af3ee42c770e56c97a64fe3adb063799d8ab032fe551",
+      "spdx": "LGPL-2.1-only"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/onnxjs/deps/eigen/COPYING.MINPACK",
+      "sha256": "f5b330efdad110cdd84d585ec61220b0650461fa599e36b13e1726c9346dcfb9",
+      "spdx": "BSD-2-Clause"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/onnxjs/deps/eigen/COPYING.MPL2",
+      "sha256": "fab3dd6bdab226f1c08630b1dd917e11fcb4ec5e1e020e2c16f83a0a13863e85",
+      "spdx": "MPL-2.0"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/onnxjs/deps/eigen/COPYING.README",
+      "sha256": "c83230b770f17ef1386ea1fd3681271dd98aa93646bdbfb5bff3a1b7050fff9d",
+      "spdx": "MPL-2.0 AND BSD-3-Clause AND LGPL-2.1-or-later"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/onnxjs/deps/eigen/bench/btl/COPYING",
+      "sha256": "b8d0e2bcbf36f6af3cdbf94055ad2ea675d5a19fc623eb0ec82febb2b08e719b",
+      "spdx": "GPL-2.0-only"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/pathie-cpp/LICENSE",
+      "sha256": "8515fc938185ff3edb2c38b60b3a2f4a92b93644502de2b73fc32d54077e2a61",
+      "spdx": "BSD-2-Clause"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/phf/LICENSE",
+      "sha256": "3f9e948dcc51aab1299dc37a53f9218bf0414c7ea24ee38e310269f74e2eef72",
+      "spdx": "MIT"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/ruy/LICENSE",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "spdx": "Apache-2.0"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/ruy/third_party/cpuinfo/LICENSE",
+      "sha256": "8e7e60636c3aa0cb03571a1a841ce5697f9551ff92b3c426c2561613d15ade70",
+      "spdx": "BSD-2-Clause"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/ruy/third_party/cpuinfo/deps/clog/LICENSE",
+      "sha256": "68a14c3e79add023eecd83d611e73f05b8bf1d16852efeb7eb4033a96736da9e",
+      "spdx": "BSD-2-Clause"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/ruy/third_party/googletest/LICENSE",
+      "sha256": "9702de7e4117a8e2b20dafab11ffda58c198aede066406496bef670d40a22138",
+      "spdx": "BSD-3-Clause"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/ruy/third_party/googletest/googlemock/LICENSE",
+      "sha256": "9702de7e4117a8e2b20dafab11ffda58c198aede066406496bef670d40a22138",
+      "spdx": "BSD-3-Clause"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/ruy/third_party/googletest/googlemock/scripts/generator/LICENSE",
+      "sha256": "5e0df8c845c742e76f2f64d2d9ce1b7e74a2422fddbc577ae6a56319083de0bf",
+      "spdx": "Apache-2.0"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/ruy/third_party/googletest/googletest/LICENSE",
+      "sha256": "9702de7e4117a8e2b20dafab11ffda58c198aede066406496bef670d40a22138",
+      "spdx": "BSD-3-Clause"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/sentencepiece/LICENSE",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "spdx": "Apache-2.0"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/sentencepiece/third_party/absl/LICENSE",
+      "sha256": "d3e2f59e1d71176dfdb555ece6a41f7a5aa0f52ff21211010ace314f57695f6b",
+      "spdx": "Apache-2.0"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/sentencepiece/third_party/darts_clone/LICENSE",
+      "sha256": "155f59997298ee336602c49f9c1110f268ac394ca2197eb02647a3555935ad52",
+      "spdx": "BSD-3-Clause"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/sentencepiece/third_party/esaxx/LICENSE",
+      "sha256": "7c28553d1d3312d65fe309f76a22ebaf33a3d76c8c1e3b98a88ee4654ecb53db",
+      "spdx": "MIT"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/sentencepiece/third_party/protobuf-lite/LICENSE",
+      "sha256": "6e5e117324afd944dcf67f36cf329843bc1a92229a8cd9bb573d7a83130fea7d",
+      "spdx": "BSD-3-Clause"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/simd_utils/LICENSE",
+      "sha256": "dfaa54b4188ffa0e6298ce7ea27c865d12edcf73d742e2200ce9812db6268c0f",
+      "spdx": "BSD-2-Clause"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/simple-websocket-server/LICENSE",
+      "sha256": "5afa89bf6dbbe8a88b50235dc786d047a7f8c8d4142c9981197cdfa53c76bbf5",
+      "spdx": "MIT"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/spdlog/LICENSE",
+      "sha256": "9eb46fbd9cbdb0793e496ab744aa2e290b4e39825a2da5cba3ba6fa36bb25683",
+      "spdx": "MIT"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/yaml-cpp/LICENSE",
+      "sha256": "aa6fcc27be034e41e21dd832f9175bfe694a48491d9e14ff0fa278e19ad14f1b",
+      "spdx": "MIT"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/zstr/LICENSE",
+      "sha256": "f2b4ae40b0311262960b46f697497994fe35706110ac04f04b3768d9ea7df460",
+      "spdx": "MIT"
+    }
+  ],
+  "repository": "https://github.com/mozilla/translations.git",
+  "revision": "eea6e5a80aa4ddd86d9cc35ce9a65b79aa3ab96d",
+  "schemaVersion": 1,
+  "sourceTreeSha256": "94e42bbd05187c94dbb8adc04074015faab65d8f648d583b7056e8e4cf59182f",
+  "submodules": [
+    {
+      "path": "3rd_party/extract-lex",
+      "revision": "42fa605b53f32eaf6c6e0b5677255c21c91b3d49",
+      "treeSha256": "0de4b8dff900103960c3d6e6dae84d1ae72f68ed7edafcd132bc3bcd4d542830",
+      "url": "https://github.com/marian-nmt/extract-lex.git"
+    },
+    {
+      "path": "3rd_party/fast_align",
+      "revision": "cab1e9aac8d3bb02ff5ae58218d8d225a039fa11",
+      "treeSha256": "9fe2ce30748f479ff6e66defd09a4b21d4c7fccfc162f83fc4a9134d26db3d15",
+      "url": "https://github.com/clab/fast_align.git"
+    },
+    {
+      "path": "3rd_party/kenlm",
+      "revision": "bbf4fc511266c5d4515047055d7bdec659a6e158",
+      "treeSha256": "20f117d6e9e75fbb9f5bf223e59aa13e183c5dbadeab71e4258954485bc42ff5",
+      "url": "https://github.com/kpu/kenlm.git"
+    },
+    {
+      "path": "3rd_party/marian-dev",
+      "revision": "e8a1a2530fb84cbff7383302ebca393e5875c441",
+      "treeSha256": "0725339359335e9addb5443aad2a3105d68ff0807d115f764e49c86e3a65d78d",
+      "url": "https://github.com/marian-nmt/marian-dev.git"
+    },
+    {
+      "path": "3rd_party/marian-dev/examples",
+      "revision": "6d5921cc7de91f4e915b59e9c52c9a76c4e99b00",
+      "treeSha256": "3bf18b4e45bb399e77a022934e3993e458434920dc30b9baea6385e6e95b6a50",
+      "url": "https://github.com/marian-nmt/marian-examples.git"
+    },
+    {
+      "path": "3rd_party/marian-dev/regression-tests",
+      "revision": "32a2f7960d8cc48d6c90cbb5d03fbb42eb923d3d",
+      "treeSha256": "5fb76f3aba011ceb42487dc8731a9be41c4f25ab557415b2d6682701247b3048",
+      "url": "https://github.com/marian-nmt/marian-regression-tests.git"
+    },
+    {
+      "path": "3rd_party/marian-dev/src/3rd_party/fbgemm",
+      "revision": "6f45243cb8ab7d7ab921af18d313ae97144618b8",
+      "treeSha256": "dd34ba817d79e4a98ebf7effe12ee2eed88643a741c19551ac8ec124b9b4ed3a",
+      "url": "https://github.com/marian-nmt/FBGEMM.git"
+    },
+    {
+      "path": "3rd_party/marian-dev/src/3rd_party/fbgemm/third_party/asmjit",
+      "revision": "4da474ac9aa2689e88d5e40a2f37628f302d7e3c",
+      "treeSha256": "7fe3f84169a07e2eb12c6024a763af819c50b88704c0db3f5158f5dc39f1371c",
+      "url": "https://github.com/asmjit/asmjit.git"
+    },
+    {
+      "path": "3rd_party/marian-dev/src/3rd_party/fbgemm/third_party/cpuinfo",
+      "revision": "d5e37adf1406cf899d7d9ec1d317c47506ccb970",
+      "treeSha256": "12eaeebf2344e05653dbbee45e48e2c41313975714f1bb0d587f41ef98bd2e36",
+      "url": "https://github.com/pytorch/cpuinfo.git"
+    },
+    {
+      "path": "3rd_party/marian-dev/src/3rd_party/fbgemm/third_party/googletest",
+      "revision": "0fc5466dbb9e623029b1ada539717d10bd45e99e",
+      "treeSha256": "022e487e0263d8994ae39a6882f693e54e307d2d9a5479a6353f7ff87505e595",
+      "url": "https://github.com/google/googletest.git"
+    },
+    {
+      "path": "3rd_party/marian-dev/src/3rd_party/intgemm",
+      "revision": "8abde25b13c3ab210c0dec8e23f4944e3953812d",
+      "treeSha256": "4a8c67d54961ab2da8fd651c07b039df2baa28f06e12a384890296b2e3d3d746",
+      "url": "https://github.com/marian-nmt/intgemm.git"
+    },
+    {
+      "path": "3rd_party/marian-dev/src/3rd_party/nccl",
+      "revision": "5dcf7751494f9d04057bfc6b4a2b64611bc12253",
+      "treeSha256": "add4b21361fd82c1e9863365c1ad484e79a29bdaa42148e9d02652cea63e3d26",
+      "url": "https://github.com/marian-nmt/nccl.git"
+    },
+    {
+      "path": "3rd_party/marian-dev/src/3rd_party/sentencepiece",
+      "revision": "c307b874deb5ea896db8f93506e173353e66d4d3",
+      "treeSha256": "79be678bed6494cdd2c19b01eeaf503df34add061afeace46a214e0ef46fdf9c",
+      "url": "https://github.com/marian-nmt/sentencepiece.git"
+    },
+    {
+      "path": "3rd_party/marian-dev/src/3rd_party/simple-websocket-server",
+      "revision": "1d7e84aeb3f1ebdc78f6965d79ad3ca3003789fe",
+      "treeSha256": "5cb00ad585aee3a5dd35af6d4252229ebaab97786952e282b41f8df4ad509ca9",
+      "url": "https://github.com/marian-nmt/Simple-WebSocket-Server.git"
+    },
+    {
+      "path": "3rd_party/preprocess",
+      "revision": "64307314b4d5a9a0bd529b5c1036b0710d995eec",
+      "treeSha256": "a94d5009c5e35ac7f5fbe8d4f8476c116661ee50f58d07e7e994c785181ae403",
+      "url": "https://github.com/kpu/preprocess.git"
+    },
+    {
+      "path": "inference/3rd_party/emsdk",
+      "revision": "2346baa7bb44a4a0571cc75f1986ab9aaa35aa03",
+      "treeSha256": "ae2183b0d19bb1f736811c1d3d27ce3d1b16d9d93cbb5b1d9a0827d42e084610",
+      "url": "https://github.com/emscripten-core/emsdk.git"
+    },
+    {
+      "path": "inference/3rd_party/ssplit-cpp",
+      "revision": "a311f9865ade34db1e8e080e6cc146f55dafb067",
+      "treeSha256": "ee21e57f85c5d146b0f89af45a6fe1ff36de7c54d3683575b2f7c0d554e4e30e",
+      "url": "https://github.com/browsermt/ssplit-cpp.git"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/fbgemm",
+      "revision": "0e33146d3e7f070c7de9494efef49147a9d20558",
+      "treeSha256": "0b4dab3915fc7ced9956ca01525bcc4c13dabb57c579b80fc23869803d9a38ec",
+      "url": "https://github.com/marian-nmt/FBGEMM.git"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/fbgemm/third_party/asmjit",
+      "revision": "4da474ac9aa2689e88d5e40a2f37628f302d7e3c",
+      "treeSha256": "7fe3f84169a07e2eb12c6024a763af819c50b88704c0db3f5158f5dc39f1371c",
+      "url": "https://github.com/asmjit/asmjit.git"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/fbgemm/third_party/cpuinfo",
+      "revision": "d5e37adf1406cf899d7d9ec1d317c47506ccb970",
+      "treeSha256": "12eaeebf2344e05653dbbee45e48e2c41313975714f1bb0d587f41ef98bd2e36",
+      "url": "https://github.com/pytorch/cpuinfo.git"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/fbgemm/third_party/googletest",
+      "revision": "0fc5466dbb9e623029b1ada539717d10bd45e99e",
+      "treeSha256": "022e487e0263d8994ae39a6882f693e54e307d2d9a5479a6353f7ff87505e595",
+      "url": "https://github.com/google/googletest.git"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/intgemm",
+      "revision": "f7401513da71758dacce52fed1c7855549abee59",
+      "treeSha256": "a3a12b22c92d93bce4b28d61a6cb59826f66103c17b8357cd363ce9dc74ae1eb",
+      "url": "https://github.com/kpu/intgemm.git"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/nccl",
+      "revision": "7d3486128ebc865b9f2cad63a5cfd3a8f6abcb5a",
+      "treeSha256": "51ba64927a5b4332a189031419d447223cb0625812459526bf5763aa837af65d",
+      "url": "https://github.com/marian-nmt/nccl.git"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/onnxjs",
+      "revision": "924924b08e9596b41aeebada4a172f026be95f5a",
+      "treeSha256": "f7079663d1b7a23e12efb6802bcf87ee9f1a214faf921464b955430e8c85547e",
+      "url": "https://github.com/browsermt/onnxjs.git"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/onnxjs/deps/eigen",
+      "revision": "fff37f4ca0397af9ed7e04f3bd6b893a1ea2b08e",
+      "treeSha256": "6273532fda8897f281d5d20283b6b5dbca31df2e57ec652d0b6a17721eaa2323",
+      "url": "https://github.com/abhi-agg/eigen-git-mirror.git"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/ruy",
+      "revision": "2d950b3bfa7ebfbe7a97ecb44b1cc4da5ac1d6f0",
+      "treeSha256": "fb4771433c7edac824e1302aac247561b675085dcb3330035ef910a2ebc8c38b",
+      "url": "https://github.com/google/ruy.git"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/ruy/third_party/cpuinfo",
+      "revision": "5916273f79a21551890fd3d56fc5375a78d1598d",
+      "treeSha256": "a0e7cf20e83118129f7813bacce57c45d3ece280b109a20c5bea0bac794313fa",
+      "url": "https://github.com/pytorch/cpuinfo.git"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/ruy/third_party/googletest",
+      "revision": "6c58c11d5497b6ee1df3cb400ce30deb72fc28c0",
+      "treeSha256": "be3805c8fd61d87e61d9491c706fb21a55da6bafc034293d77d2adfec6595824",
+      "url": "https://github.com/google/googletest.git"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/sentencepiece",
+      "revision": "ae41b7740d7006596bb9257e83340b2620db9d00",
+      "treeSha256": "46a62efff3f518b820a07b2fe0811de101a8c56ad61758ed4319fb65828c309c",
+      "url": "https://github.com/browsermt/sentencepiece.git"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/simd_utils",
+      "revision": "d0793d86aea9036a5bc77b9ca7791dff024168ca",
+      "treeSha256": "d39607f9c6de8bae7e4d58340b614a73874dc95fb9b165ec67b599eb4a4207ce",
+      "url": "https://github.com/browsermt/simd_utils.git"
+    },
+    {
+      "path": "inference/marian-fork/src/3rd_party/simple-websocket-server",
+      "revision": "417a2a9e9dbd720b8d2dfa1dafe57cf1b37ca0d7",
+      "treeSha256": "0b62a67244d48855e7918fad88d2563222a80c7af3c15c17ea875fa5849cb752",
+      "url": "https://github.com/marian-nmt/Simple-WebSocket-Server.git"
+    }
+  ]
+}

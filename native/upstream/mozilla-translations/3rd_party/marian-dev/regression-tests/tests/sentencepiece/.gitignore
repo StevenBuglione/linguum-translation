@@ -1,0 +1,10 @@
+vocabs/
+vocab.joint/
+vocab.maxlines/
+vocab.norm/
+vocab.lm/
+bleu/
+chrf/
+*.bleu
+*.sacrebleu
+*.score

@@ -1,0 +1,184 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+---
+
+loader: taskgraph.loader.transform:loader
+
+transforms:
+    - translations_taskgraph.transforms.continuation
+    - translations_taskgraph.transforms.worker_selection
+    - taskgraph.transforms.task_context
+    - taskgraph.transforms.run:transforms
+    - taskgraph.transforms.task:transforms
+
+kind-dependencies:
+    - toolchain
+
+task-defaults:
+  description: Run tests
+  task-context:
+    from-parameters:
+      base_rev: base_rev
+    substitution-fields:
+      - run.command
+  run:
+    using: run-task
+    cwd: '{checkout}'
+  worker:
+    # 128 happens when cloning this repository fails
+    retry-exit-status: [128]
+    artifacts:
+      - name: public/build
+        path: /builds/worker/artifacts
+        type: directory
+
+tasks:
+  # See issue: https://github.com/mozilla/translations/issues/363
+  #  snakemake-dry-run:
+#    # Ensure that the snakemake workflow is still executing correctly, even though
+#    # taskcluster is the preferred execution environment.
+#    worker-type: b-cpu
+#    worker:
+#      max-run-time: 3600
+#      docker-image: {in-tree: test}
+#    run-on-tasks-for: ["github-push", "github-pull-request"]
+#    optimization:
+#        skip-unless-changed:
+#            - pipeline/**
+#            - envs/**
+#            - configs/**
+#    run:
+#      command:
+#        - bash
+#        - -c
+#        - >-
+#          echo "Setting environment variables"                              &&
+#          export CONDA_PATH=/builds/worker/artifacts/mambaforge             &&
+#          export SNAKEMAKE_OUTPUT_CACHE=/builds/worker/artifacts/mambaforge &&
+#          export REPORTS=/builds/worker/artifacts/reports                   &&
+#          export MODELS=/builds/worker/artifacts/models                     &&
+#
+#          echo "Install necessary dependencies"                             &&
+#          make conda                                                        &&
+#          make snakemake                                                    &&
+#          make git-modules                                                  &&
+#
+#          echo "Start the dry run"                                          &&
+#          make dry-run                                                      &&
+#          make test-dry-run
+
+  lint-eslint:
+    # Runs the eslint linter, which lints JavaScript files.
+    worker-type: b-cpu
+    worker:
+      max-run-time: 3600
+      docker-image: {in-tree: inference}
+    run:
+      command:
+        - bash
+        - -c
+        - >-
+            task lint-eslint
+    run-on-tasks-for: ["github-push", "github-pull-request"]
+
+  lint-black:
+    # Run python's black formatter, which formats python files.
+    worker-type: b-cpu
+    worker:
+      max-run-time: 3600
+      docker-image: {in-tree: test}
+    run:
+      command:
+        - bash
+        - -c
+        - >-
+            task lint-black
+    run-on-tasks-for: ["github-push", "github-pull-request"]
+
+  lint-pyright:
+    # Run python's pyright type checker.
+    worker-type: b-cpu
+    worker:
+      max-run-time: 3600
+      docker-image: {in-tree: test}
+    run:
+      command:
+        - bash
+        - -c
+        - >-
+            task lint-pyright
+    run-on-tasks-for: ["github-push", "github-pull-request"]
+
+  lint-ruff:
+    # Run ruff, a python linter.
+    worker-type: b-cpu
+    worker:
+      max-run-time: 3600
+      docker-image: {in-tree: test}
+    run:
+      command:
+        - bash
+        - -c
+        - >-
+            task lint-ruff
+    run-on-tasks-for: ["github-push", "github-pull-request"]
+
+  test:
+    # Run unit tests
+    worker-type: b-cpu
+    worker:
+      max-run-time: 3600
+      docker-image: {in-tree: test}
+    run:
+      command:
+        - bash
+        - -c
+        - >-
+            export BIN=$MOZ_FETCHES_DIR &&
+            export MARIAN=$MOZ_FETCHES_DIR &&
+            task test
+    run-on-tasks-for: ["github-push", "github-pull-request"]
+    optimization:
+      skip-unless-changed:
+        - pipeline/**
+        - tests/**
+        - tracking/**
+        - taskcluster/**
+        - poetry.*
+        - Taskfile.yml
+    fetches:
+        toolchain:
+            - fast-align
+            - extract-lex
+            - marian-cpu
+
+  taskgraph-definition:
+      worker-type: b-cpu
+      worker:
+          docker-image: {in-tree: test}
+          max-run-time: 3600
+      description: Test the full `translations_taskgraph` to validate the latest changes
+      run-on-tasks-for: ["github-push", "github-pull-request"]
+      optimization:
+        skip-unless-changed:
+            - pipeline/**
+            - taskcluster/**
+      run:
+          command: >-
+              task taskgraph-validate
+
+  taskgraph-diff:
+      worker-type: b-cpu
+      worker:
+          docker-image: {in-tree: test}
+          max-run-time: 1200
+      description: Create diffs of taskgraphs vs. base revision.
+      run-on-tasks-for: ["github-pull-request"]
+      optimization:
+        skip-unless-changed:
+            - taskcluster/**
+      run:
+          command: >-
+              task taskgraph-diff BASE_REV={base_rev}
+              OUTPUT_FILE=$TASK_WORKDIR/artifacts/taskgraph.diff

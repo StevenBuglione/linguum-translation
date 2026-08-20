@@ -1,0 +1,122 @@
+base_ref: origin/main
+base_repository: https://github.com/mozilla/translations
+base_rev: fd3125862741e231e5b4a43e2bde715e1ee05482
+build_date: 1700603004
+build_number: 1
+do_not_optimize: []
+enable_always_target: true
+existing_tasks: {}
+filters:
+- target_tasks_method
+head_ref: refs/heads/main
+head_repository: https://github.com/mozilla/translations
+head_rev: fd3125862741e231e5b4a43e2bde715e1ee05482
+head_tag: ''
+level: '1'
+moz_build_date: '20231121214324'
+next_version: null
+optimize_strategies: null
+optimize_target_tasks: true
+owner: pavlov89@gmail.com
+project: firefox-translations-training
+pushdate: 0
+pushlog_id: '0'
+repository_type: git
+target_tasks_method: train-target-tasks
+tasks_for: github-push
+training_config:
+  datasets:
+    devtest:
+    - flores_dev
+    - sacrebleu_aug-mix_wmt19
+    mono-src:
+    - news-crawl_news.2008
+    mono-trg:
+    - news-crawl_news.2007
+    test:
+    - flores_devtest
+    train:
+    - opus_ada83/v1
+    - opus_ELRC-3075-wikipedia_health/v1
+  experiment:
+    archive-corpora: false
+    backward-model: NOT-YET-SUPPORTED
+    best-model: chrf
+    bicleaner:
+      dataset-thresholds:
+        opus_ELRC-3075-wikipedia_health_v1: 0.6
+        opus_ada83_v1: 0.0
+      default-threshold: 0.5
+    monocleaner:
+      mono-src:
+        default-threshold: 0.5
+        dataset-thresholds:
+          news-crawl_news_2008: 0.0
+      mono-trg:
+        default-threshold: 0.9
+        dataset-thresholds:
+          news-crawl_news_2007: 0.0
+          opus_tldr-pages_v2023-08-29: 0.7
+    hplt-min-doc-score:
+      mono-src: 7.0
+      mono-trg: 9.0
+    mono-max-sentences-src:
+      total: 1000
+      per-dataset: 1000
+    mono-max-sentences-trg:
+      total: 1000
+      per-dataset: 1000
+    name: ci
+    split-length: 5000
+    spm-sample-size: 10000
+    spm-vocab-size: 1000
+    spm-vocab-split: false
+    src: ru
+    teacher-ensemble: 1
+    teacher-mode: 'two-stage'
+    teacher-decoder: marian
+    student-model: 'tiny'
+    trg: en
+    vocab: NOT-YET-SUPPORTED
+  marian-args:
+    decoding-backward:
+      mini-batch-words: '2000'
+    decoding-teacher:
+      mini-batch-words: '1000'
+      precision: float16
+    training-backward:
+      after: 50u
+      dim-vocabs: 1000 1000
+      disp-freq: '1'
+      save-freq: '25'
+      valid-freq: '50'
+    training-student:
+      after: 50u
+      dim-vocabs: 1000 1000
+      disp-freq: '1'
+      save-freq: '25'
+      valid-freq: '50'
+    training-student-finetuned:
+      after: 50u
+      dim-vocabs: 1000 1000
+      disp-freq: '1'
+      save-freq: '25'
+      valid-freq: '50'
+    training-teacher:
+      after: 50u
+      dim-vocabs: 1000 1000
+      disp-freq: '1'
+      save-freq: '25'
+      task: transformer-base
+      valid-freq: '50'
+  target-stage: corpus-clean-parallel
+  taskcluster:
+    split-chunks: 2
+    upload-bucket: production
+    worker-classes:
+      distillation-student-model-finetune: gcp-standard
+      backtranslations-train-backwards-model: gcp-standard
+      distillation-student-model-train: gcp-standard
+      train-teacher-model: gcp-standard
+      default: gcp-spot
+version: null

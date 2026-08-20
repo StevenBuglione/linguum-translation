@@ -35,11 +35,14 @@ branch="$(git branch --show-current)"
 printf 'Running checkpoint gate: %s\n' "$CHECKPOINT_GATE"
 bash -lc "$CHECKPOINT_GATE"
 
-git diff --check
+git diff --check -- . ':(exclude)native/upstream/mozilla-translations/**'
 git status --short
 
 git add -- "${PATHS[@]}"
-git diff --cached --check
+if [[ -d native/upstream/mozilla-translations ]]; then
+  python3 scripts/upstream/snapshot.py stage
+fi
+git diff --cached --check -- . ':(exclude)native/upstream/mozilla-translations/**'
 
 if git diff --cached --quiet; then
   printf 'ERROR: no staged changes for %s\n' "$WORK_PACKAGE" >&2

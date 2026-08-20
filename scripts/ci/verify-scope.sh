@@ -13,6 +13,8 @@ fi
   exit 1
 }
 
+python3 scripts/upstream/snapshot.py prepare
+
 require_absent() {
   local path
   for path in "$@"; do
@@ -37,7 +39,13 @@ case "$scope" in
   kotlin)
     ./gradlew :testing:architecture:test --warning-mode=fail
     ;;
-  linux|macos|android|ios|swift|consumers|native|upstream|performance|release)
+  native|upstream)
+    python3 -m unittest discover -s scripts/upstream/tests -v
+    python3 -m py_compile scripts/upstream/snapshot.py scripts/upstream/tests/test_snapshot.py
+    python3 scripts/upstream/snapshot.py verify
+    ./gradlew architectureCheck --warning-mode=fail
+    ;;
+  linux|macos|android|ios|swift|consumers|performance|release)
     ./gradlew architectureCheck --warning-mode=fail
     ;;
   models)
