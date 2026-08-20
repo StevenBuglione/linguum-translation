@@ -1,0 +1,123 @@
+diff --git a/inference/3rd_party/ssplit-cpp/cmake/FindPCRE2.cmake b/inference/3rd_party/ssplit-cpp/cmake/FindPCRE2.cmake
+--- a/inference/3rd_party/ssplit-cpp/cmake/FindPCRE2.cmake
++++ b/inference/3rd_party/ssplit-cpp/cmake/FindPCRE2.cmake
+@@ -50,0 +51,6 @@ if(SSPLIT_USE_INTERNAL_PCRE2)
++    -DCMAKE_POLICY_VERSION_MINIMUM=3.5
++    -DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES}
++    -DCMAKE_OSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET}
++    -DPCRE2_BUILD_PCRE2GREP=OFF
++    -DPCRE2_BUILD_TESTS=OFF
++    -DPCRE2_STATIC_PIC=ON
+@@ -75,0 +82,2 @@ if(SSPLIT_USE_INTERNAL_PCRE2)
++    URL_HASH SHA256=0781bd2536ef5279b1943471fdcdbd9961a2845e1d2c9ad849b9bd98ba1a9bd4
++    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+diff --git a/inference/cmake/GetVersionFromFile.cmake b/inference/cmake/GetVersionFromFile.cmake
+--- a/inference/cmake/GetVersionFromFile.cmake
++++ b/inference/cmake/GetVersionFromFile.cmake
+@@ -25,4 +25,6 @@ endif()
+-execute_process(COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
+-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+-  OUTPUT_VARIABLE PROJECT_VERSION_GIT_SHA
+-  OUTPUT_STRIP_TRAILING_WHITESPACE)
++if(NOT PROJECT_VERSION_GIT_SHA)
++  execute_process(COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
++    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
++    OUTPUT_VARIABLE PROJECT_VERSION_GIT_SHA
++    OUTPUT_STRIP_TRAILING_WHITESPACE)
++endif()
+diff --git a/inference/marian-fork/cmake/GetVersionFromFile.cmake b/inference/marian-fork/cmake/GetVersionFromFile.cmake
+--- a/inference/marian-fork/cmake/GetVersionFromFile.cmake
++++ b/inference/marian-fork/cmake/GetVersionFromFile.cmake
+@@ -25,4 +25,6 @@ endif()
+-execute_process(COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
+-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+-  OUTPUT_VARIABLE PROJECT_VERSION_GIT_SHA
+-  OUTPUT_STRIP_TRAILING_WHITESPACE)
++if(NOT PROJECT_VERSION_GIT_SHA)
++  execute_process(COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
++    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
++    OUTPUT_VARIABLE PROJECT_VERSION_GIT_SHA
++    OUTPUT_STRIP_TRAILING_WHITESPACE)
++endif()
+diff --git a/inference/marian-fork/cmake/TargetArch.cmake b/inference/marian-fork/cmake/TargetArch.cmake
+--- a/inference/marian-fork/cmake/TargetArch.cmake
++++ b/inference/marian-fork/cmake/TargetArch.cmake
+@@ -83,0 +84,2 @@ function(target_architecture output_var)
++            elseif("${osx_arch}" STREQUAL "arm64" OR "${osx_arch}" STREQUAL "arm64e")
++                set(osx_arch_armv8 TRUE)
+@@ -104,0 +107,4 @@ function(target_architecture output_var)
++
++        if(osx_arch_armv8)
++            list(APPEND ARCH armv8)
++        endif()
+diff --git a/inference/marian-fork/src/3rd_party/ExceptionWithCallStack.cpp b/inference/marian-fork/src/3rd_party/ExceptionWithCallStack.cpp
+--- a/inference/marian-fork/src/3rd_party/ExceptionWithCallStack.cpp
++++ b/inference/marian-fork/src/3rd_party/ExceptionWithCallStack.cpp
+@@ -202 +202 @@ static void CollectCallStack(size_t skipLevels, bool makeFunctionNamesStandOut,
+-    unsigned int MAX_NUM_FRAMES = 1024;
++    constexpr unsigned int MAX_NUM_FRAMES = 1024;
+@@ -235 +235 @@ static void CollectCallStack(size_t skipLevels, bool makeFunctionNamesStandOut,
+-            unsigned int MAX_FUNCNAME_SIZE = 4096;
++            constexpr unsigned int MAX_FUNCNAME_SIZE = 4096;
+diff --git a/inference/marian-fork/src/3rd_party/sentencepiece/src/unicode_script.h b/inference/marian-fork/src/3rd_party/sentencepiece/src/unicode_script.h
+--- a/inference/marian-fork/src/3rd_party/sentencepiece/src/unicode_script.h
++++ b/inference/marian-fork/src/3rd_party/sentencepiece/src/unicode_script.h
+@@ -17,0 +18 @@
++#include <cstdint>
+@@ -22 +23 @@ namespace unicode_script {
+-enum ScriptType {
++enum ScriptType : std::int32_t {
+diff --git a/inference/marian-fork/src/3rd_party/simd_utils/simd_utils.h b/inference/marian-fork/src/3rd_party/simd_utils/simd_utils.h
+--- a/inference/marian-fork/src/3rd_party/simd_utils/simd_utils.h
++++ b/inference/marian-fork/src/3rd_party/simd_utils/simd_utils.h
+@@ -21,0 +22 @@ extern "C" {
++#include <fenv.h>
+diff --git a/inference/marian-fork/src/3rd_party/zlib/zutil.h b/inference/marian-fork/src/3rd_party/zlib/zutil.h
+--- a/inference/marian-fork/src/3rd_party/zlib/zutil.h
++++ b/inference/marian-fork/src/3rd_party/zlib/zutil.h
+@@ -133 +133 @@ extern z_const char * const z_errmsg[10]; /* indexed by 2-zlib_error */
+-#if defined(MACOS) || defined(TARGET_OS_MAC)
++#if defined(MACOS)
+diff --git a/inference/marian-fork/src/CMakeLists.txt b/inference/marian-fork/src/CMakeLists.txt
+--- a/inference/marian-fork/src/CMakeLists.txt
++++ b/inference/marian-fork/src/CMakeLists.txt
+@@ -135,29 +135,10 @@ target_compile_options(marian PRIVATE ${ALL_WARNINGS})
+-# Generate git_revision.h to reflect current git revision information
+-# [https://stackoverflow.com/questions/1435953/how-can-i-pass-git-sha1-to-compiler-as-definition-using-cmake]
+-# Git updates .git/logs/HEAD file whenever you pull or commit something.
+-
+-# If Marian is checked out as a submodule in another repository,
+-# ${CMAKE_CURRENT_SOURCE_DIR}/../.git is not a directory but a file
+-# that specifies the relative path from ${CMAKE_CURRENT_SOURCE_DIR}/..
+-# to ./git/modules/<MARIAN_ROOT_DIR> in the root of the check_out of
+-# the project that contains Marian as a submodule.
+-#
+-# We set MARIAN_GIT_DIR to the appropriate path, depending on whether
+-# ${CMAKE_CURRENT_SOURCE_DIR}/../.git is a directory or file.
+-set(MARIAN_GIT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../.git)
+-if(NOT IS_DIRECTORY ${MARIAN_GIT_DIR}) # i.e., it's a submodule
+-  file(READ ${MARIAN_GIT_DIR} MARIAN_GIT_DIR)
+-  string(REGEX REPLACE "gitdir: (.*)\n" "\\1" MARIAN_GIT_DIR ${MARIAN_GIT_DIR})
+-  if(NOT IS_ABSOLUTE ${MARIAN_GIT_DIR})
+-    get_filename_component(MARIAN_GIT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../${MARIAN_GIT_DIR}" ABSOLUTE)
+-  endif()
+-endif(NOT IS_DIRECTORY ${MARIAN_GIT_DIR})
+-
+-add_custom_command(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/common/git_revision.h
+-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+-  COMMAND git log -1 --pretty=format:\#define\ GIT_REVISION\ \"\%h\ \%ai\" > ${CMAKE_CURRENT_SOURCE_DIR}/common/git_revision.h
+-  DEPENDS ${MARIAN_GIT_DIR}/logs/HEAD
+-  VERBATIM
+-)
+-add_custom_target(marian_version DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/common/git_revision.h)
+-add_dependencies(marian marian_version) # marian must depend on it so that it gets created first
++# Linguum builds a flattened, immutable source snapshot without Git administration.
++# The staged build copy receives the exact Firefox-pinned translations revision
++# from the outer build instead of inspecting or writing the vendored source tree.
++string(LENGTH "${LINGUUM_TRANSLATIONS_REVISION}" LINGUUM_TRANSLATIONS_REVISION_LENGTH)
++if(NOT LINGUUM_TRANSLATIONS_REVISION_LENGTH EQUAL 40 OR
++   NOT LINGUUM_TRANSLATIONS_REVISION MATCHES "^[0-9a-f]+$")
++  message(FATAL_ERROR "LINGUUM_TRANSLATIONS_REVISION must be an exact 40-character Git revision")
++endif()
++file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/common/git_revision.h
++  "#define GIT_REVISION \"${LINGUUM_TRANSLATIONS_REVISION}\"\n")

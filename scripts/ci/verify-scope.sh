@@ -41,7 +41,12 @@ case "$scope" in
     ;;
   native|upstream)
     python3 -m unittest discover -s scripts/upstream/tests -v
+    python3 -m unittest discover -s scripts/native/tests -v
     python3 -m py_compile scripts/upstream/snapshot.py scripts/upstream/tests/test_snapshot.py
+    python3 -m py_compile scripts/native/*.py scripts/native/tests/*.py
+    python3 -m json.tool native/patches/PATCHES.yaml >/dev/null
+    python3 -m json.tool testing/native/fixtures/es-en-v2.0.json >/dev/null
+    python3 -m json.tool toolchains/native-tools.lock.json >/dev/null
     python3 scripts/upstream/snapshot.py verify
     ./gradlew architectureCheck --warning-mode=fail
     ;;
@@ -51,6 +56,7 @@ case "$scope" in
   models)
     python3 -m json.tool schemas/model-manifest.schema.json >/dev/null
     python3 -m json.tool schemas/upstream-lock.schema.json >/dev/null
+    python3 -m json.tool testing/native/fixtures/es-en-v2.0.json >/dev/null
     ;;
   license)
     test -s LICENSE

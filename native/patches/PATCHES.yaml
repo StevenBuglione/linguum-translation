@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "id": "LT-UPSTREAM-0001",
+  "title": "Build the Firefox-pinned flattened source with locked modern toolchains",
+  "reason": "The immutable flattened Firefox snapshot lacks Git metadata and contains pinned portability defects that prevent a reproducible CMake 4 build on the locked native target matrix.",
+  "upstreamRevision": "eea6e5a80aa4ddd86d9cc35ce9a65b79aa3ab96d",
+  "platforms": [
+    "windows-x64-avx2",
+    "windows-x64-baseline",
+    "macos-arm64",
+    "macos-x64",
+    "linux-x64-avx2",
+    "linux-x64-baseline",
+    "linux-arm64",
+    "android-arm64-v8a",
+    "android-x86_64",
+    "ios-arm64",
+    "ios-simulator-arm64",
+    "ios-simulator-x64"
+  ],
+  "affectedPaths": [
+    "inference/3rd_party/ssplit-cpp/cmake/FindPCRE2.cmake",
+    "inference/cmake/GetVersionFromFile.cmake",
+    "inference/marian-fork/cmake/GetVersionFromFile.cmake",
+    "inference/marian-fork/cmake/TargetArch.cmake",
+    "inference/marian-fork/src/CMakeLists.txt",
+    "inference/marian-fork/src/3rd_party/ExceptionWithCallStack.cpp",
+    "inference/marian-fork/src/3rd_party/sentencepiece/src/unicode_script.h",
+    "inference/marian-fork/src/3rd_party/simd_utils/simd_utils.h",
+    "inference/marian-fork/src/3rd_party/zlib/zutil.h"
+  ],
+  "upstreamIssue": null,
+  "introducedIn": "0.1.0-M1",
+  "removeWhen": "Remove each hunk after Firefox pins an upstream revision that builds the flattened snapshot with CMake 4 on every listed platform without that hunk.",
+  "license": "MPL-2.0",
+  "approvedBy": "Steven Buglione",
+  "approvalReference": "Repository-owner standing delivery and patch authorization in Codex task 01a01dba-bb5f-7272-b179-7a6e6db206f3 on 2026-08-20",
+  "patchSha256": "39fdeee61d7b327adc3b54e5d4ec1dc0e4180acb59a2420e97859f8930044b39"
+}

@@ -26,9 +26,30 @@ if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
 }
 
+& python -m unittest discover -s scripts\native\tests -v
+if ($LASTEXITCODE -ne 0) {
+    exit $LASTEXITCODE
+}
+
 & python -m py_compile scripts\upstream\snapshot.py scripts\upstream\tests\test_snapshot.py
 if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
+}
+
+& python -m py_compile scripts\native\bootstrap_tools.py scripts\native\fetch_canary_model.py scripts\native\run_host_canary.py scripts\native\stage_source.py scripts\native\tests\test_native_helpers.py
+if ($LASTEXITCODE -ne 0) {
+    exit $LASTEXITCODE
+}
+
+@(
+    "native\patches\PATCHES.yaml",
+    "testing\native\fixtures\es-en-v2.0.json",
+    "toolchains\native-tools.lock.json"
+) | ForEach-Object {
+    & python -m json.tool $_ | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        exit $LASTEXITCODE
+    }
 }
 
 & python .\scripts\upstream\snapshot.py verify
