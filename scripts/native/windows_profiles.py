@@ -468,6 +468,12 @@ def package_profile(
     expected_cmake = "cmake version {}".format(toolchain["cmake"])
     if result["cmake"] != expected_cmake or result["ninja"] != toolchain["ninja"]:
         raise WindowsProfileError("packaged build tools do not match the Windows profile lock")
+    commands = verify_compile_commands(profile_id, build_directory)
+    print(json.dumps(
+        {"compileEvidence": commands, "profile": profile_id},
+        indent=2,
+        sort_keys=True,
+    ))
     disassembly = capture(["dumpbin.exe", "/nologo", "/DISASM:NOBYTES", str(library)])
     isa = verify_isa(profile_id, disassembly)
     dependencies = parse_dependencies(
@@ -476,7 +482,6 @@ def package_profile(
     headers = capture(["dumpbin.exe", "/nologo", "/HEADERS", str(library)])
     if re.search(r"\b8664 machine \(x64\)", headers, re.IGNORECASE) is None:
         raise WindowsProfileError("DLL is not PE x64")
-    commands = verify_compile_commands(profile_id, build_directory)
     manifest = {
         "schemaVersion": 1,
         "profile": profile,

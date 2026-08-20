@@ -98,6 +98,11 @@ target_compile_options(linguum_translation PRIVATE
   $<$<CXX_COMPILER_ID:AppleClang,Clang,GNU>:-Wall;-Wextra;-Wpedantic;-Werror>
   $<$<CXX_COMPILER_ID:MSVC>:/W4;/WX>
 )
+if(MSVC AND LINGUUM_INTGEMM_BASELINE_ONLY)
+  # Emit the archive member and symbol that retain any remaining static-runtime
+  # code until the complete-DLL baseline ISA audit is clean.
+  target_link_options(linguum_translation PRIVATE /VERBOSE:LIB)
+endif()
 target_include_directories(linguum_translation
   PUBLIC ../abi/include
 )

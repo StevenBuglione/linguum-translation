@@ -120,6 +120,7 @@ class WindowsProfileLockTests(unittest.TestCase):
         )
         self.assertIn("if(MSVC AND LINGUUM_INTGEMM_BASELINE_ONLY)", cmake)
         self.assertIn("add_compile_definitions(_USE_STD_VECTOR_ALGORITHMS=0)", cmake)
+        self.assertIn("target_link_options(linguum_translation PRIVATE /VERBOSE:LIB)", cmake)
 
     def test_profile_failures_do_not_mask_the_other_locked_profile(self):
         profiles = windows_profiles.profile_map(windows_profiles.load_lock())
