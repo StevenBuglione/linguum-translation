@@ -99,7 +99,11 @@ class WindowsProfileLockTests(unittest.TestCase):
             self.assertIn("set({} FALSE)".format(name), patch)
         self.assertIn("else()", patch)
         self.assertIn("try_compile(INTGEMM_COMPILER_SUPPORTS_AVX2", patch)
-        self.assertIn("The AVX2 candidate must not opportunistically dispatch AVX-512", patch)
+        self.assertIn("LINGUUM_INTGEMM_MAX_AVX2", patch)
+        self.assertIn("!defined(LINGUUM_INTGEMM_MAX_AVX2)", patch)
+        self.assertIn("using Integer = int8_t", patch)
+        self.assertIn("using Integer = int16_t", patch)
+        self.assertIn("(void)ebx", patch)
 
     def test_profile_failures_do_not_mask_the_other_locked_profile(self):
         profiles = windows_profiles.profile_map(windows_profiles.load_lock())
@@ -264,14 +268,22 @@ class EvidenceParsingTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             commands = root / "compile_commands.json"
-            commands.write_text(json.dumps([{"command": "cl /arch:SSE2 /c adapter.cpp"}]))
+            commands.write_text(json.dumps([{
+                "command": "cl /arch:SSE2 /c intgemm.cc",
+                "file": "C:/source/3rd_party/intgemm/intgemm/intgemm.cc",
+            }]))
             evidence = windows_profiles.verify_compile_commands("windows-x64-baseline", root)
             self.assertTrue(evidence["hasArchSse2"])
             self.assertFalse(evidence["hasArchAvx2"])
+            self.assertFalse(evidence["hasIntgemmAvx2Cap"])
 
-            commands.write_text(json.dumps([{"command": "cl /arch:AVX2 /c adapter.cpp"}]))
+            commands.write_text(json.dumps([{
+                "command": "cl /arch:AVX2 /DLINGUUM_INTGEMM_MAX_AVX2 /c intgemm.cc",
+                "file": "C:/source/3rd_party/intgemm/intgemm/intgemm.cc",
+            }]))
             evidence = windows_profiles.verify_compile_commands("windows-x64-avx2", root)
             self.assertTrue(evidence["hasArchAvx2"])
+            self.assertTrue(evidence["hasIntgemmAvx2Cap"])
             with self.assertRaises(windows_profiles.WindowsProfileError):
                 windows_profiles.verify_compile_commands("windows-x64-baseline", root)
 

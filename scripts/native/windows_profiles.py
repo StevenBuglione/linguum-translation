@@ -302,20 +302,40 @@ def parse_dependencies(output: str) -> List[str]:
 def verify_compile_commands(profile_id: str, build_directory: Path) -> Dict[str, object]:
     path = build_directory / "compile_commands.json"
     commands = json.loads(path.read_text(encoding="utf-8"))
-    command_text = "\n".join(
+    command_texts = [
         entry.get("command", " ".join(entry.get("arguments", []))) for entry in commands
-    )
+    ]
+    command_text = "\n".join(command_texts)
+    intgemm_command_texts = [
+        text
+        for entry, text in zip(commands, command_texts)
+        if str(entry.get("file", "")).replace("\\", "/").lower().endswith(
+            "/3rd_party/intgemm/intgemm/intgemm.cc"
+        )
+    ]
+    if len(intgemm_command_texts) != 1:
+        raise WindowsProfileError("compile database must contain exactly one intgemm.cc command")
     has_avx2 = re.search(r"(?:^|\s)/arch:AVX2(?:\s|$)", command_text, re.IGNORECASE) is not None
     has_sse2 = re.search(r"(?:^|\s)/arch:SSE2(?:\s|$)", command_text, re.IGNORECASE) is not None
-    if profile_id == "windows-x64-avx2" and not has_avx2:
-        raise WindowsProfileError("optimized compiler commands do not contain /arch:AVX2")
-    if profile_id == "windows-x64-baseline" and (has_avx2 or not has_sse2):
+    has_intgemm_avx2_cap = re.search(
+        r"(?:^|\s)(?:/D|-D)LINGUUM_INTGEMM_MAX_AVX2(?:=1)?(?:\s|$)",
+        intgemm_command_texts[0],
+        re.IGNORECASE,
+    ) is not None
+    if profile_id == "windows-x64-avx2" and (not has_avx2 or not has_intgemm_avx2_cap):
+        raise WindowsProfileError(
+            "optimized compiler commands must contain /arch:AVX2 and the intgemm AVX2 cap"
+        )
+    if profile_id == "windows-x64-baseline" and (
+        has_avx2 or not has_sse2 or has_intgemm_avx2_cap
+    ):
         raise WindowsProfileError("baseline compiler commands are not restricted to /arch:SSE2")
     return {
         "compileCommandCount": len(commands),
         "compileCommandsSha256": run_host_canary.file_sha256(path),
         "hasArchAvx2": has_avx2,
         "hasArchSse2": has_sse2,
+        "hasIntgemmAvx2Cap": has_intgemm_avx2_cap,
     }
 
 

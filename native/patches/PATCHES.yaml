@@ -26,6 +26,8 @@
     "inference/marian-fork/cmake/TargetArch.cmake",
     "inference/marian-fork/src/CMakeLists.txt",
     "inference/marian-fork/src/3rd_party/intgemm/CMakeLists.txt",
+    "inference/marian-fork/src/3rd_party/intgemm/intgemm/intgemm.cc",
+    "inference/marian-fork/src/3rd_party/intgemm/intgemm/intgemm.h",
     "inference/marian-fork/src/3rd_party/ExceptionWithCallStack.cpp",
     "inference/marian-fork/src/3rd_party/sentencepiece/src/unicode_script.h",
     "inference/marian-fork/src/3rd_party/simd_utils/simd_utils.h",
@@ -37,5 +39,5 @@
   "license": "MPL-2.0",
   "approvedBy": "Steven Buglione",
   "approvalReference": "Repository-owner standing delivery and patch authorization in Codex task 01a01dba-bb5f-7272-b179-7a6e6db206f3 on 2026-08-20",
-  "patchSha256": "6b69a7cce3fdd41d4ecd6723df8133600b20e71e08b188115ad1b4ff3b6e6f78"
+  "patchSha256": "8066775aa835b9ccc2ce5b3288b4c7023dc40fd5c7260df5a0dd6e01b9dc5d5d"
 }
