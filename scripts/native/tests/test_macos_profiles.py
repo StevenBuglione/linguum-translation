@@ -162,9 +162,9 @@ class MacosProfileContractTests(unittest.TestCase):
             ROOT / ".github" / "workflows" / "native-safety.yml"
         ).read_text(encoding="utf-8")
         self.assertIn("runs-on: macos-15", workflow)
-        self.assertIn("runs-on: macos-15-intel", workflow)
         self.assertIn("LINGUUM_MACOS_PROFILE: macos-arm64", workflow)
-        self.assertIn("LINGUUM_MACOS_PROFILE: macos-x64", workflow)
+        self.assertNotIn("PR / macOS Intel native integration", workflow)
+        self.assertIn("runs-on: macos-15-intel", native_safety)
         self.assertIn("--profile macos-arm64", native_safety)
         self.assertIn("--profile macos-x64", native_safety)
 
