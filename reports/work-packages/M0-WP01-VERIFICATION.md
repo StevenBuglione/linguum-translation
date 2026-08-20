@@ -7,7 +7,7 @@ Status: PASS
 Milestone: M0 — Repository and governance
 Work package: M0-WP01 — Repository bootstrap and first remote checkpoint
 Branch: codex/M0-WP01-repository-governance
-Draft PR: pending first branch push
+Draft PR: https://github.com/StevenBuglione/linguum-translation/pull/1
 Date/time UTC: 2026-08-20
 Verifier: Codex
 ```
@@ -17,11 +17,12 @@ Verifier: Codex
 ```text
 Repository: https://github.com/StevenBuglione/linguum-translation
 Base commit: 2e7e1f8260e7d5b86626798264c463bc6607818d
-Verified commit: recorded by the next checkpoint after remote verification
+Verified commit: 30da708f6464af5d0a9d402cbc400a9f19383452
 Local main: 2e7e1f8260e7d5b86626798264c463bc6607818d
 Remote main SHA: 2e7e1f8260e7d5b86626798264c463bc6607818d
+Remote branch SHA: 30da708f6464af5d0a9d402cbc400a9f19383452
 Remote SHA matches local: YES
-Working tree clean after initial push: YES
+Working tree clean after branch push: YES
 Shallow clone: NO
 ```
 
@@ -33,7 +34,7 @@ Shallow clone: NO
 | Apache-2.0 original-code license | Root `LICENSE` | License text inspection | PASS |
 | Repository hygiene | Root `.gitignore` | Tracked-path and secret-pattern inspection | PASS |
 | Public canonical remote | `StevenBuglione/linguum-translation` | `gh repo view` | PASS |
-| First remote checkpoint | `main` pushed | local and `origin/main` SHA comparison | PASS |
+| First remote checkpoint | `main` and first M0 branch checkpoint pushed | local/remote SHA comparisons | PASS |
 
 ## Changed modules and paths
 
@@ -58,6 +59,8 @@ Shallow clone: NO
 | `gh repo create ... --public` | 0 | GitHub | public repository created |
 | `git push -u origin main` | 0 | GitHub | `main` created remotely |
 | `git fetch origin main` plus SHA equality test | 0 | macOS arm64 | local and remote `2e7e1f8...` matched |
+| `git push -u origin codex/M0-WP01-repository-governance` plus `ls-remote` equality test | 0 | GitHub/macOS arm64 | local and remote `30da708...` matched |
+| `gh pr create --draft ...` | 0 | GitHub | draft PR 1 created |
 
 ## Tests and quality
 
@@ -82,7 +85,7 @@ Translation output drift: none
 ## Known limitations
 
 - The supplied bootstrap script runs `git diff --cached --check` over immutable package files that intentionally contain Markdown hard-break whitespace, so it cannot complete without violating package integrity. The equivalent commit/create/push/verify steps were executed individually.
-- Branch checkpoint SHA and PR URL are added by the following remote-verification commit because a commit cannot contain its own SHA.
+- The report itself is committed in the immediately following evidence checkpoint because a commit cannot contain its own SHA.
 
 ## Gate immutability declaration
 
