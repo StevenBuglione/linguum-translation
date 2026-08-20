@@ -90,6 +90,15 @@ if(MSVC AND LINGUUM_INTGEMM_BASELINE_ONLY)
     TARGET_DIRECTORY marian
     PROPERTIES COMPILE_OPTIONS "/Oi-;/GL-"
   )
+  # Locked MSVC emitted one VEX-encoded store while optimizing the inline
+  # Dense graph-construction function in this translation unit. This is not a
+  # tensor compute kernel, so keep only this proven source unoptimized and
+  # outside LTCG for the zero-AVX candidate.
+  set_source_files_properties(
+    "${LINGUUM_TRANSLATIONS_SOURCE}/inference/marian-fork/src/graph/expression_operators.cpp"
+    TARGET_DIRECTORY marian
+    PROPERTIES COMPILE_OPTIONS "/Od;/Oi-;/GL-"
+  )
 endif()
 
 if(LINGUUM_ARM_NATIVE)

@@ -540,6 +540,17 @@ def verify_compile_commands(profile_id: str, build_directory: Path) -> Dict[str,
         raise WindowsProfileError(
             "compile database must contain exactly one factored vocabulary command"
         )
+    expression_operators_command_texts = [
+        text
+        for entry, text in zip(commands, command_texts)
+        if str(entry.get("file", "")).replace("\\", "/").lower().endswith(
+            "/marian-fork/src/graph/expression_operators.cpp"
+        )
+    ]
+    if len(expression_operators_command_texts) != 1:
+        raise WindowsProfileError(
+            "compile database must contain exactly one expression operators command"
+        )
     has_avx2 = re.search(r"(?:^|\s)/arch:AVX2(?:\s|$)", command_text, re.IGNORECASE) is not None
     has_sse2 = re.search(r"(?:^|\s)/arch:SSE2(?:\s|$)", command_text, re.IGNORECASE) is not None
     has_intgemm_avx2_cap = re.search(
@@ -595,6 +606,10 @@ def verify_compile_commands(profile_id: str, build_directory: Path) -> Dict[str,
         )
         is not None
     )
+    dense_graph_scalar_boundary = all(
+        flag in expression_operators_command_texts[0].casefold()
+        for flag in ("/od", "/oi-", "/gl-")
+    )
     if not has_onnx_sgemm:
         raise WindowsProfileError("native product command must enable the ONNX SGEMM backend")
     if profile_id == "windows-x64-avx2" and (not has_avx2 or not has_intgemm_avx2_cap):
@@ -634,6 +649,10 @@ def verify_compile_commands(profile_id: str, build_directory: Path) -> Dict[str,
         raise WindowsProfileError(
             "baseline factored vocabulary command must enable the scalar search boundary"
         )
+    if profile_id == "windows-x64-baseline" and not dense_graph_scalar_boundary:
+        raise WindowsProfileError(
+            "baseline expression operators command must enable the scalar graph boundary"
+        )
     return {
         "compileCommandCount": len(commands),
         "cppCompileCommandCount": len(cpp_command_texts),
@@ -648,6 +667,7 @@ def verify_compile_commands(profile_id: str, build_directory: Path) -> Dict[str,
         "factoredVocabularyScalarSearchBoundary": (
             factored_vocab_scalar_search_boundary
         ),
+        "denseGraphScalarBoundary": dense_graph_scalar_boundary,
         "hasOnnxSgemm": has_onnx_sgemm,
         "hasOnnxSgemmImplementation": True,
         "vectorizedStlDisabledCommandCount": vectorized_stl_disabled_count,

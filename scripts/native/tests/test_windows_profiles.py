@@ -133,6 +133,8 @@ class WindowsProfileLockTests(unittest.TestCase):
         self.assertIn("add_compile_options(/Oi-)", cmake)
         self.assertIn("TARGET_DIRECTORY marian", cmake)
         self.assertIn('PROPERTIES COMPILE_OPTIONS "/Oi-;/GL-"', cmake)
+        self.assertIn("src/graph/expression_operators.cpp", cmake)
+        self.assertIn('PROPERTIES COMPILE_OPTIONS "/Od;/Oi-;/GL-"', cmake)
         self.assertIn("baseline_runtime_shims.c", cmake)
         self.assertIn("/Od /Oi- /GL- /W4 /WX", cmake)
         self.assertIn("/NODEFAULTLIB:libucrt.lib", cmake)
@@ -440,6 +442,10 @@ class EvidenceParsingTests(unittest.TestCase):
                     "command": "cl /arch:SSE2 /Oi- /D_USE_STD_VECTOR_ALGORITHMS=0 /c gemm.cpp",
                     "file": "C:/source/onnxjs/src/wasm-ops/gemm.cpp",
                 },
+                {
+                    "command": "cl /arch:SSE2 /Od /Oi- /GL- /D_USE_STD_VECTOR_ALGORITHMS=0 /c expression_operators.cpp",
+                    "file": "C:/source/marian-fork/src/graph/expression_operators.cpp",
+                },
             ]))
             evidence = windows_profiles.verify_compile_commands("windows-x64-baseline", root)
             self.assertTrue(evidence["hasArchSse2"])
@@ -447,12 +453,47 @@ class EvidenceParsingTests(unittest.TestCase):
             self.assertFalse(evidence["hasIntgemmAvx2Cap"])
             self.assertTrue(evidence["hasOnnxSgemm"])
             self.assertTrue(evidence["hasOnnxSgemmImplementation"])
-            self.assertEqual(4, evidence["cppCompileCommandCount"])
-            self.assertEqual(4, evidence["vectorizedStlDisabledCommandCount"])
+            self.assertEqual(5, evidence["cppCompileCommandCount"])
+            self.assertEqual(5, evidence["vectorizedStlDisabledCommandCount"])
             self.assertTrue(evidence["vectorizedStlDisabledForAllCpp"])
-            self.assertEqual(4, evidence["compilerIntrinsicsDisabledCommandCount"])
+            self.assertEqual(5, evidence["compilerIntrinsicsDisabledCommandCount"])
             self.assertTrue(evidence["compilerIntrinsicsDisabledForAllCommands"])
             self.assertTrue(evidence["factoredVocabularyScalarSearchBoundary"])
+            self.assertTrue(evidence["denseGraphScalarBoundary"])
+
+            missing_dense_graph_boundary = json.loads(commands.read_text())
+            missing_dense_graph_boundary[4]["command"] = (
+                missing_dense_graph_boundary[4]["command"].replace(" /Od", "")
+            )
+            commands.write_text(json.dumps(missing_dense_graph_boundary))
+            with self.assertRaisesRegex(
+                windows_profiles.WindowsProfileError,
+                "must enable the scalar graph boundary",
+            ):
+                windows_profiles.verify_compile_commands("windows-x64-baseline", root)
+
+            commands.write_text(json.dumps([
+                {
+                    "command": "cl /arch:SSE2 /Oi- /D_USE_STD_VECTOR_ALGORITHMS=0 /c intgemm.cc",
+                    "file": "C:/source/3rd_party/intgemm/intgemm/intgemm.cc",
+                },
+                {
+                    "command": "cl /arch:SSE2 /Oi- /GL- /DLINGUUM_MSVC_BASELINE=1 /D_USE_STD_VECTOR_ALGORITHMS=0 /c factored_vocab.cpp",
+                    "file": "C:/source/marian-fork/src/data/factored_vocab.cpp",
+                },
+                {
+                    "command": "cl /arch:SSE2 /Oi- /D_USE_STD_VECTOR_ALGORITHMS=0 /DUSE_ONNX_SGEMM=1 /c prod.cpp",
+                    "file": "C:/source/marian-fork/src/tensors/cpu/prod.cpp",
+                },
+                {
+                    "command": "cl /arch:SSE2 /Oi- /D_USE_STD_VECTOR_ALGORITHMS=0 /c gemm.cpp",
+                    "file": "C:/source/onnxjs/src/wasm-ops/gemm.cpp",
+                },
+                {
+                    "command": "cl /arch:SSE2 /Od /Oi- /GL- /D_USE_STD_VECTOR_ALGORITHMS=0 /c expression_operators.cpp",
+                    "file": "C:/source/marian-fork/src/graph/expression_operators.cpp",
+                },
+            ]))
 
             missing_scalar_search_boundary = json.loads(commands.read_text())
             missing_scalar_search_boundary[1]["command"] = (
@@ -483,6 +524,10 @@ class EvidenceParsingTests(unittest.TestCase):
                 {
                     "command": "cl /arch:SSE2 /Oi- /D_USE_STD_VECTOR_ALGORITHMS=0 /c gemm.cpp",
                     "file": "C:/source/onnxjs/src/wasm-ops/gemm.cpp",
+                },
+                {
+                    "command": "cl /arch:SSE2 /Od /Oi- /GL- /D_USE_STD_VECTOR_ALGORITHMS=0 /c expression_operators.cpp",
+                    "file": "C:/source/marian-fork/src/graph/expression_operators.cpp",
                 },
             ]))
             evidence = windows_profiles.verify_compile_commands("windows-x64-baseline", root)
@@ -516,6 +561,10 @@ class EvidenceParsingTests(unittest.TestCase):
                     "command": "cl /arch:SSE2 /Oi- /c gemm.cpp",
                     "file": "C:/source/onnxjs/src/wasm-ops/gemm.cpp",
                 },
+                {
+                    "command": "cl /arch:SSE2 /Od /Oi- /GL- /D_USE_STD_VECTOR_ALGORITHMS=0 /c expression_operators.cpp",
+                    "file": "C:/source/marian-fork/src/graph/expression_operators.cpp",
+                },
             ]))
             with self.assertRaisesRegex(
                 windows_profiles.WindowsProfileError,
@@ -539,6 +588,10 @@ class EvidenceParsingTests(unittest.TestCase):
                 {
                     "command": "cl /arch:AVX2 /c gemm.cpp",
                     "file": "C:/source/onnxjs/src/wasm-ops/gemm.cpp",
+                },
+                {
+                    "command": "cl /arch:AVX2 /c expression_operators.cpp",
+                    "file": "C:/source/marian-fork/src/graph/expression_operators.cpp",
                 },
             ]))
             evidence = windows_profiles.verify_compile_commands("windows-x64-avx2", root)
