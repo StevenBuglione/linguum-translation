@@ -61,16 +61,26 @@ set(GIT_SUBMODULE OFF CACHE BOOL "Never mutate flattened source submodules" FORC
 
 if(CMAKE_OSX_ARCHITECTURES MATCHES "(^|;)arm64(;|$)" OR
    CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64|ARM64)$")
-  # Pinned Marian applies these only inside its own directory, while the
-  # sibling Bergamot target includes Marian's ARM SIMD headers as well.
-  add_compile_definitions(ARM FMA SSE)
+  set(LINGUUM_ARM_NATIVE ON)
+else()
+  set(LINGUUM_ARM_NATIVE OFF)
 endif()
 
 add_subdirectory("${LINGUUM_TRANSLATIONS_SOURCE}/inference" upstream SYSTEM)
 
+if(LINGUUM_ARM_NATIVE)
+  # Pinned Marian sets these on its own target. Its sibling Bergamot target
+  # also includes Marian's ARM SIMD headers, but unrelated dependencies such
+  # as Eigen must not inherit the SSE preprocessor macro.
+  target_compile_definitions(bergamot-translator-source PRIVATE ARM FMA SSE)
+endif()
+
 add_library(linguum_translation SHARED
   ../mozilla-adapter/src/linguum_translation.cpp
 )
+if(LINGUUM_ARM_NATIVE)
+  target_compile_definitions(linguum_translation PRIVATE ARM FMA SSE)
+endif()
 target_compile_definitions(linguum_translation PRIVATE
   LINGUUM_TRANSLATION_BUILD
   LINGUUM_LIBRARY_VERSION="${LINGUUM_LIBRARY_VERSION}"

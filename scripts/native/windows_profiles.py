@@ -315,6 +315,24 @@ def verify_compile_commands(profile_id: str, build_directory: Path) -> Dict[str,
     ]
     if len(intgemm_command_texts) != 1:
         raise WindowsProfileError("compile database must contain exactly one intgemm.cc command")
+    prod_command_texts = [
+        text
+        for entry, text in zip(commands, command_texts)
+        if str(entry.get("file", "")).replace("\\", "/").lower().endswith(
+            "/marian-fork/src/tensors/cpu/prod.cpp"
+        )
+    ]
+    onnx_gemm_command_texts = [
+        text
+        for entry, text in zip(commands, command_texts)
+        if str(entry.get("file", "")).replace("\\", "/").lower().endswith(
+            "/onnxjs/src/wasm-ops/gemm.cpp"
+        )
+    ]
+    if len(prod_command_texts) != 1 or len(onnx_gemm_command_texts) != 1:
+        raise WindowsProfileError(
+            "compile database must contain the native product and ONNX SGEMM implementations"
+        )
     has_avx2 = re.search(r"(?:^|\s)/arch:AVX2(?:\s|$)", command_text, re.IGNORECASE) is not None
     has_sse2 = re.search(r"(?:^|\s)/arch:SSE2(?:\s|$)", command_text, re.IGNORECASE) is not None
     has_intgemm_avx2_cap = re.search(
@@ -322,6 +340,13 @@ def verify_compile_commands(profile_id: str, build_directory: Path) -> Dict[str,
         intgemm_command_texts[0],
         re.IGNORECASE,
     ) is not None
+    has_onnx_sgemm = re.search(
+        r"(?:^|\s)(?:/D|-D)USE_ONNX_SGEMM=1(?:\s|$)",
+        prod_command_texts[0],
+        re.IGNORECASE,
+    ) is not None
+    if not has_onnx_sgemm:
+        raise WindowsProfileError("native product command must enable the ONNX SGEMM backend")
     if profile_id == "windows-x64-avx2" and (not has_avx2 or not has_intgemm_avx2_cap):
         raise WindowsProfileError(
             "optimized compiler commands must contain /arch:AVX2 and the intgemm AVX2 cap"
@@ -336,6 +361,8 @@ def verify_compile_commands(profile_id: str, build_directory: Path) -> Dict[str,
         "hasArchAvx2": has_avx2,
         "hasArchSse2": has_sse2,
         "hasIntgemmAvx2Cap": has_intgemm_avx2_cap,
+        "hasOnnxSgemm": has_onnx_sgemm,
+        "hasOnnxSgemmImplementation": True,
     }
 
 

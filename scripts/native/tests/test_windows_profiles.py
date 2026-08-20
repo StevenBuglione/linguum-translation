@@ -105,6 +105,15 @@ class WindowsProfileLockTests(unittest.TestCase):
         self.assertIn("using Integer = int16_t", patch)
         self.assertIn("(void)ebx", patch)
 
+    def test_external_patch_allows_onnx_sgemm_in_native_profiles(self):
+        patch = (
+            ROOT / "native" / "patches" / "0001-reproducible-flattened-source-build.patch"
+        ).read_text(encoding="utf-8")
+        self.assertIn("option(USE_ONNX_SGEMM", patch)
+        self.assertIn("BLAS_FOUND || USE_ONNX_SGEMM || USE_RUY_SGEMM", patch)
+        self.assertIn("remove_definitions(-DSSE)", patch)
+        self.assertIn("set(BUILD_TESTING OFF)", patch)
+
     def test_profile_failures_do_not_mask_the_other_locked_profile(self):
         profiles = windows_profiles.profile_map(windows_profiles.load_lock())
         baseline_result = {"profile": "windows-x64-baseline"}
@@ -171,6 +180,20 @@ class WindowsProfileLockTests(unittest.TestCase):
             cmake,
         )
         self.assertIn('$<$<CXX_COMPILER_ID:MSVC>:/W4;/WX>', cmake)
+
+    def test_runtime_build_scopes_arm_simd_definitions_away_from_eigen(self):
+        cmake = (ROOT / "native" / "runtime-build" / "CMakeLists.txt").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn(
+            "target_compile_definitions(bergamot-translator-source PRIVATE ARM FMA SSE)",
+            cmake,
+        )
+        self.assertIn(
+            "target_compile_definitions(linguum_translation PRIVATE ARM FMA SSE)",
+            cmake,
+        )
+        self.assertNotIn("add_compile_definitions(ARM FMA SSE)", cmake)
 
     def test_windows_canary_traces_the_first_lifecycle_failure_boundary(self):
         canary = (ROOT / "testing" / "native" / "canary.c").read_text(encoding="utf-8")
@@ -268,19 +291,41 @@ class EvidenceParsingTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             commands = root / "compile_commands.json"
-            commands.write_text(json.dumps([{
-                "command": "cl /arch:SSE2 /c intgemm.cc",
-                "file": "C:/source/3rd_party/intgemm/intgemm/intgemm.cc",
-            }]))
+            commands.write_text(json.dumps([
+                {
+                    "command": "cl /arch:SSE2 /c intgemm.cc",
+                    "file": "C:/source/3rd_party/intgemm/intgemm/intgemm.cc",
+                },
+                {
+                    "command": "cl /arch:SSE2 /DUSE_ONNX_SGEMM=1 /c prod.cpp",
+                    "file": "C:/source/marian-fork/src/tensors/cpu/prod.cpp",
+                },
+                {
+                    "command": "cl /arch:SSE2 /c gemm.cpp",
+                    "file": "C:/source/onnxjs/src/wasm-ops/gemm.cpp",
+                },
+            ]))
             evidence = windows_profiles.verify_compile_commands("windows-x64-baseline", root)
             self.assertTrue(evidence["hasArchSse2"])
             self.assertFalse(evidence["hasArchAvx2"])
             self.assertFalse(evidence["hasIntgemmAvx2Cap"])
+            self.assertTrue(evidence["hasOnnxSgemm"])
+            self.assertTrue(evidence["hasOnnxSgemmImplementation"])
 
-            commands.write_text(json.dumps([{
-                "command": "cl /arch:AVX2 /DLINGUUM_INTGEMM_MAX_AVX2 /c intgemm.cc",
-                "file": "C:/source/3rd_party/intgemm/intgemm/intgemm.cc",
-            }]))
+            commands.write_text(json.dumps([
+                {
+                    "command": "cl /arch:AVX2 /DLINGUUM_INTGEMM_MAX_AVX2 /c intgemm.cc",
+                    "file": "C:/source/3rd_party/intgemm/intgemm/intgemm.cc",
+                },
+                {
+                    "command": "cl /arch:AVX2 /DUSE_ONNX_SGEMM=1 /c prod.cpp",
+                    "file": "C:/source/marian-fork/src/tensors/cpu/prod.cpp",
+                },
+                {
+                    "command": "cl /arch:AVX2 /c gemm.cpp",
+                    "file": "C:/source/onnxjs/src/wasm-ops/gemm.cpp",
+                },
+            ]))
             evidence = windows_profiles.verify_compile_commands("windows-x64-avx2", root)
             self.assertTrue(evidence["hasArchAvx2"])
             self.assertTrue(evidence["hasIntgemmAvx2Cap"])

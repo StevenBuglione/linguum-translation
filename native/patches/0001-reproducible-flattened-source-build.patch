@@ -236,3 +236,35 @@ diff --git a/inference/src/translator/service.cpp b/inference/src/translator/ser
 +            throw;
 +          }
 +        }
+diff --git a/inference/marian-fork/CMakeLists.txt b/inference/marian-fork/CMakeLists.txt
+--- a/inference/marian-fork/CMakeLists.txt
++++ b/inference/marian-fork/CMakeLists.txt
+@@ -63,2 +63,6 @@ CMAKE_DEPENDENT_OPTION(USE_THREADS "Compile with multi-threading support" OFF
+-CMAKE_DEPENDENT_OPTION(USE_ONNX_SGEMM "Compile with wasm compatible blas" ON
+-                       "USE_WASM_COMPATIBLE_SOURCE" OFF)
++set(_USE_ONNX_SGEMM_DEFAULT OFF)
++if(USE_WASM_COMPATIBLE_SOURCE)
++  set(_USE_ONNX_SGEMM_DEFAULT ON)
++endif()
++option(USE_ONNX_SGEMM "Compile with wasm compatible blas"
++       ${_USE_ONNX_SGEMM_DEFAULT})
+diff --git a/inference/marian-fork/src/tensors/cpu/prod.cpp b/inference/marian-fork/src/tensors/cpu/prod.cpp
+--- a/inference/marian-fork/src/tensors/cpu/prod.cpp
++++ b/inference/marian-fork/src/tensors/cpu/prod.cpp
+@@ -33 +33 @@ void Prod(marian::Tensor C,
+-#if BLAS_FOUND || USE_RUY_SGEMM
++#if BLAS_FOUND || USE_ONNX_SGEMM || USE_RUY_SGEMM
+diff --git a/inference/marian-fork/src/3rd_party/onnxjs/CMakeLists.txt b/inference/marian-fork/src/3rd_party/onnxjs/CMakeLists.txt
+--- a/inference/marian-fork/src/3rd_party/onnxjs/CMakeLists.txt
++++ b/inference/marian-fork/src/3rd_party/onnxjs/CMakeLists.txt
+@@ -7,0 +8,6 @@ project(onnx CXX C)
++
++# Marian's ARM SIMD macro conflicts with Eigen::Architecture::SSE. Keep the
++# directory-wide Marian definition out of this isolated ONNX/Eigen subtree.
++if(CMAKE_TARGET_ARCHITECTURE_CODE MATCHES "arm")
++  remove_definitions(-DSSE)
++endif()
+@@ -18,2 +24,3 @@ if(ONNXJS_SGEMM)
+   # Eigen is a dependency for enabling sgemm support
++  set(BUILD_TESTING OFF)
+   add_subdirectory(deps/eigen)

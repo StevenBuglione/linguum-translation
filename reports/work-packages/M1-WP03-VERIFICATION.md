@@ -43,7 +43,7 @@ Shallow clone: NO
 | Path/module | Classification | Change | Dependency rule result |
 |---|---|---|---|
 | `native/runtime-build` | internal native bridge | locked Windows profile switches | allowed `native-bridge`; pending gate |
-| `native/patches` | MPL external patch queue | constrain profile-specific intgemm dispatch and transport async worker failures to the embedding adapter | upstream tree untouched; pending gate |
+| `native/patches` | MPL external patch queue | constrain profile-specific intgemm dispatch, transport async worker failures, and enable the native ONNX SGEMM product path without leaking Marian's ARM `SSE` macro into Eigen | upstream tree untouched; pending gate |
 | `scripts/native` | build/evidence tooling | MSVC activation, two-profile build, PE/ISA/dependency audit, deterministic packages | build-time only; pending gate |
 | `scripts/native/tests` | internal test harness | offline profile, ISA, dependency, and package invariants | build-time only; local PASS |
 | `toolchains` | toolchain policy | exact Windows profile/MSVC/SDK/backend lock | no production dependency; pending hosted identity |
@@ -53,11 +53,12 @@ Shallow clone: NO
 
 | Command | Exit/result | Environment |
 |---|---:|---|
-| `python3 -m unittest discover -s scripts/native/tests -v` | 0; 37 tests passed | local macOS arm64 |
+| `python3 -m unittest discover -s scripts/native/tests -v` | 0; 39 tests passed | local macOS arm64 |
 | `python3 -m py_compile scripts/native/*.py scripts/native/tests/*.py` | 0 | local Python |
 | `python3 scripts/native/stage_source.py --clean` | 0; external patch applied in ignored staging only | local macOS arm64 |
 | `python3 scripts/upstream/snapshot.py verify` | 0; 31 submodules and 88 licenses | immutable source unchanged |
-| `python3 scripts/native/run_host_canary.py --clean --iterations 100` | 0; ABI C/C++ and 100-cycle es→en canary passed; clean-build dylib SHA-256 `c9d6685f879d5a077501c1eaa2df37359ed8bb55831301903e08eeee4879de05` | macOS 13 arm64 regression profile, CMake 4.0.2, Ninja 1.13.2 |
+| `python3 scripts/native/run_host_canary.py --clean --iterations 100` | 0; ABI C/C++ and 100-cycle es→en canary passed; clean-build dylib SHA-256 `60a8221cc45f8ded7c5b59084d113cafc57ffd3794c16b673379132df28946b6` | macOS 13 arm64 regression profile, CMake 4.0.2, Ninja 1.13.2 |
+| clean locked CMake configure/build/CTest with `-DUSE_ONNX_SGEMM=ON` | 0; native ONNX `gemm.cpp` compiled without the conflicting `SSE` macro, Marian `prod.cpp` compiled with `USE_ONNX_SGEMM=1`, exactly the three intended ABI/canary tests passed, and the real es→en canary completed 100 cycles; 20-export dylib SHA-256 `e4fd3e05f83985df6e093688d4db9f3d169411db308abdd990e53e9f7795d09c` | clean macOS arm64 forced-ONNX diagnostic, CMake 4.0.2, Ninja 1.13.2 |
 | `./gradlew clean verificationGate --warning-mode=fail` | 0; 17 tasks, architecture/policy/API/format/coverage/quality passed | local Temurin JDK 21 / Gradle 9.5.0 |
 | all 17 `scripts/ci/verify-scope.sh` M1 scopes | 0 each | architecture, quality, API, Kotlin, native, upstream, platform, consumer, model, license, artifact, release, performance |
 | workflow YAML parse | 0 | all GitHub workflow YAML loaded with aliases enabled |
@@ -78,6 +79,7 @@ Shallow clone: NO
 | hosted PR run `32399217334`, Windows job `96523135772` | 1 after runtime creation, runtime-info validation, descriptor bounds, model load, translator creation, and invalid-input rejection probes; fast-fail `0xc0000409` occurs inside the first valid translation call before cleanup | first AVX2-cap attempt added with independent profile execution so the baseline proof still runs after an optimized-profile failure |
 | hosted PR run `32400843977`, Windows job `96528411259` | 1 during both profile builds; removing AVX-512 implementations made the pinned intgemm header's six-way function-pointer dispatch ill-formed in the optimized build, while the independently executed baseline exposed unused CPUID register warning C4189 under `/WX` | retain the complete optimized implementation set but cap runtime CPUID at AVX2; add the pinned unsupported-backend integer aliases and explicit unused-register expression required by an SSSE3-only MSVC build; hosted result pending |
 | hosted PR run `32402074501`, Windows job `96532383070` | 1 after both profiles built and linked completely and both C/C++ ABI consumers passed; optimized and independently executed SSSE3-only baseline both fast-failed with `0xc0000409` inside the first valid asynchronous translation call | matching failures rule out optimized acceleration and AVX-512 dispatch as the cause; hold Marian's process-global throw-on-abort mode for the async operation and propagate worker exceptions through the C ABI promise instead of terminating the host; hosted result pending |
+| hosted PR run `32404301933`, Windows job `96539620777` | 1 after both profiles again built and linked completely and both C/C++ ABI consumers passed; the exception bridge replaced the process fast-fail with a clean status-300 error and full cleanup: `Marian must be compiled with a BLAS library` | the pinned dependent option silently forced requested native ONNX SGEMM off; preserve the wasm default while allowing an explicit native ONNX backend, include it in the CPU product dispatch, and require both its compile definition and implementation source in generated-command evidence; hosted result pending |
 
 ## Local test and policy results
 
@@ -88,7 +90,10 @@ artifacts, non-system DLL dependencies fail, compiler flags are profile-specific
 compiler command evidence is emitted, and package generation is byte-reproducible
 with sorted fixed-metadata entries. The complete pre-WP03 macOS native profile was
 also rebuilt from clean staging and passed its exact ABI/export/minimum-OS and
-100-cycle translation regression.
+100-cycle translation regression. An independent clean forced-ONNX build compiled
+the same SGEMM implementation requested by both Windows profiles and passed the
+same ABI and 100-cycle translation lifecycle without registering Eigen's upstream
+test suite into the product CTest tree.
 
 ## Platform and artifact results
 
