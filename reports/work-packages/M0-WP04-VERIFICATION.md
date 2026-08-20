@@ -3,7 +3,7 @@
 ## Result
 
 ```text
-Status: PARTIAL — local gate complete; hosted CI and ruleset application pending
+Status: PASS
 Milestone: M0 — Repository and governance
 Work package: M0-WP04 — Quality and CI skeleton
 Branch: codex/M0-WP01-repository-governance
@@ -17,11 +17,11 @@ Verifier: Codex
 ```text
 Repository: https://github.com/StevenBuglione/linguum-translation
 Base commit: bbddd7ef0e86b8bb8d6a249de1302701342dbc20
-Verified commit: pending work-package checkpoint commit
+Verified implementation commit: 635d35e4bea91bce6b289abfee5a8b359d0652a1
 Local clean gate: PASS
-Remote branch SHA: pending push
-Remote SHA matches local: pending push
-Working tree clean: pending commit
+Remote branch SHA: 635d35e4bea91bce6b289abfee5a8b359d0652a1
+Remote SHA matches local: YES
+Working tree clean after verified push: YES
 Shallow clone: NO
 ```
 
@@ -34,10 +34,10 @@ Shallow clone: NO
 | Kover scaffold | Kover on architecture test harness | Kover verify and XML report tasks | PASS |
 | API validation scaffold | protected lifecycle gate | `apiValidationCheck` | PASS |
 | Stable required checks | 15 always-present PR jobs | machine comparison to ruleset contexts | PASS |
-| Cross-platform M0 checks | Linux, macOS, Windows scope scripts | local Bash scopes pass; hosted jobs pending | PARTIAL |
+| Cross-platform M0 checks | Linux, macOS, Windows scope scripts | hosted run 32341484301 | PASS |
 | Governance | CODEOWNERS, templates, security and contribution policy | repository policy and file inspection | PASS |
-| Supply-chain CI | full-SHA official actions and least-privilege permissions | action-pin policy; hosted jobs pending | PARTIAL |
-| Main protection | versioned no-bypass ruleset and application script | JSON parsing passes; administrative apply pending | PARTIAL |
+| Supply-chain CI | full-SHA official actions and least-privilege permissions | dependency review and native-safety runs | PASS |
+| Main protection | versioned no-bypass ruleset and application script | active GitHub ruleset 21078407 | PASS |
 
 ## Changed modules and paths
 
@@ -63,6 +63,12 @@ Shallow clone: NO
 | `bash -n` over CI/admin shell scripts | 0 | macOS arm64 | all scripts parse |
 | `git diff --check` | 0 | working tree | no whitespace errors |
 | staged credential/private-key pattern scan | 0 | staged files | no matches |
+| fresh Gradle-home `clean verificationGate --write-verification-metadata sha256` | 0 | macOS arm64/JDK 21 | complete clean dependency graph passes |
+| `core.autocrlf=true` checkout plus protected-file SHA-256 verification | 0 | simulated Windows checkout | all three protected files pass |
+| GitHub Actions PR run 32341484301 | 0 | Ubuntu 22.04/24.04, macOS 15, Windows 2025 | all 15 protected jobs pass |
+| GitHub Actions dependency review run 32341484277 | 0 | GitHub-hosted Ubuntu | dependency/license policy passes |
+| GitHub Actions native-safety run 32341484310 | 0 | GitHub-hosted Ubuntu 22.04 | M0 native hard-stop passes |
+| `scripts/admin/apply-main-ruleset.sh` plus ruleset GET | 0 | GitHub API | active ruleset 21078407 matches versioned contract |
 
 ## Tests and quality
 
@@ -76,7 +82,7 @@ Coverage scaffold: PASS; Kover verification and XML generation
 API compatibility scaffold: PASS
 Protected PR check count/name parity: PASS; exactly 15
 External action full-SHA policy: PASS
-PowerShell execution: PENDING hosted Windows check
+PowerShell execution: PASS on Windows 2025
 ```
 
 ## Security, privacy, licensing, supply chain
@@ -90,6 +96,10 @@ Mozilla snapshot integrity: source not introduced or changed
 Action pinning: PASS; external actions use full commit SHAs
 Workflow permissions: read-only by default; scoped writes only in administrative workflows
 SBOM/provenance: release gates scaffolded; no release artifacts exist at M0
+Dependency graph and Dependabot security updates: ENABLED
+Secret scanning and push protection: ENABLED
+Private vulnerability reporting: ENABLED
+Main ruleset: ACTIVE; no bypass actors; 15 required checks; owner review; squash only
 ```
 
 ## Compatibility impact
@@ -104,8 +114,8 @@ Translation output drift: none
 
 ## Known limitations
 
-- The Windows PowerShell scope has been parsed as source but cannot execute on this macOS host; the required hosted Windows job is the execution proof.
-- M0 acceptance remains incomplete until the pushed PR is green and the main-branch ruleset is active.
+- M0 intentionally contains no production API, translation runtime, native artifact, model artifact, or publication.
+- The milestone PR still requires its protected merge before `architecture/current-milestone.txt` may advance.
 
 ## Gate immutability declaration
 
@@ -122,7 +132,7 @@ Translation output drift: none
 ## Final decision
 
 ```text
-WORK PACKAGE GATE: PENDING HOSTED CI AND RULESET APPLICATION
-SAFE TO START NEXT WORK PACKAGE: NO
+WORK PACKAGE GATE: PASS
+SAFE TO START NEXT WORK PACKAGE: YES, AFTER THE M0 MILESTONE PR MERGES
 SAFE TO ADVANCE MILESTONE: NO
 ```
