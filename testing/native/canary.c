@@ -17,6 +17,18 @@ static const char* const CANARY_INPUT = "¿Qué estás haciendo?";
 static const char* const CANARY_EXPECTED = "What are you doing?";
 static const char* const FIREFOX_REVISION = "48d55cf7ec80093903e2ef7f58b61a84a22ef716";
 
+static void trace_first_windows_iteration(int enabled, const char* stage) {
+#if defined(_WIN32)
+    if (enabled) {
+        fprintf(stderr, "canary trace: %s\n", stage);
+        fflush(stderr);
+    }
+#else
+    (void)enabled;
+    (void)stage;
+#endif
+}
+
 static linguum_translation_string_view string_view(const char* value) {
     linguum_translation_string_view view;
     view.data = (const uint8_t*)value;
@@ -200,7 +212,7 @@ static int verify_model_descriptor_bounds(
 }
 
 static int run_iteration(const char* model_path, const char* shortlist_path, const char* vocabulary_path,
-                         const char* configuration, size_t configuration_length) {
+                         const char* configuration, size_t configuration_length, int trace) {
     linguum_translation_runtime_config runtime_config = {0};
     linguum_translation_runtime* runtime = NULL;
     linguum_translation_runtime_info* info = NULL;
@@ -214,6 +226,7 @@ static int run_iteration(const char* model_path, const char* shortlist_path, con
     linguum_translation_status status;
     int result_code = 1;
 
+    trace_first_windows_iteration(trace, "runtime-create");
     runtime_config.struct_size = (uint32_t)sizeof(runtime_config);
     runtime_config.expected_abi_major = LINGUUM_TRANSLATION_ABI_MAJOR;
     runtime_config.expected_abi_minor = LINGUUM_TRANSLATION_ABI_MINOR;
@@ -225,6 +238,7 @@ static int run_iteration(const char* model_path, const char* shortlist_path, con
         goto cleanup;
     }
 
+    trace_first_windows_iteration(trace, "runtime-info");
     status = linguum_translation_runtime_info_create(runtime, &info, &error);
     if (status != LINGUUM_TRANSLATION_STATUS_OK) {
         print_error("runtime info create", status, error);
@@ -238,6 +252,7 @@ static int run_iteration(const char* model_path, const char* shortlist_path, con
         goto cleanup;
     }
 
+    trace_first_windows_iteration(trace, "descriptor-bounds");
     vocabularies[0] = string_view(vocabulary_path);
     descriptor.struct_size = (uint32_t)sizeof(descriptor);
     descriptor.language_pair = string_view("es-en");
@@ -250,22 +265,26 @@ static int run_iteration(const char* model_path, const char* shortlist_path, con
     if (verify_model_descriptor_bounds(runtime, &descriptor) != 0) {
         goto cleanup;
     }
+    trace_first_windows_iteration(trace, "model-load");
     status = linguum_translation_model_load(runtime, &descriptor, &model, &error);
     if (status != LINGUUM_TRANSLATION_STATUS_OK) {
         print_error("model load", status, error);
         goto cleanup;
     }
 
+    trace_first_windows_iteration(trace, "translator-create");
     status = linguum_translation_translator_create(runtime, model, &translator, &error);
     if (status != LINGUUM_TRANSLATION_STATUS_OK) {
         print_error("translator create", status, error);
         goto cleanup;
     }
 
+    trace_first_windows_iteration(trace, "rejection-probes");
     if (verify_translation_rejections(translator) != 0) {
         goto cleanup;
     }
 
+    trace_first_windows_iteration(trace, "translation");
     request.struct_size = (uint32_t)sizeof(request);
     request.input = string_view(CANARY_INPUT);
     request.input_format = LINGUUM_TRANSLATION_INPUT_PLAIN_TEXT;
@@ -274,6 +293,7 @@ static int run_iteration(const char* model_path, const char* shortlist_path, con
         print_error("translation", status, error);
         goto cleanup;
     }
+    trace_first_windows_iteration(trace, "translation-result");
     if (!view_equals(linguum_translation_result_text(result), CANARY_EXPECTED)) {
         fprintf(stderr, "canary output mismatch\n");
         goto cleanup;
@@ -281,12 +301,20 @@ static int run_iteration(const char* model_path, const char* shortlist_path, con
     result_code = 0;
 
 cleanup:
+    trace_first_windows_iteration(trace, "cleanup-begin");
     linguum_translation_error_destroy(error);
+    trace_first_windows_iteration(trace, "cleanup-error");
     linguum_translation_result_destroy(result);
+    trace_first_windows_iteration(trace, "cleanup-result");
     linguum_translation_translator_destroy(translator);
+    trace_first_windows_iteration(trace, "cleanup-translator");
     linguum_translation_model_destroy(model);
+    trace_first_windows_iteration(trace, "cleanup-model");
     linguum_translation_runtime_info_destroy(info);
+    trace_first_windows_iteration(trace, "cleanup-info");
     linguum_translation_runtime_destroy(runtime);
+    trace_first_windows_iteration(trace, "cleanup-runtime");
+    trace_first_windows_iteration(trace, "cleanup-complete");
     return result_code;
 }
 
@@ -330,7 +358,8 @@ int main(int argc, char** argv) {
     }
 
     for (iteration = 0; iteration < iterations; ++iteration) {
-        if (run_iteration(model_path, shortlist_path, vocabulary_path, configuration, configuration_length) != 0) {
+        if (run_iteration(model_path, shortlist_path, vocabulary_path, configuration, configuration_length,
+                          iteration == 0L) != 0) {
             fprintf(stderr, "canary lifecycle failed at iteration %ld\n", iteration + 1L);
             free(model_path);
             free(shortlist_path);

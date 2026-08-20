@@ -53,7 +53,7 @@ Shallow clone: NO
 
 | Command | Exit/result | Environment |
 |---|---:|---|
-| `python3 -m unittest discover -s scripts/native/tests -v` | 0; 34 tests passed | local macOS arm64 |
+| `python3 -m unittest discover -s scripts/native/tests -v` | 0; 35 tests passed | local macOS arm64 |
 | `python3 -m py_compile scripts/native/*.py scripts/native/tests/*.py` | 0 | local Python |
 | `python3 scripts/native/stage_source.py --clean` | 0; external patch applied in ignored staging only | local macOS arm64 |
 | `python3 scripts/upstream/snapshot.py verify` | 0; 31 submodules and 88 licenses | immutable source unchanged |
@@ -74,6 +74,7 @@ Shallow clone: NO
 | hosted PR run `32395376300`, Windows job `96510842275` | 1 at optimized-profile object 318/319; `/WX` promoted warnings emitted from pinned upstream headers while compiling the Linguum adapter | external target/include boundary marked `SYSTEM`; first-party adapter remains `/W4 /WX` |
 | hosted PR run `32396191855`, Windows job `96513462526` | 1 at optimized-profile DLL link after all objects compiled; pinned PCRE2 installs `pcre2-8-static.lib` on MSVC while the upstream integration assumed `pcre2-8.lib` | staged external patch selects PCRE2's exact MSVC static-library filename without changing non-Windows names |
 | hosted PR run `32397117391`, Windows job `96516421868` | 1 at optimized-profile DLL link; the correct static PCRE2 archive was linked, but `ssplit` compiled PCRE2 calls as DLL imports and produced ten unresolved `__imp_pcre2_*` symbols | staged external patch defines `PCRE2_STATIC` privately for the `ssplit` target on MSVC |
+| hosted PR run `32398081608`, Windows job `96519499238` | 1 after the optimized DLL and both ABI consumers linked and the ABI tests passed; the first real translation lifecycle terminated with Windows fast-fail `0xc0000409` before producing application diagnostics | first-iteration Windows canary breadcrumbs added to localize the exact model/translation/cleanup boundary without weakening the 100-cycle gate |
 
 ## Local test and policy results
 

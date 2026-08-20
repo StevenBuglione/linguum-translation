@@ -127,6 +127,14 @@ class WindowsProfileLockTests(unittest.TestCase):
         )
         self.assertIn('$<$<CXX_COMPILER_ID:MSVC>:/W4;/WX>', cmake)
 
+    def test_windows_canary_traces_the_first_lifecycle_failure_boundary(self):
+        canary = (ROOT / "testing" / "native" / "canary.c").read_text(encoding="utf-8")
+        self.assertIn("trace_first_windows_iteration", canary)
+        self.assertIn('trace_first_windows_iteration(trace, "model-load")', canary)
+        self.assertIn('trace_first_windows_iteration(trace, "translation")', canary)
+        self.assertIn('trace_first_windows_iteration(trace, "cleanup-runtime")', canary)
+        self.assertIn("iteration == 0L", canary)
+
 
 class EvidenceParsingTests(unittest.TestCase):
     def test_environment_parser_ignores_cmd_pseudo_variables(self):
