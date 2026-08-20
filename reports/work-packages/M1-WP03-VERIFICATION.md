@@ -53,7 +53,7 @@ Shallow clone: NO
 
 | Command | Exit/result | Environment |
 |---|---:|---|
-| `python3 -m unittest discover -s scripts/native/tests -v` | 0; 30 tests passed | local macOS arm64 |
+| `python3 -m unittest discover -s scripts/native/tests -v` | 0; 31 tests passed | local macOS arm64 |
 | `python3 -m py_compile scripts/native/*.py scripts/native/tests/*.py` | 0 | local Python |
 | `python3 scripts/native/stage_source.py --clean` | 0; external patch applied in ignored staging only | local macOS arm64 |
 | `python3 scripts/upstream/snapshot.py verify` | 0; 31 submodules and 88 licenses | immutable source unchanged |
@@ -68,6 +68,7 @@ Shallow clone: NO
 | hosted PR run `32393470949`, Windows job `96504800219` | 1 before compilation; case-insensitive inspection proved `VCToolsVersion` was genuinely absent after vcvars returned, with only unrelated `VCPKG_INSTALLATION_ROOT` present | activation batch now reports the vcvars exit code and installed MSVC toolset directories before failing closed |
 | hosted PR run `32393848450`, Windows job `96505999675` | 1 before compilation; a second runner region served official rolling image `20260810.198.2` with VS `18.8.12023.21` instead of image `20260818.207.1` with VS `18.9.12112.369` | both finite official rollout identities locked; exact compiler, MSVC toolset, SDK, CMake, and Ninja locks remain singular |
 | hosted PR run `32394104132`, Windows job `96506822256` | 1 before compilation; diagnostics proved VS 2026 rejects the named `-winsdk` form and listed exact installed legacy toolset directory `14.44.35207` | SDK changed to the supported positional argument; exact full legacy toolset requested and locked |
+| hosted PR run `32394364835`, Windows job `96507654648` | 1 before compilation; exact SDK and legacy toolset activation succeeded, then the compiler banner differed from the provisional compiler lock | compiler-banner parser and fail-closed expected/actual diagnostic added before changing the lock |
 
 ## Local test and policy results
 

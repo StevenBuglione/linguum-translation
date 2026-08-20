@@ -122,6 +122,14 @@ class EvidenceParsingTests(unittest.TestCase):
         ):
             windows_profiles.environment_value(environment, "VSCMD_ARG_TGT_ARCH")
 
+    def test_compiler_version_parses_the_x64_banner_and_rejects_unknown_output(self):
+        banner = "Microsoft (R) C/C++ Optimizing Compiler Version 19.44.35221 for x64"
+        self.assertEqual("19.44.35221", windows_profiles.compiler_version(banner))
+        with self.assertRaisesRegex(
+            windows_profiles.WindowsProfileError, "unrecognized MSVC compiler banner"
+        ):
+            windows_profiles.compiler_version("unexpected compiler output")
+
     def test_vswhere_selects_the_locked_visual_studio_major(self):
         arguments = windows_profiles.vswhere_arguments({"visualStudio": "2026"})
         self.assertIn("[18.0,19.0)", arguments)

@@ -132,6 +132,14 @@ def environment_value(environment: Mapping[str, str], name: str) -> str:
     return matches[0]
 
 
+def compiler_version(output: str) -> str:
+    match = re.search(r"Compiler Version ([0-9.]+) for x64", output, re.IGNORECASE)
+    if match is None:
+        banner = " ".join(output.split())[:240]
+        raise WindowsProfileError("unrecognized MSVC compiler banner: {!r}".format(banner))
+    return match.group(1)
+
+
 def vswhere_arguments(
     toolchain: Mapping[str, object], property_name: str = "installationPath"
 ) -> List[str]:
@@ -209,14 +217,18 @@ def activate_msvc(toolchain: Mapping[str, object]) -> Dict[str, str]:
             "Windows SDK mismatch: expected {}, got {}".format(toolchain["windowsSdk"], actual_sdk)
         )
     compiler_output = capture(["cl.exe"], allow_failure=True)
-    match = re.search(r"Compiler Version ([0-9.]+) for x64", compiler_output)
-    if match is None or match.group(1) != toolchain["compiler"]:
-        raise WindowsProfileError("MSVC compiler identity does not match the lock")
+    actual_compiler = compiler_version(compiler_output)
+    if actual_compiler != toolchain["compiler"]:
+        raise WindowsProfileError(
+            "MSVC compiler mismatch: expected {}, got {}".format(
+                toolchain["compiler"], actual_compiler
+            )
+        )
     for executable in ("cl.exe", "dumpbin.exe", "link.exe"):
         if shutil.which(executable) is None:
             raise WindowsProfileError("{} is unavailable after MSVC activation".format(executable))
     return {
-        "compiler": match.group(1),
+        "compiler": actual_compiler,
         "msvcToolset": actual_toolset,
         "visualStudioInstallation": installation,
         "visualStudioVersion": installation_version,
