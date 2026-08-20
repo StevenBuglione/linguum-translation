@@ -21,6 +21,24 @@ Agents must:
 - push every verified checkpoint to GitHub;
 - stop and report blockers rather than inventing exceptions.
 
+### Standing delivery authorization
+
+The repository owner has granted standing authorization for Codex to complete the
+locked project roadmap without waiting for interactive review. Within the active
+milestone and work-package contracts, agents may:
+
+- edit implementation, tests, fixtures, workflows, documentation, and evidence;
+- create commits and branches, push verified checkpoints, and maintain pull requests;
+- mark pull requests ready, apply the versioned repository ruleset, and squash-merge;
+- delete merged remote work branches when GitHub does not delete them automatically;
+- continue to the next work package only after the progression gate below is green.
+
+Manual user approval, an approving pull-request review, and CODEOWNERS approval are
+not delivery gates. CODEOWNERS remains ownership and routing metadata. This standing
+authorization does not permit a silent architecture exception, a weakened test or
+baseline, credential invention, release signing without the configured identity, or
+an irreversible external publication outside the documented release workflow.
+
 ## 2. Protected files and baselines
 
 Normal implementation work may not modify:
@@ -87,8 +105,29 @@ For every work package:
 10. Push immediately to the remote branch.
 11. Verify local and remote SHAs match.
 12. Update the draft PR and work-package verification report.
-13. At milestone end, run the full clean milestone gate.
-14. Merge only through a protected pull request after every required check is green.
+13. Run the full clean repository gate before starting the next work package.
+14. Confirm every applicable hosted pull-request check for the checkpoint is green.
+15. At milestone end, rerun the full clean milestone and platform gates from a clean,
+    non-shallow checkout.
+16. Merge only through a protected pull request after every required check is green.
+17. Record the merge SHA and advance only as the milestone contract permits.
+
+### Progression gate
+
+"Tested" means more than a narrow unit-test pass. Before work advances, agents must:
+
+- run the affected module's narrow tests;
+- run `./gradlew clean verificationGate --warning-mode=fail` (or the documented
+  platform-equivalent clean gate) from the committed checkpoint;
+- run workflow, policy, manifest, formatting, architecture, dependency, license,
+  security, and secret checks applicable to the changed paths;
+- push the exact verified SHA and confirm local/remote parity;
+- wait for every applicable required GitHub check to finish successfully;
+- treat failed, cancelled, timed-out, skipped-required, or pending checks as not green;
+- fix failures and rerun the complete affected gate set before proceeding.
+
+The verification report must name every command, exit code, hosted run, artifact, and
+known platform limitation. A cached or earlier run cannot prove a later commit.
 
 ## 5. Remote checkpoint rule
 

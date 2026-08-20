@@ -213,7 +213,7 @@ TODO pretending to be implemented
 
 - no force push;
 - no `git reset --hard` to discard other agent work;
-- no rebasing a reviewed branch without approval;
+- no rebasing or rewriting pushed branch history;
 - corrections are new commits;
 - squash merge may be used by the protected merge workflow while original branch commits remain in GitHub history until branch deletion.
 
@@ -222,7 +222,6 @@ TODO pretending to be implemented
 After required PR checks have run at least once, apply a main-branch ruleset requiring:
 
 - pull request;
-- one approving owner review for protected architecture/upstream/ABI/release paths;
 - required status checks;
 - conversation resolution;
 - linear history/squash merge policy;
@@ -230,7 +229,12 @@ After required PR checks have run at least once, apply a main-branch ruleset req
 - no deletion;
 - no bypass, including administrators where supported;
 - signed release tags;
-- CODEOWNERS review.
+- zero mandatory human approvals or CODEOWNERS approvals; CODEOWNERS is routing metadata.
+
+The owner grants standing delivery authorization to merge when the exact remote head
+SHA has passed every required status check. Manual review remains welcome but is not
+a progression or merge gate. Protected architecture, upstream, ABI, baseline, and
+release changes still require their dedicated evidence-producing workflows.
 
 The ruleset JSON and `scripts/admin/apply-main-ruleset.*` are committed and versioned. Applying the ruleset is an administrative work-package step with evidence.
 

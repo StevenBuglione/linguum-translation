@@ -4,6 +4,15 @@
 
 Implement the frozen Linguum Translation architecture incrementally, prove each risky assumption before building on it, and preserve all verified work on GitHub through frequent clean checkpoint pushes.
 
+## Standing execution authorization
+
+The repository owner authorizes Codex to implement the full locked roadmap, create
+and push branches and commits, create and maintain pull requests, apply the versioned
+ruleset, and squash-merge verified pull requests without waiting for human approval.
+Human review is optional and is not a completion gate. This authorization is bounded
+by the locked architecture, protected baselines, documented release workflows, and
+the requirement that all applicable local and hosted technical gates are green.
+
 ## Milestone lock
 
 `architecture/current-milestone.txt` records the active milestone. Codex may work only in that milestone plus completed earlier milestones.
@@ -35,12 +44,14 @@ Default visibility is public. If private visibility is explicitly selected, the 
 
 - Never commit generated secrets, credentials, signing keys, model payloads, build directories, or local tool caches.
 - Never force-push.
-- Never rebase already reviewed/pushed milestone history unless the maintainer explicitly authorizes it.
+- Never rebase or rewrite pushed milestone history.
 - Prefer small commits aligned to one traceability slice.
 - Push after every verified slice.
 - A local branch must never be more than one verified commit ahead of origin.
 - Create a draft PR immediately after the first branch push.
 - Keep the PR body current with work-package checkboxes and evidence links.
+- Mark the PR ready and merge it autonomously only after the exact remote head SHA
+  has passed every applicable required check.
 
 ## Branch and commit naming
 
@@ -76,7 +87,10 @@ May change the Firefox pin, immutable snapshot, recursive source lock, patch que
 
 ### Release-baseline update
 
-May update API, ABI, schema, model, or performance baselines only through a release/compatibility work package with before/after evidence and maintainer approval.
+May update API, ABI, schema, model, or performance baselines only when the locked
+roadmap requires it and only through a dedicated release/compatibility work package
+with before/after evidence. Standing execution authorization replaces interactive
+approval; it does not permit relaxing a threshold to make a failure pass.
 
 ## Pull request requirements
 
@@ -96,6 +110,17 @@ Every PR must contain:
 - rollback notes;
 - explicit statement that no protected gate or baseline was weakened;
 - local and remote head SHA.
+
+An approving human or CODEOWNERS review is not required. Unresolved review threads,
+when present, still block merge, and every required status check must be successful.
+
+## Progression requirements
+
+Before beginning the next work package, Codex must verify the committed checkpoint
+with the affected narrow gate, the full clean repository gate, applicable policy and
+security checks, local/remote SHA parity, and every applicable required hosted check.
+Failed, cancelled, timed-out, skipped-required, or pending results are not green.
+After any correction, the complete affected gate set must run again on the new SHA.
 
 ## Self-check before completion
 
