@@ -148,7 +148,7 @@ def vswhere_arguments(
 def vcvars_script(vcvars: Path, toolchain: Mapping[str, object]) -> str:
     toolset_directory = vcvars.parents[2] / "Tools" / "MSVC"
     return (
-        "@call \"{}\" -vcvars_ver=14.44 -winsdk={}\r\n"
+        "@call \"{}\" {} -vcvars_ver={}\r\n"
         "@set \"LINGUUM_VCVARS_EXIT=%errorlevel%\"\r\n"
         "@if not \"%LINGUUM_VCVARS_EXIT%\"==\"0\" goto :vcvars_failed\r\n"
         "@if not defined VCToolsVersion goto :toolset_missing\r\n"
@@ -165,7 +165,12 @@ def vcvars_script(vcvars: Path, toolchain: Mapping[str, object]) -> str:
         ":sdk_missing\r\n"
         "@echo LINGUUM_VCVARS_MISSING_WINDOWSSDKVERSION\r\n"
         "@exit /b 83\r\n"
-    ).format(vcvars, toolchain["windowsSdk"], toolset_directory)
+    ).format(
+        vcvars,
+        toolchain["windowsSdk"],
+        toolchain["msvcToolset"],
+        toolset_directory,
+    )
 
 
 def activate_msvc(toolchain: Mapping[str, object]) -> Dict[str, str]:

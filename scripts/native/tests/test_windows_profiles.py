@@ -36,6 +36,7 @@ class WindowsProfileLockTests(unittest.TestCase):
             ["18.8.12023.21", "18.9.12112.369"],
             document["toolchain"]["visualStudioVersions"],
         )
+        self.assertEqual("14.44.35207", document["toolchain"]["msvcToolset"])
         self.assertEqual(set(windows_profiles.PROFILE_IDS), set(profiles))
         self.assertEqual(["AVX2"], profiles["windows-x64-avx2"]["requiredCpuFeatures"])
         baseline = profiles["windows-x64-baseline"]
@@ -134,10 +135,11 @@ class EvidenceParsingTests(unittest.TestCase):
                 "C:/Program Files/Microsoft Visual Studio/18/Enterprise/"
                 "VC/Auxiliary/Build/vcvars64.bat"
             ),
-            {"windowsSdk": "10.0.26100.0"},
+            {"windowsSdk": "10.0.26100.0", "msvcToolset": "14.44.35207"},
         )
         self.assertIn('@call "C:', script)
-        self.assertIn("-vcvars_ver=14.44 -winsdk=10.0.26100.0", script)
+        self.assertIn(" 10.0.26100.0 -vcvars_ver=14.44.35207", script)
+        self.assertNotIn("-winsdk=", script)
         self.assertIn("LINGUUM_VCVARS_FAILED exit=", script)
         self.assertIn("LINGUUM_VCVARS_MISSING_VCTOOLSVERSION", script)
         self.assertIn("VC/Tools/MSVC", script.replace("\\", "/"))
