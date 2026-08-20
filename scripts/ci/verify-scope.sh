@@ -47,11 +47,27 @@ case "$scope" in
     python3 -m json.tool native/patches/PATCHES.yaml >/dev/null
     python3 -m json.tool testing/native/fixtures/es-en-v2.0.json >/dev/null
     python3 -m json.tool toolchains/native-tools.lock.json >/dev/null
+    python3 -m json.tool toolchains/macos-native-profiles.lock.json >/dev/null
     python3 -m json.tool toolchains/windows-native-profiles.lock.json >/dev/null
     python3 scripts/upstream/snapshot.py verify
     ./gradlew architectureCheck --warning-mode=fail
     ;;
-  linux|macos|android|ios|swift|consumers|performance|release)
+  macos)
+    macos_profile="${LINGUUM_MACOS_PROFILE:?LINGUUM_MACOS_PROFILE must select macos-arm64 or macos-x64}"
+    case "$macos_profile" in
+      macos-arm64|macos-x64) ;;
+      *)
+        printf 'Unsupported macOS native profile: %s\n' "$macos_profile" >&2
+        exit 1
+        ;;
+    esac
+    python3 scripts/native/macos_profiles.py \
+      --profile "$macos_profile" \
+      --clean \
+      --iterations 100
+    ./gradlew architectureCheck --warning-mode=fail
+    ;;
+  linux|android|ios|swift|consumers|performance|release)
     ./gradlew architectureCheck --warning-mode=fail
     ;;
   models)

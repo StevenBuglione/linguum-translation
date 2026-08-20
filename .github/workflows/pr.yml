@@ -73,7 +73,20 @@ jobs:
   macos:
     name: PR / macOS native and JVM integration
     runs-on: macos-15
-    timeout-minutes: 15
+    timeout-minutes: 45
+    env:
+      LINGUUM_MACOS_PROFILE: macos-arm64
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup-gradle
+      - run: bash scripts/ci/verify-scope.sh macos
+
+  macos-intel:
+    name: PR / macOS Intel native integration
+    runs-on: macos-15-intel
+    timeout-minutes: 45
+    env:
+      LINGUUM_MACOS_PROFILE: macos-x64
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-gradle

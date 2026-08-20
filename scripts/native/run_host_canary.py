@@ -73,8 +73,30 @@ def safe_build_directory(path: Path) -> Path:
 def host_profile(profile_name: str = "host") -> Tuple[str, str, List[str]]:
     system = platform.system().lower()
     machine = platform.machine().lower()
-    if profile_name != "host" and system != "windows":
-        raise HostCanaryError("{} is a Windows-only native profile".format(profile_name))
+    if profile_name.startswith("windows-") and system != "windows":
+        raise HostCanaryError("{} requires Windows".format(profile_name))
+    if profile_name.startswith("macos-") and system != "darwin":
+        raise HostCanaryError("{} requires macOS".format(profile_name))
+    if profile_name == "macos-arm64":
+        return "armv8-a", "apple-accelerate-arm64", [
+            "-DCMAKE_OSX_ARCHITECTURES=arm64",
+            "-DCMAKE_OSX_DEPLOYMENT_TARGET=13.0",
+            "-DCMAKE_OSX_SYSROOT=macosx",
+            "-DUSE_APPLE_ACCELERATE=ON",
+            "-DUSE_ONNX_SGEMM=OFF",
+            "-DUSE_RUY=ON",
+            "-DUSE_RUY_SGEMM=OFF",
+        ]
+    if profile_name == "macos-x64":
+        return "nehalem", "apple-accelerate-intgemm-runtime-x64", [
+            "-DCMAKE_OSX_ARCHITECTURES=x86_64",
+            "-DCMAKE_OSX_DEPLOYMENT_TARGET=13.0",
+            "-DCMAKE_OSX_SYSROOT=macosx",
+            "-DUSE_APPLE_ACCELERATE=ON",
+            "-DUSE_ONNX_SGEMM=OFF",
+            "-DUSE_RUY=OFF",
+            "-DUSE_RUY_SGEMM=OFF",
+        ]
     if system == "darwin" and machine in {"arm64", "aarch64"}:
         return "armv8-a", "apple-accelerate-arm64", [
             "-DCMAKE_OSX_ARCHITECTURES=arm64",
@@ -279,7 +301,13 @@ def main() -> int:
     parser.add_argument("--clean", action="store_true")
     parser.add_argument(
         "--profile",
-        choices=("host", "windows-x64-avx2", "windows-x64-baseline"),
+        choices=(
+            "host",
+            "windows-x64-avx2",
+            "windows-x64-baseline",
+            "macos-arm64",
+            "macos-x64",
+        ),
         default="host",
     )
     arguments = parser.parse_args()
