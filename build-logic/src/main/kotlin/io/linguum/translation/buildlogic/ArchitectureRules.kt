@@ -8,10 +8,14 @@ internal object ArchitectureRules {
         declaredProjects: Set<String>,
         dependencyEdges: Set<Pair<String, String>>,
     ): List<String> = buildList {
-        val milestoneNumber = milestoneNumber(currentMilestone)
+        val activeMilestoneNumber = milestoneNumber(currentMilestone)
         val modulesByPath = modules.associateBy(ModuleSpec::path)
         val requiredProjects = modules
-            .filter { milestoneNumber(it.introduced) <= milestoneNumber }
+            .filter { module ->
+                val introducedNumber = milestoneNumber(module.introduced)
+                introducedNumber < activeMilestoneNumber ||
+                    activeMilestoneNumber == 0 && introducedNumber == 0
+            }
             .map(ModuleSpec::path)
             .toSet()
 

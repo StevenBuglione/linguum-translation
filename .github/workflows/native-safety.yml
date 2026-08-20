@@ -19,4 +19,4 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-gradle
-      - run: bash scripts/ci/verify-m0-scope.sh native
+      - run: bash scripts/ci/verify-scope.sh native

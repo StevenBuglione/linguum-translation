@@ -4,17 +4,16 @@ package io.linguum.translation.architecture
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.test.Test
-import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 public class RepositoryArchitectureTest {
     @Test
-    public fun `M0 architecture test module is declared in the canonical catalog`() {
+    public fun `active milestone and architecture test module are declared canonically`() {
         val root = repositoryRoot()
         val catalog = Files.readString(root.resolve("architecture/MODULE_CATALOG.yaml"))
         val milestone = Files.readString(root.resolve("architecture/current-milestone.txt")).trim()
 
-        assertEquals("M0", milestone)
+        assertTrue(milestone.matches(Regex("M(?:10|[0-9])")))
         assertTrue(catalog.contains("path: :testing:architecture"))
         assertTrue(catalog.contains("introduced: M0"))
     }
