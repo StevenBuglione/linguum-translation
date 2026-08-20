@@ -81,6 +81,10 @@ def validate_tar_link(member: tarfile.TarInfo, destination: Path) -> None:
         raise ToolBootstrapError("archive link escapes destination: {!r}".format(member.linkname)) from error
 
 
+def tar_links_supported() -> bool:
+    return os.name != "nt"
+
+
 def extract_archive(archive: Path, destination: Path) -> None:
     destination.mkdir(parents=True, exist_ok=True)
     if archive.suffix == ".zip":
@@ -94,6 +98,12 @@ def extract_archive(archive: Path, destination: Path) -> None:
             for member in source.getmembers():
                 validate_archive_member(member.name, destination)
                 if member.issym() or member.islnk():
+                    if not tar_links_supported():
+                        raise ToolBootstrapError(
+                            "tar archive links are not supported on Windows: {!r}".format(
+                                member.name
+                            )
+                        )
                     validate_tar_link(member, destination)
             source.extractall(str(destination))
         return

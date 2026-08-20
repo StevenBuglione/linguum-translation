@@ -68,7 +68,7 @@ class ArchiveSafetyTests(unittest.TestCase):
                 bootstrap_tools.extract_archive(archive, root / "output")
             self.assertFalse((root / "escaped").exists())
 
-    def test_allows_internal_relative_tar_symlink(self):
+    def test_handles_internal_relative_tar_symlink_per_host(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             archive = root / "tool.tar.gz"
@@ -82,6 +82,11 @@ class ArchiveSafetyTests(unittest.TestCase):
                 link.linkname = "../libexec/tool"
                 output.addfile(link)
             destination = root / "output"
+            with mock.patch.object(bootstrap_tools, "tar_links_supported", return_value=False):
+                with self.assertRaises(bootstrap_tools.ToolBootstrapError):
+                    bootstrap_tools.extract_archive(archive, destination)
+            if sys.platform == "win32":
+                return
             bootstrap_tools.extract_archive(archive, destination)
             self.assertEqual((destination / "bin" / "tool").read_bytes(), b"tool")
 
