@@ -104,6 +104,20 @@ class WindowsProfileLockTests(unittest.TestCase):
             cmake,
         )
 
+    def test_runtime_build_keeps_upstream_header_warnings_outside_first_party_werror(self):
+        cmake = (ROOT / "native" / "runtime-build" / "CMakeLists.txt").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn(
+            'add_subdirectory("${LINGUUM_TRANSLATIONS_SOURCE}/inference" upstream SYSTEM)',
+            cmake,
+        )
+        self.assertIn(
+            "target_include_directories(linguum_translation SYSTEM PRIVATE",
+            cmake,
+        )
+        self.assertIn('$<$<CXX_COMPILER_ID:MSVC>:/W4;/WX>', cmake)
+
 
 class EvidenceParsingTests(unittest.TestCase):
     def test_environment_parser_ignores_cmd_pseudo_variables(self):

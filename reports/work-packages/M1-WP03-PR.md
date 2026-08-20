@@ -19,7 +19,7 @@ the complete DLL disassembly. The immutable Firefox snapshot remains untouched.
 
 ## Local gate
 
-- 32 native helper/profile tests pass;
+- 33 native helper/profile tests pass;
 - Python compilation, clean external patch staging, and immutable source verification pass;
 - the clean macOS arm64 native ABI and 100-cycle translation regression pass;
 - the clean repository gate and all 17 POSIX M1 workflow scopes pass;

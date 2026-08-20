@@ -59,7 +59,7 @@ if(CMAKE_OSX_ARCHITECTURES MATCHES "(^|;)arm64(;|$)" OR
   add_compile_definitions(ARM FMA SSE)
 endif()
 
-add_subdirectory("${LINGUUM_TRANSLATIONS_SOURCE}/inference" upstream)
+add_subdirectory("${LINGUUM_TRANSLATIONS_SOURCE}/inference" upstream SYSTEM)
 
 add_library(linguum_translation SHARED
   ../mozilla-adapter/src/linguum_translation.cpp
@@ -77,7 +77,9 @@ target_compile_options(linguum_translation PRIVATE
 )
 target_include_directories(linguum_translation
   PUBLIC ../abi/include
-  PRIVATE "${LINGUUM_TRANSLATIONS_SOURCE}/inference/src"
+)
+target_include_directories(linguum_translation SYSTEM PRIVATE
+  "${LINGUUM_TRANSLATIONS_SOURCE}/inference/src"
 )
 target_link_libraries(linguum_translation PRIVATE bergamot-translator-source)
 set_target_properties(linguum_translation PROPERTIES
