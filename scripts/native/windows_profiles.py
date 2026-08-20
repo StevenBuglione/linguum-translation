@@ -138,11 +138,26 @@ def vswhere_arguments(
 
 
 def vcvars_script(vcvars: Path, toolchain: Mapping[str, object]) -> str:
+    toolset_directory = vcvars.parents[2] / "Tools" / "MSVC"
     return (
         "@call \"{}\" -vcvars_ver=14.44 -winsdk={}\r\n"
-        "@if errorlevel 1 exit /b %errorlevel%\r\n"
+        "@set \"LINGUUM_VCVARS_EXIT=%errorlevel%\"\r\n"
+        "@if not \"%LINGUUM_VCVARS_EXIT%\"==\"0\" goto :vcvars_failed\r\n"
+        "@if not defined VCToolsVersion goto :toolset_missing\r\n"
+        "@if not defined WindowsSDKVersion goto :sdk_missing\r\n"
         "@set\r\n"
-    ).format(vcvars, toolchain["windowsSdk"])
+        "@exit /b 0\r\n"
+        ":vcvars_failed\r\n"
+        "@echo LINGUUM_VCVARS_FAILED exit=%LINGUUM_VCVARS_EXIT%\r\n"
+        "@exit /b 81\r\n"
+        ":toolset_missing\r\n"
+        "@echo LINGUUM_VCVARS_MISSING_VCTOOLSVERSION installed-toolsets:\r\n"
+        "@dir /b \"{}\" 2>nul\r\n"
+        "@exit /b 82\r\n"
+        ":sdk_missing\r\n"
+        "@echo LINGUUM_VCVARS_MISSING_WINDOWSSDKVERSION\r\n"
+        "@exit /b 83\r\n"
+    ).format(vcvars, toolchain["windowsSdk"], toolset_directory)
 
 
 def activate_msvc(toolchain: Mapping[str, object]) -> Dict[str, str]:

@@ -126,13 +126,19 @@ class EvidenceParsingTests(unittest.TestCase):
 
     def test_vcvars_activation_uses_a_batch_script_not_inline_cmd_quoting(self):
         script = windows_profiles.vcvars_script(
-            Path("C:/Program Files/Microsoft Visual Studio/18/Enterprise/vcvars64.bat"),
+            Path(
+                "C:/Program Files/Microsoft Visual Studio/18/Enterprise/"
+                "VC/Auxiliary/Build/vcvars64.bat"
+            ),
             {"windowsSdk": "10.0.26100.0"},
         )
         self.assertIn('@call "C:', script)
         self.assertIn("-vcvars_ver=14.44 -winsdk=10.0.26100.0", script)
-        self.assertIn("@if errorlevel 1 exit /b %errorlevel%", script)
-        self.assertTrue(script.endswith("@set\r\n"))
+        self.assertIn("LINGUUM_VCVARS_FAILED exit=", script)
+        self.assertIn("LINGUUM_VCVARS_MISSING_VCTOOLSVERSION", script)
+        self.assertIn("VC/Tools/MSVC", script.replace("\\", "/"))
+        self.assertIn("LINGUUM_VCVARS_MISSING_WINDOWSSDKVERSION", script)
+        self.assertIn("@set\r\n@exit /b 0", script)
 
     def test_baseline_disassembly_rejects_any_avx_family_instruction(self):
         safe = "  0000000180001000: mov rax,qword ptr [rcx]\n"

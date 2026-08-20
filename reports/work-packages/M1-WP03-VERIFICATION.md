@@ -65,6 +65,7 @@ Shallow clone: NO
 | hosted PR run `32392539956`, Windows job `96501807295` | 1 before compilation; exact VS 17 selection proved absent on image `windows-2025-vs2026` `20260818.207.1` | official image manifest verified; exact VS 2026 install identity added while retaining legacy MSVC 14.44 |
 | hosted PR run `32392944640`, Windows job `96503094811` | 1 before compilation; exact VS 2026 path resolved, but inline `cmd /s /c` quoting treated the quoted batch path literally | temporary activation batch script added with exact-content regression test |
 | hosted PR run `32393175982`, Windows job `96503848960` | 1 before compilation; activation completed but the case-sensitive toolset lookup returned no value and exposed no related-key diagnostics | case-insensitive Windows environment lookup added with fail-closed related-variable diagnostics |
+| hosted PR run `32393470949`, Windows job `96504800219` | 1 before compilation; case-insensitive inspection proved `VCToolsVersion` was genuinely absent after vcvars returned, with only unrelated `VCPKG_INSTALLATION_ROOT` present | activation batch now reports the vcvars exit code and installed MSVC toolset directories before failing closed |
 
 ## Local test and policy results
 
