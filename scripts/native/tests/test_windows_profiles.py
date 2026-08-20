@@ -84,6 +84,15 @@ class WindowsProfileLockTests(unittest.TestCase):
             )
         self.assertIn("-DCMAKE_EXPORT_COMPILE_COMMANDS=ON", arguments)
 
+    def test_baseline_build_executes_the_scalar_runtime_test_target(self):
+        common_targets = run_host_canary.build_targets("host")
+        baseline_targets = run_host_canary.build_targets("windows-x64-baseline")
+        self.assertNotIn("linguum_baseline_runtime_shims_test", common_targets)
+        self.assertEqual(
+            common_targets + ["linguum_baseline_runtime_shims_test"],
+            baseline_targets,
+        )
+
     def test_external_patch_caps_intgemm_kernels_for_locked_profiles(self):
         patch = (
             ROOT / "native" / "patches" / "0001-reproducible-flattened-source-build.patch"

@@ -231,10 +231,8 @@ def execute(
     )
     run(configure)
     run([
-        str(cmake), "--build", str(build_directory), "--parallel",
-        "--target", "linguum_translation", "linguum_translation_abi_header_c",
-        "linguum_translation_abi_header_cpp", "linguum_translation_canary",
-    ])
+        str(cmake), "--build", str(build_directory), "--parallel", "--target",
+    ] + build_targets(profile_name))
     ctest_name = "ctest.exe" if platform.system().lower() == "windows" else "ctest"
     ctest = cmake.parent / ctest_name
     run([str(ctest), "--test-dir", str(build_directory), "--output-on-failure", "-C", "Release"])
@@ -260,6 +258,18 @@ def execute(
     }
     print(json.dumps(result, indent=2, sort_keys=True))
     return result
+
+
+def build_targets(profile_name: str) -> List[str]:
+    targets = [
+        "linguum_translation",
+        "linguum_translation_abi_header_c",
+        "linguum_translation_abi_header_cpp",
+        "linguum_translation_canary",
+    ]
+    if profile_name == "windows-x64-baseline":
+        targets.append("linguum_baseline_runtime_shims_test")
+    return targets
 
 
 def main() -> int:
