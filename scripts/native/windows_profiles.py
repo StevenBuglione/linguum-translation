@@ -109,6 +109,21 @@ def parse_environment(output: str) -> Dict[str, str]:
     return environment
 
 
+def environment_value(environment: Mapping[str, str], name: str) -> str:
+    """Read a Windows environment variable without assuming output key casing."""
+    matches = [value for key, value in environment.items() if key.casefold() == name.casefold()]
+    if len(matches) != 1:
+        related = sorted(
+            key for key in environment
+            if key.upper().startswith(("VC", "WINDOWSSDK"))
+        )
+        raise WindowsProfileError(
+            "Windows environment variable {} is unavailable or ambiguous; "
+            "related variables: {}".format(name, related)
+        )
+    return matches[0]
+
+
 def vswhere_arguments(
     toolchain: Mapping[str, object], property_name: str = "installationPath"
 ) -> List[str]:
@@ -153,8 +168,8 @@ def activate_msvc(toolchain: Mapping[str, object]) -> Dict[str, str]:
         activation.write_text(vcvars_script(vcvars, toolchain), encoding="utf-8", newline="")
         environment = parse_environment(capture(["cmd.exe", "/d", "/c", str(activation)]))
     os.environ.update(environment)
-    actual_toolset = environment.get("VCToolsVersion", "").rstrip("\\/")
-    actual_sdk = environment.get("WindowsSDKVersion", "").rstrip("\\/")
+    actual_toolset = environment_value(environment, "VCToolsVersion").rstrip("\\/")
+    actual_sdk = environment_value(environment, "WindowsSDKVersion").rstrip("\\/")
     if actual_toolset != toolchain["msvcToolset"]:
         raise WindowsProfileError(
             "MSVC toolset mismatch: expected {}, got {}".format(

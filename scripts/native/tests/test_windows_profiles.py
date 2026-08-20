@@ -98,6 +98,25 @@ class EvidenceParsingTests(unittest.TestCase):
             windows_profiles.parse_environment(output),
         )
 
+    def test_environment_lookup_is_case_insensitive_and_reports_related_names(self):
+        environment = {
+            "VCTOOLSVERSION": "14.44.35211\\",
+            "WindowsSdkVersion": "10.0.26100.0\\",
+        }
+        self.assertEqual(
+            "14.44.35211\\",
+            windows_profiles.environment_value(environment, "VCToolsVersion"),
+        )
+        self.assertEqual(
+            "10.0.26100.0\\",
+            windows_profiles.environment_value(environment, "WindowsSDKVersion"),
+        )
+        with self.assertRaisesRegex(
+            windows_profiles.WindowsProfileError,
+            "related variables:.*VCTOOLSVERSION",
+        ):
+            windows_profiles.environment_value(environment, "VSCMD_ARG_TGT_ARCH")
+
     def test_vswhere_selects_the_locked_visual_studio_major(self):
         arguments = windows_profiles.vswhere_arguments({"visualStudio": "2026"})
         self.assertIn("[18.0,19.0)", arguments)
