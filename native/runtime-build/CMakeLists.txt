@@ -49,6 +49,7 @@ set(COMPILE_CUDA OFF CACHE BOOL "Disable CUDA" FORCE)
 set(COMPILE_TESTS OFF CACHE BOOL "Disable upstream integration tests" FORCE)
 set(COMPILE_UNIT_TESTS OFF CACHE BOOL "Disable upstream unit tests" FORCE)
 set(COMPILE_PYTHON OFF CACHE BOOL "Disable upstream Python binding" FORCE)
+set(USE_DOXYGEN OFF CACHE BOOL "Disable host-dependent upstream documentation" FORCE)
 set(GIT_SUBMODULE OFF CACHE BOOL "Never mutate flattened source submodules" FORCE)
 
 if(CMAKE_OSX_ARCHITECTURES MATCHES "(^|;)arm64(;|$)" OR

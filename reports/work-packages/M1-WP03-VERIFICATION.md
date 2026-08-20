@@ -53,11 +53,11 @@ Shallow clone: NO
 
 | Command | Exit/result | Environment |
 |---|---:|---|
-| `python3 -m unittest discover -s scripts/native/tests -v` | 0; 31 tests passed | local macOS arm64 |
+| `python3 -m unittest discover -s scripts/native/tests -v` | 0; 32 tests passed | local macOS arm64 |
 | `python3 -m py_compile scripts/native/*.py scripts/native/tests/*.py` | 0 | local Python |
 | `python3 scripts/native/stage_source.py --clean` | 0; external patch applied in ignored staging only | local macOS arm64 |
 | `python3 scripts/upstream/snapshot.py verify` | 0; 31 submodules and 88 licenses | immutable source unchanged |
-| `python3 scripts/native/run_host_canary.py --clean --iterations 100` | 0; ABI C/C++ and 100-cycle es→en canary passed; dylib SHA-256 `d797e1d0feec296a7dc83c8977b2eb827c0e858739a484c7842d8458624580ad` | macOS 13 arm64 regression profile, CMake 4.0.2, Ninja 1.13.2 |
+| `python3 scripts/native/run_host_canary.py --clean --iterations 100` | 0; ABI C/C++ and 100-cycle es→en canary passed; dylib SHA-256 `ff85f29e52de1bc7bf8b349834e31fc98aa99edd965c17aacc255418adf745e0` | macOS 13 arm64 regression profile, CMake 4.0.2, Ninja 1.13.2 |
 | `./gradlew clean verificationGate --warning-mode=fail` | 0; 17 tasks, architecture/policy/API/format/coverage/quality passed | local Temurin JDK 21 / Gradle 9.5.0 |
 | all 17 `scripts/ci/verify-scope.sh` M1 scopes | 0 each | architecture, quality, API, Kotlin, native, upstream, platform, consumer, model, license, artifact, release, performance |
 | workflow YAML parse | 0 | all GitHub workflow YAML loaded with aliases enabled |
@@ -70,6 +70,7 @@ Shallow clone: NO
 | hosted PR run `32394104132`, Windows job `96506822256` | 1 before compilation; diagnostics proved VS 2026 rejects the named `-winsdk` form and listed exact installed legacy toolset directory `14.44.35207` | SDK changed to the supported positional argument; exact full legacy toolset requested and locked |
 | hosted PR run `32394364835`, Windows job `96507654648` | 1 before compilation; exact SDK and legacy toolset activation succeeded, then the compiler banner differed from the provisional compiler lock | compiler-banner parser and fail-closed expected/actual diagnostic added before changing the lock |
 | hosted PR run `32394570521`, Windows job `96508383645` | 1 before compilation; exact activation proved the legacy toolset compiler banner is `19.44.35228` | observed compiler identity locked exactly |
+| hosted PR run `32394796302`, Windows job `96509086153` | 1 during optimized-profile CMake configuration; installed Doxygen activated an optional upstream docs branch whose input is absent from the pinned snapshot | upstream documentation forced off so host tool presence cannot change the native build graph |
 
 ## Local test and policy results
 

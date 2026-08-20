@@ -95,6 +95,15 @@ class WindowsProfileLockTests(unittest.TestCase):
         self.assertIn("else()", patch)
         self.assertIn("try_compile(INTGEMM_COMPILER_SUPPORTS_AVX2", patch)
 
+    def test_runtime_build_disables_host_dependent_documentation(self):
+        cmake = (ROOT / "native" / "runtime-build" / "CMakeLists.txt").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn(
+            'set(USE_DOXYGEN OFF CACHE BOOL "Disable host-dependent upstream documentation" FORCE)',
+            cmake,
+        )
+
 
 class EvidenceParsingTests(unittest.TestCase):
     def test_environment_parser_ignores_cmd_pseudo_variables(self):
