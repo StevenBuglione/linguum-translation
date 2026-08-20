@@ -98,6 +98,13 @@ class EvidenceParsingTests(unittest.TestCase):
             windows_profiles.parse_environment(output),
         )
 
+    def test_vswhere_selects_the_locked_visual_studio_major(self):
+        arguments = windows_profiles.vswhere_arguments({"visualStudio": "2022"})
+        self.assertIn("[17.0,18.0)", arguments)
+        self.assertNotIn("-latest", arguments)
+        with self.assertRaises(windows_profiles.WindowsProfileError):
+            windows_profiles.vswhere_arguments({"visualStudio": "2026"})
+
     def test_baseline_disassembly_rejects_any_avx_family_instruction(self):
         safe = "  0000000180001000: mov rax,qword ptr [rcx]\n"
         result = windows_profiles.verify_isa("windows-x64-baseline", safe)

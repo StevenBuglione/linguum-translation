@@ -15,11 +15,11 @@ Verifier: Codex
 ```text
 Repository: https://github.com/StevenBuglione/linguum-translation
 Base main commit: 0bcb8479f98e4a973f04dd2c676c0e12f3ff6dae
-Implementation commit: pending
+Implementation commit: 6d694e3af4dee2572109212c4a1508c4bd474139
 Hosted evidence commit: pending
 Remote branch SHA: pending
-Pull request: pending
-Working tree clean: NO — intentional WP03 implementation awaits checkpoint commit
+Pull request: https://github.com/StevenBuglione/linguum-translation/pull/10
+Working tree clean: NO — tested Windows runner-selection correction awaits checkpoint commit
 Shallow clone: NO
 ```
 
@@ -53,7 +53,7 @@ Shallow clone: NO
 
 | Command | Exit/result | Environment |
 |---|---:|---|
-| `python3 -m unittest discover -s scripts/native/tests -v` | 0; 27 tests passed | local macOS arm64 |
+| `python3 -m unittest discover -s scripts/native/tests -v` | 0; 28 tests passed | local macOS arm64 |
 | `python3 -m py_compile scripts/native/*.py scripts/native/tests/*.py` | 0 | local Python |
 | `python3 scripts/native/stage_source.py --clean` | 0; external patch applied in ignored staging only | local macOS arm64 |
 | `python3 scripts/upstream/snapshot.py verify` | 0; 31 submodules and 88 licenses | immutable source unchanged |
@@ -61,6 +61,7 @@ Shallow clone: NO
 | `./gradlew clean verificationGate --warning-mode=fail` | 0; 17 tasks, architecture/policy/API/format/coverage/quality passed | local Temurin JDK 21 / Gradle 9.5.0 |
 | all 17 `scripts/ci/verify-scope.sh` M1 scopes | 0 each | architecture, quality, API, Kotlin, native, upstream, platform, consumer, model, license, artifact, release, performance |
 | workflow YAML parse | 0 | all GitHub workflow YAML loaded with aliases enabled |
+| hosted PR run `32392262528`, Windows job `96500930701` | 1 before compilation; `vswhere -latest` selected Visual Studio 18 while the lock requires VS 2022/MSVC 14.44 | fail-closed discovery; exact VS 17 instance range added and unit-tested |
 
 ## Local test and policy results
 

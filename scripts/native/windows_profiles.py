@@ -88,7 +88,11 @@ def capture(command: Sequence[str], allow_failure: bool = False) -> str:
         text=True,
     )
     if completed.returncode != 0 and not allow_failure:
-        raise WindowsProfileError("command failed ({}): {}".format(completed.returncode, command))
+        raise WindowsProfileError(
+            "command failed ({}): {}\n{}".format(
+                completed.returncode, command, completed.stdout.strip()
+            )
+        )
     return completed.stdout
 
 
@@ -103,6 +107,15 @@ def parse_environment(output: str) -> Dict[str, str]:
     return environment
 
 
+def vswhere_arguments(toolchain: Mapping[str, object]) -> List[str]:
+    if toolchain.get("visualStudio") != "2022":
+        raise WindowsProfileError("unsupported Visual Studio lock identity")
+    return [
+        "-products", "*", "-version", "[17.0,18.0)", "-requires",
+        "Microsoft.VisualStudio.Component.VC.Tools.x86.x64", "-property", "installationPath",
+    ]
+
+
 def activate_msvc(toolchain: Mapping[str, object]) -> Dict[str, str]:
     if os.name != "nt":
         raise WindowsProfileError("MSVC activation requires Windows")
@@ -110,10 +123,7 @@ def activate_msvc(toolchain: Mapping[str, object]) -> Dict[str, str]:
     if not program_files:
         raise WindowsProfileError("ProgramFiles(x86) is unavailable")
     vswhere = Path(program_files) / "Microsoft Visual Studio" / "Installer" / "vswhere.exe"
-    installation = capture([
-        str(vswhere), "-latest", "-products", "*", "-requires",
-        "Microsoft.VisualStudio.Component.VC.Tools.x86.x64", "-property", "installationPath",
-    ]).strip()
+    installation = capture([str(vswhere)] + vswhere_arguments(toolchain)).strip()
     vcvars = Path(installation) / "VC" / "Auxiliary" / "Build" / "vcvars64.bat"
     command = 'call "{}" -vcvars_ver=14.44 -winsdk={} >nul && set'.format(
         vcvars, toolchain["windowsSdk"]
