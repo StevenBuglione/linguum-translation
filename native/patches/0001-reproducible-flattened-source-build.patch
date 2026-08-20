@@ -213,3 +213,26 @@ diff --git a/inference/marian-fork/src/3rd_party/intgemm/intgemm/intgemm.cc b/in
 @@ -70 +71 @@ CPUType RealCPUID() {
 -#  ifdef INTGEMM_COMPILER_SUPPORTS_AVX512BW
 +#  if defined(INTGEMM_COMPILER_SUPPORTS_AVX512BW) && !defined(LINGUUM_INTGEMM_MAX_AVX2)
+diff --git a/inference/src/translator/service.h b/inference/src/translator/service.h
+--- a/inference/src/translator/service.h
++++ b/inference/src/translator/service.h
+@@ -3,0 +4,2 @@
++#include <exception>
++#include <functional>
+@@ -114,0 +117,2 @@ class AsyncService {
++    /// Receives failures from worker threads instead of terminating the embedding process.
++    std::function<void(std::exception_ptr)> workerExceptionHandler;
+diff --git a/inference/src/translator/service.cpp b/inference/src/translator/service.cpp
+--- a/inference/src/translator/service.cpp
++++ b/inference/src/translator/service.cpp
+@@ -147 +147,9 @@ AsyncService::AsyncService(const AsyncService::Config &config)
+-        translationModel->translateBatch(cpuId, batch);
++        try {
++          translationModel->translateBatch(cpuId, batch);
++        } catch (...) {
++          if (config_.workerExceptionHandler) {
++            config_.workerExceptionHandler(std::current_exception());
++          } else {
++            throw;
++          }
++        }

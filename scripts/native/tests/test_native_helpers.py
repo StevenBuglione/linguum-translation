@@ -322,6 +322,21 @@ class NativeContractMetadataTests(unittest.TestCase):
         affected_paths = set(re.findall(r"^diff --git a/(\S+) b/\S+$", patch.read_text(encoding="utf-8"), re.M))
         self.assertEqual(affected_paths, set(metadata["affectedPaths"]))
 
+    def test_async_worker_failures_cross_the_c_abi_without_terminating_the_host(self):
+        adapter = (
+            ROOT / "native" / "mozilla-adapter" / "src" / "linguum_translation.cpp"
+        ).read_text(encoding="utf-8")
+        patch = (
+            ROOT / "native" / "patches" / "0001-reproducible-flattened-source-build.patch"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("std::unique_lock<std::mutex> lock_", adapter)
+        self.assertIn("configuration.workerExceptionHandler", adapter)
+        self.assertIn("TranslationPromiseLease promise_lease", adapter)
+        self.assertIn("MarianAbortMode abort_mode", adapter)
+        self.assertIn("catch (const std::exception& error)", adapter)
+        self.assertIn("workerExceptionHandler(std::current_exception())", patch)
+
 
 if __name__ == "__main__":
     unittest.main()

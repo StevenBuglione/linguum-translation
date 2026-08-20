@@ -10,6 +10,7 @@
 #include <future>
 #include <limits>
 #include <memory>
+#include <mutex>
 #include <new>
 #include <stdexcept>
 #include <string>
@@ -44,6 +45,11 @@ constexpr std::size_t kMaximumLanguagePairBytes = 63U;
 constexpr std::size_t kMaximumPathBytes = 32U * 1024U;
 constexpr std::chrono::seconds kTranslationTimeout{120};
 
+std::mutex& marian_abort_mutex() {
+  static std::mutex mutex;
+  return mutex;
+}
+
 class AbiFailure final : public std::runtime_error {
  public:
   AbiFailure(linguum_translation_status status, const char* message)
@@ -57,7 +63,8 @@ class AbiFailure final : public std::runtime_error {
 
 class MarianAbortMode final {
  public:
-  MarianAbortMode() : previous_(marian::getThrowExceptionOnAbort()) {
+  MarianAbortMode()
+      : lock_(marian_abort_mutex()), previous_(marian::getThrowExceptionOnAbort()) {
     marian::setThrowExceptionOnAbort(true);
   }
 
@@ -67,6 +74,7 @@ class MarianAbortMode final {
   MarianAbortMode& operator=(const MarianAbortMode&) = delete;
 
  private:
+  std::unique_lock<std::mutex> lock_;
   bool previous_;
 };
 
@@ -272,9 +280,39 @@ struct linguum_translation_runtime {
     AsyncService::Config configuration;
     configuration.numWorkers = workers;
     configuration.cacheSize = 0U;
+    configuration.workerExceptionHandler =
+        [this](std::exception_ptr error) noexcept { fail_active_translation(error); };
     service = std::make_unique<AsyncService>(configuration);
   }
 
+  void activate_translation(const std::shared_ptr<std::promise<Response>>& promise) {
+    std::lock_guard<std::mutex> lock(active_translation_mutex);
+    active_translation = promise;
+  }
+
+  void deactivate_translation(const std::shared_ptr<std::promise<Response>>& promise) {
+    std::lock_guard<std::mutex> lock(active_translation_mutex);
+    if (active_translation.lock() == promise) {
+      active_translation.reset();
+    }
+  }
+
+  void fail_active_translation(std::exception_ptr error) noexcept {
+    std::shared_ptr<std::promise<Response>> promise;
+    {
+      std::lock_guard<std::mutex> lock(active_translation_mutex);
+      promise = active_translation.lock();
+    }
+    if (promise != nullptr) {
+      try {
+        promise->set_exception(error);
+      } catch (const std::future_error&) {
+      }
+    }
+  }
+
+  std::mutex active_translation_mutex;
+  std::weak_ptr<std::promise<Response>> active_translation;
   std::unique_ptr<AsyncService> service;
   std::uint64_t maximum_input_bytes;
 };
@@ -301,6 +339,25 @@ struct linguum_translation_runtime_info {
 };
 
 namespace {
+
+class TranslationPromiseLease final {
+ public:
+  TranslationPromiseLease(
+      linguum_translation_runtime* runtime,
+      std::shared_ptr<std::promise<Response>> promise)
+      : runtime_(runtime), promise_(std::move(promise)) {
+    runtime_->activate_translation(promise_);
+  }
+
+  ~TranslationPromiseLease() { runtime_->deactivate_translation(promise_); }
+
+  TranslationPromiseLease(const TranslationPromiseLease&) = delete;
+  TranslationPromiseLease& operator=(const TranslationPromiseLease&) = delete;
+
+ private:
+  linguum_translation_runtime* runtime_;
+  std::shared_ptr<std::promise<Response>> promise_;
+};
 
 void clear_error(linguum_translation_error** error_out) noexcept {
   if (error_out != nullptr) {
@@ -487,8 +544,10 @@ linguum_translation_status linguum_translation_translator_translate(
         request->input,
         LINGUUM_TRANSLATION_STATUS_INVALID_ARGUMENT,
         "translation input is missing");
+    MarianAbortMode abort_mode;
     auto promise = std::make_shared<std::promise<Response>>();
     std::future<Response> future = promise->get_future();
+    TranslationPromiseLease promise_lease(translator->runtime, promise);
     ResponseOptions options;
     options.qualityScores = false;
     options.alignment = false;
@@ -496,7 +555,12 @@ linguum_translation_status linguum_translation_translator_translate(
     translator->runtime->service->translate(
         translator->model,
         std::move(input),
-        [promise](Response&& response) { promise->set_value(std::move(response)); },
+        [promise](Response&& response) {
+          try {
+            promise->set_value(std::move(response));
+          } catch (const std::future_error&) {
+          }
+        },
         options);
     if (future.wait_for(kTranslationTimeout) != std::future_status::ready) {
       return fail(LINGUUM_TRANSLATION_STATUS_TRANSLATION_FAILED, "native translation timed out", error_out);
@@ -508,6 +572,8 @@ linguum_translation_status linguum_translation_translator_translate(
     return exception_status(error, error_out);
   } catch (const std::bad_alloc&) {
     return unknown_failure(LINGUUM_TRANSLATION_STATUS_OUT_OF_MEMORY, "translation allocation failed", error_out);
+  } catch (const std::exception& error) {
+    return unknown_failure(LINGUUM_TRANSLATION_STATUS_TRANSLATION_FAILED, error.what(), error_out);
   } catch (...) {
     return unknown_failure(LINGUUM_TRANSLATION_STATUS_TRANSLATION_FAILED, "native translation failed", error_out);
   }

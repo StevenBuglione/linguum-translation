@@ -31,7 +31,9 @@
     "inference/marian-fork/src/3rd_party/ExceptionWithCallStack.cpp",
     "inference/marian-fork/src/3rd_party/sentencepiece/src/unicode_script.h",
     "inference/marian-fork/src/3rd_party/simd_utils/simd_utils.h",
-    "inference/marian-fork/src/3rd_party/zlib/zutil.h"
+    "inference/marian-fork/src/3rd_party/zlib/zutil.h",
+    "inference/src/translator/service.cpp",
+    "inference/src/translator/service.h"
   ],
   "upstreamIssue": null,
   "introducedIn": "0.1.0-M1",
@@ -39,5 +41,5 @@
   "license": "MPL-2.0",
   "approvedBy": "Steven Buglione",
   "approvalReference": "Repository-owner standing delivery and patch authorization in Codex task 01a01dba-bb5f-7272-b179-7a6e6db206f3 on 2026-08-20",
-  "patchSha256": "8066775aa835b9ccc2ce5b3288b4c7023dc40fd5c7260df5a0dd6e01b9dc5d5d"
+  "patchSha256": "e2c6d9e9db6e0aeeda144edddde20c02be986001392d12f15f3dd2e0e682f84a"
 }
