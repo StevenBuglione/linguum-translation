@@ -25,5 +25,7 @@ jobs:
           languages: java-kotlin
           build-mode: manual
       - name: Build Kotlin sources for CodeQL
-        run: ./gradlew clean verificationGate --warning-mode=fail
+        run: >-
+          ./gradlew clean verificationGate --warning-mode=fail
+          --rerun-tasks --no-build-cache --no-configuration-cache
       - uses: github/codeql-action/analyze@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd # v4

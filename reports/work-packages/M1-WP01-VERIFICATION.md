@@ -86,6 +86,12 @@ hash read normalized Windows bytes instead of the locked Git blob. License hashe
 read the byte-exact index blobs, matching the canonical tree verifier and preserving
 the same cross-platform source identity.
 
+The manually dispatched CodeQL run (`32374452938`) then proved the workflow was
+cache-sensitive: restored Gradle compilation outputs left CodeQL with no observed
+Java/Kotlin build. The CodeQL build step now disables build/configuration caches and
+reruns every task under instrumentation; the full clean verification task remains
+the build target.
+
 ## Compatibility, security, and limitations
 
 ```text
