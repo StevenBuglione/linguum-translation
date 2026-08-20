@@ -131,6 +131,7 @@ class SnapshotTest(unittest.TestCase):
                 check=True,
             )
             self.assertEqual(snapshot.source_tree_sha256(source), snapshot.source_tree_sha256_from_index(root, source))
+            self.assertEqual(snapshot.file_sha256(payload), snapshot.file_sha256_from_index(root, payload))
 
 
 if __name__ == "__main__":

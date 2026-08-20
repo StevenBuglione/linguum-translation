@@ -284,6 +284,27 @@ def file_sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def file_sha256_from_index(repository_root: Path, path: Path) -> str:
+    try:
+        repository_path = path.resolve().relative_to(repository_root.resolve()).as_posix()
+    except ValueError as error:
+        raise SnapshotError("locked file is outside its Git repository") from error
+    completed = subprocess.run(
+        ["git", "-C", str(repository_root), "cat-file", "blob", ":" + repository_path],
+        check=False,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    if completed.returncode != 0:
+        raise SnapshotError(
+            "Git index blob is unavailable for {}: {}".format(
+                repository_path,
+                completed.stderr.decode("utf-8", errors="replace").strip(),
+            )
+        )
+    return hashlib.sha256(completed.stdout).hexdigest()
+
+
 def parse_submodule_status(output: str) -> List[Tuple[str, str]]:
     submodules: List[Tuple[str, str]] = []
     for line in output.splitlines():
@@ -723,7 +744,12 @@ def verify_snapshot(arguments: argparse.Namespace) -> None:
         expected_file = validate_sha("license sha256", raw_record["sha256"], 64)
         if not isinstance(raw_record["spdx"], str) or not raw_record["spdx"]:
             raise SnapshotError("license SPDX identity is empty: {}".format(relative))
-        if file_sha256(snapshot / relative) != expected_file:
+        actual_file = (
+            file_sha256_from_index(repository_root, snapshot / relative)
+            if tracked_snapshot
+            else file_sha256(snapshot / relative)
+        )
+        if actual_file != expected_file:
             raise SnapshotError("license file digest mismatch: {}".format(relative))
     if license_paths != sorted(license_paths) or len(license_paths) != len(set(license_paths)):
         raise SnapshotError("license paths must be sorted and unique")

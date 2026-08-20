@@ -80,6 +80,12 @@ The implementation itself had prepared the Windows snapshot successfully. The te
 now keep byte sensitivity platform-neutral, exercise mode sensitivity where chmod is
 supported, and reject both POSIX and drive-qualified Windows absolute paths.
 
+The second hosted run (`32373734090`) passed those tests and reached full snapshot
+verification. It then exposed one remaining working-tree dependency: a license-file
+hash read normalized Windows bytes instead of the locked Git blob. License hashes now
+read the byte-exact index blobs, matching the canonical tree verifier and preserving
+the same cross-platform source identity.
+
 ## Compatibility, security, and limitations
 
 ```text
