@@ -99,9 +99,12 @@ target_compile_options(linguum_translation PRIVATE
   $<$<CXX_COMPILER_ID:MSVC>:/W4;/WX>
 )
 if(MSVC AND LINGUUM_INTGEMM_BASELINE_ONLY)
-  # Emit the archive member and symbol that retain any remaining static-runtime
-  # code until the complete-DLL baseline ISA audit is clean.
-  target_link_options(linguum_translation PRIVATE /VERBOSE:LIB)
+  # Keep address-to-symbol and archive-member provenance available to the
+  # complete-DLL ISA audit. The map is build evidence and is not packaged.
+  target_link_options(linguum_translation PRIVATE
+    "/MAP:${CMAKE_CURRENT_BINARY_DIR}/linguum_translation.map"
+    /MAPINFO:EXPORTS
+  )
 endif()
 target_include_directories(linguum_translation
   PUBLIC ../abi/include

@@ -120,7 +120,12 @@ class WindowsProfileLockTests(unittest.TestCase):
         )
         self.assertIn("if(MSVC AND LINGUUM_INTGEMM_BASELINE_ONLY)", cmake)
         self.assertIn("add_compile_definitions(_USE_STD_VECTOR_ALGORITHMS=0)", cmake)
-        self.assertIn("target_link_options(linguum_translation PRIVATE /VERBOSE:LIB)", cmake)
+        self.assertIn(
+            '"/MAP:${CMAKE_CURRENT_BINARY_DIR}/linguum_translation.map"',
+            cmake,
+        )
+        self.assertIn("/MAPINFO:EXPORTS", cmake)
+        self.assertNotIn("/VERBOSE:LIB", cmake)
 
     def test_profile_failures_do_not_mask_the_other_locked_profile(self):
         profiles = windows_profiles.profile_map(windows_profiles.load_lock())
@@ -282,6 +287,33 @@ class EvidenceParsingTests(unittest.TestCase):
             r"1 AVX-family instructions; first records: runtime_dispatch -> .*vzeroupper",
         ):
             windows_profiles.verify_isa("windows-x64-baseline", unsafe)
+
+    def test_linker_map_attributes_avx_to_the_defining_archive_object(self):
+        linker_map = """
+ Address         Publics by Value              Rva+Base       Lib:Object
+ 0001:00001000       __std_find_trivial_2      0000000180001000 f   libcpmt:vector_algorithms.obj
+ entry point at        0001:00000000
+ Static symbols
+ 0001:00002000       local_helper              0000000180002000 f i adapter.obj
+"""
+        symbols = windows_profiles.parse_linker_map(linker_map)
+        self.assertEqual(2, len(symbols))
+        self.assertEqual(
+            "__std_find_trivial_2 [libcpmt:vector_algorithms.obj] +0x5b",
+            windows_profiles.linker_symbol_at(0x18000105B, symbols),
+        )
+        unsafe = "  000000018000105B: vpbroadcastw ymm0,xmm0\n"
+        with self.assertRaisesRegex(
+            windows_profiles.WindowsProfileError,
+            r"__std_find_trivial_2 \[libcpmt:vector_algorithms.obj\] \+0x5b",
+        ):
+            windows_profiles.verify_isa("windows-x64-baseline", unsafe, symbols)
+
+        with self.assertRaisesRegex(
+            windows_profiles.WindowsProfileError,
+            "contains no function symbols",
+        ):
+            windows_profiles.parse_linker_map("no symbol table here")
 
     def test_optimized_disassembly_requires_avx2_evidence(self):
         avx1_only = "  0000000180001000: vaddps xmm0,xmm1,xmm2\n"

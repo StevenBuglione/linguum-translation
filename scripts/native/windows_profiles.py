@@ -12,8 +12,9 @@ import subprocess
 import sys
 import tempfile
 import zipfile
+from bisect import bisect_right
 from pathlib import Path
-from typing import Dict, Iterable, List, Mapping, Sequence, Tuple
+from typing import Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
 SCRIPT_DIRECTORY = Path(__file__).resolve().parent
 if str(SCRIPT_DIRECTORY) not in sys.path:
@@ -268,6 +269,7 @@ def avx_records(records: Iterable[Tuple[str, str, str]]) -> List[Tuple[str, str,
 def avx_diagnostics(
     disassembly: str,
     records: Sequence[Tuple[str, str, str]],
+    linker_symbols: Sequence[Tuple[int, str, str]] = (),
     limit: int = 20,
 ) -> List[str]:
     wanted = {record[2] for record in records[:limit]}
@@ -280,14 +282,62 @@ def avx_diagnostics(
             continue
         if instruction_pattern.match(line):
             if stripped in wanted:
-                diagnostics.append("{} -> {}".format(current_symbol, stripped))
+                address_match = re.match(r"^\s*([0-9A-Fa-f`]+):", line)
+                mapped_symbol = None
+                if address_match is not None and linker_symbols:
+                    address = int(address_match.group(1).replace("`", ""), 16)
+                    mapped_symbol = linker_symbol_at(address, linker_symbols)
+                diagnostics.append("{} -> {}".format(mapped_symbol or current_symbol, stripped))
             continue
         if stripped.endswith(":"):
             current_symbol = stripped[:-1]
     return diagnostics
 
 
-def verify_isa(profile_id: str, disassembly: str) -> Dict[str, object]:
+def parse_linker_map(contents: str) -> List[Tuple[int, str, str]]:
+    """Return function addresses, names, and defining objects from an MSVC map."""
+    symbols = []
+    pattern = re.compile(
+        r"^\s*[0-9A-Fa-f]+:[0-9A-Fa-f]+\s+"
+        r"(?P<name>\S+)\s+(?P<address>[0-9A-Fa-f`]{8,17})\s+"
+        r"(?:(?P<flags>[fi](?:\s+[fi])*)\s+)?(?P<source>\S.*)\s*$",
+        re.IGNORECASE,
+    )
+    for line in contents.splitlines():
+        match = pattern.match(line)
+        if match is None:
+            continue
+        flags = (match.group("flags") or "").casefold().split()
+        if "f" not in flags:
+            continue
+        symbols.append((
+            int(match.group("address").replace("`", ""), 16),
+            match.group("name"),
+            match.group("source").strip(),
+        ))
+    symbols = sorted(set(symbols))
+    if not symbols:
+        raise WindowsProfileError("MSVC linker map contains no function symbols")
+    return symbols
+
+
+def linker_symbol_at(
+    address: int,
+    symbols: Sequence[Tuple[int, str, str]],
+) -> Optional[str]:
+    """Resolve an instruction to the closest preceding mapped function."""
+    index = bisect_right([symbol[0] for symbol in symbols], address) - 1
+    if index < 0:
+        return None
+    symbol_address, name, source = symbols[index]
+    return "{} [{}] +0x{:x}".format(name, source, address - symbol_address)
+
+
+def verify_isa(
+    profile_id: str,
+    disassembly: str,
+    linker_symbols: Sequence[Tuple[int, str, str]] = (),
+) -> Dict[str, object]:
     records = instruction_records(disassembly)
     if not records:
         raise WindowsProfileError("dumpbin produced no disassembly records")
@@ -296,7 +346,7 @@ def verify_isa(profile_id: str, disassembly: str) -> Dict[str, object]:
         raise WindowsProfileError(
             "baseline DLL contains {} AVX-family instructions; first records: {}".format(
                 len(avx),
-                "; ".join(avx_diagnostics(disassembly, avx)),
+                "; ".join(avx_diagnostics(disassembly, avx, linker_symbols)),
             )
         )
     avx2 = [
@@ -474,8 +524,31 @@ def package_profile(
         indent=2,
         sort_keys=True,
     ))
+    linker_symbols = []
+    linker_map_evidence = None
+    if profile_id == "windows-x64-baseline":
+        linker_map_path = build_directory / "linguum_translation.map"
+        if not linker_map_path.is_file():
+            raise WindowsProfileError("baseline MSVC linker map is missing")
+        linker_symbols = parse_linker_map(
+            linker_map_path.read_text(encoding="utf-8-sig")
+        )
+        linker_map_evidence = {
+            "fileName": linker_map_path.name,
+            "functionSymbolCount": len(linker_symbols),
+            "sha256": run_host_canary.file_sha256(linker_map_path),
+            "vectorAlgorithmsFunctionCount": sum(
+                "vector_algorithms.obj" in source.casefold()
+                for _, _, source in linker_symbols
+            ),
+        }
+        print(json.dumps(
+            {"linkerMapEvidence": linker_map_evidence, "profile": profile_id},
+            indent=2,
+            sort_keys=True,
+        ))
     disassembly = capture(["dumpbin.exe", "/nologo", "/DISASM:NOBYTES", str(library)])
-    isa = verify_isa(profile_id, disassembly)
+    isa = verify_isa(profile_id, disassembly, linker_symbols)
     dependencies = parse_dependencies(
         capture(["dumpbin.exe", "/nologo", "/DEPENDENTS", str(library)])
     )
@@ -503,6 +576,8 @@ def package_profile(
         },
         "toolchain": toolchain,
     }
+    if linker_map_evidence is not None:
+        manifest["linkerMapAudit"] = linker_map_evidence
     profile_suffix = profile_id.removeprefix("windows-x64-")
     binary_path = "linguum/native/windows/x86_64/{}/linguum_translation.dll".format(profile_suffix)
     metadata_root = "META-INF/linguum/native"
