@@ -3,7 +3,7 @@
 ## Result
 
 ```text
-Status: LOCAL IMPLEMENTATION PASS — exact-SHA hosted evidence pending
+Status: HOSTED IMPLEMENTATION PASS — final evidence commit pending
 Milestone/work package: M1-WP01
 Branch: codex/M1-WP01-firefox-source-snapshot
 Date/time UTC: 2026-08-20
@@ -14,10 +14,11 @@ Verifier: Codex
 
 ```text
 Base main commit: 48d2718b1d894aea9cd50d7f08401de286261a73
-Implementation commit: b1c8345aaecefb5781ec1d57a1132717c2d926d1
+Initial implementation commit: b1c8345aaecefb5781ec1d57a1132717c2d926d1
+Final implementation commit: 63f070d750c6032faa39486463e5435067e55fc4
 Final evidence commit: pending
-Remote branch SHA: pending
-Pull request: pending
+Remote branch SHA: 63f070d750c6032faa39486463e5435067e55fc4
+Pull request: https://github.com/StevenBuglione/linguum-translation/pull/7
 ```
 
 ## Requirement traceability
@@ -91,6 +92,26 @@ cache-sensitive: restored Gradle compilation outputs left CodeQL with no observe
 Java/Kotlin build. The CodeQL build step now disables build/configuration caches and
 reruns every task under instrumentation; the full clean verification task remains
 the build target.
+
+## Hosted implementation verification
+
+All hosted checks below ran against final implementation commit
+`63f070d750c6032faa39486463e5435067e55fc4`. The report-only evidence commit must
+pass the same required and specialized gates before merge.
+
+| Workflow/run | Hosted result |
+|---|---|
+| Protected PR matrix `32374785356` | PASS; all 15 required checks |
+| Native safety `32374785362` | PASS |
+| Dependency review `32374785369` | PASS |
+| CodeQL `32374789830` | PASS; uncached instrumented Gradle build observed |
+| Firefox snapshot integrity `32374791423` | PASS |
+| Firefox compatibility `32374793304` | PASS; snapshot verification and candidate identity |
+
+The protected Windows job passed in 3m00s, including the unit suite, Python compile,
+snapshot preparation, Git-index source and license verification, and architecture
+checks. This supplies the mandatory Windows execution evidence unavailable on the
+local macOS verifier.
 
 ## Compatibility, security, and limitations
 
