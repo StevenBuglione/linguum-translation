@@ -55,5 +55,5 @@ Main ruleset: ACTIVE, ID 21078407
 - [x] Tests, coverage, performance, API/ABI, sanitizer, fuzzing, dependency, license, and release gates are not weakened.
 - [x] Only intentional paths are staged.
 - [x] The verified branch remote SHA matches the verified local commit.
-- [x] Required M0 documentation and artifacts are present; remote evidence is pending.
+- [x] Required M0 documentation, artifacts, hosted evidence, and protection are complete.
 - [x] The PR contains no production translation implementation or speculative modules.
