@@ -39,10 +39,11 @@ Supply-chain artifacts: dependency locks and verification metadata in M0-WP02
 See `reports/work-packages/M0-WP*-VERIFICATION.md`.
 
 ```text
-Local HEAD: updated after each checkpoint
-Remote branch SHA: updated after each checkpoint
-Clean gate command: ./gradlew verificationGate --warning-mode=fail
-Clean gate result: pending M0-WP04
+Local HEAD: pending M0-WP04 checkpoint commit
+Remote branch SHA: pending M0-WP04 checkpoint push
+Clean gate command: ./gradlew clean verificationGate --warning-mode=fail
+Clean gate result: PASS (21 tasks; Detekt, Kover, architecture, tests)
+M0 scope checks: PASS locally; hosted cross-platform CI pending
 ```
 
 ## Gate declaration
@@ -51,5 +52,5 @@ Clean gate result: pending M0-WP04
 - [x] Tests, coverage, performance, API/ABI, sanitizer, fuzzing, dependency, license, and release gates are not weakened.
 - [x] Only intentional paths are staged.
 - [ ] The final branch remote SHA matches the verified local commit.
-- [ ] Required M0 documentation and artifacts are complete.
+- [x] Required M0 documentation and artifacts are present; remote evidence is pending.
 - [x] The PR contains no production translation implementation or speculative modules.

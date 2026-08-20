@@ -10,7 +10,7 @@ plugins {
     id("io.linguum.translation.architecture")
     alias(libs.plugins.kotlin.multiplatform) apply false
     alias(libs.plugins.android.kmp.library) apply false
-    alias(libs.plugins.detekt) apply false
+    alias(libs.plugins.detekt)
     alias(libs.plugins.dokka) apply false
     alias(libs.plugins.kover) apply false
     alias(libs.plugins.maven.publish) apply false
@@ -64,6 +64,33 @@ allprojects {
     }
 }
 
+detekt {
+    toolVersion = libs.versions.detekt.get()
+    source.setFrom(
+        files(
+            "build-logic/src/main/kotlin",
+            "build-logic/src/test/kotlin",
+            "testing/architecture/src/test/kotlin",
+        ),
+    )
+    config.setFrom(files("config/detekt/detekt.yml"))
+    buildUponDefaultConfig = true
+    allRules = false
+    parallel = true
+    ignoreFailures = false
+    basePath.set(rootDir)
+}
+
+tasks.withType<dev.detekt.gradle.Detekt>().configureEach {
+    jvmTarget.set("17")
+    reports {
+        checkstyle.required.set(true)
+        html.required.set(true)
+        markdown.required.set(true)
+        sarif.required.set(true)
+    }
+}
+
 val verifyToolchain by tasks.registering {
     group = LifecycleBasePlugin.VERIFICATION_GROUP
     description = "Verifies the M0 Gradle, JDK, Kotlin, AGP, and dependency version lock."
@@ -76,7 +103,9 @@ tasks.register("verificationGate") {
     dependsOn(
         verifyToolchain,
         tasks.named("architectureCheck"),
+        tasks.named("qualityCheck"),
         ":testing:architecture:check",
+        ":testing:architecture:koverXmlReport",
         gradle.includedBuild("build-logic").task(":test"),
     )
 }

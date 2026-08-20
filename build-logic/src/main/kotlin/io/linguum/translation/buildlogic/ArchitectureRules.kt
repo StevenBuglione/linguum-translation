@@ -40,23 +40,10 @@ internal object ArchitectureRules {
         return value.removePrefix("M").toInt()
     }
 
-    private fun isAllowed(sourceType: String, targetType: String): Boolean = when (sourceType) {
-        "public-api" -> targetType == "public-api"
-        "orchestration" -> targetType in setOf("public-api", "orchestration", "internal-contract")
-        "internal-contract" -> targetType in setOf("public-api", "internal-contract")
-        "platform-adapter" -> targetType in setOf(
-            "public-api",
-            "orchestration",
-            "internal-contract",
-            "native-bridge",
-        )
-        "native-bridge" -> targetType in setOf("native-abi", "native-adapter")
-        "native-abi" -> false
-        "native-adapter" -> targetType in setOf("native-abi", "immutable-upstream")
-        "immutable-upstream" -> false
-        "test-harness" -> targetType != "test-harness" || sourceType == targetType
-        "publication" -> targetType != "immutable-upstream"
-        else -> false
+    private fun isAllowed(sourceType: String, targetType: String): Boolean = when {
+        sourceType == "test-harness" -> true
+        sourceType == "publication" -> targetType != "immutable-upstream"
+        else -> targetType in ALLOWED_TARGETS[sourceType].orEmpty()
     }
 
     private val FORBIDDEN_NAMES = setOf(
@@ -68,5 +55,13 @@ internal object ArchitectureRules {
         "stuff",
         "util",
         "utils",
+    )
+    private val ALLOWED_TARGETS = mapOf(
+        "public-api" to setOf("public-api"),
+        "orchestration" to setOf("public-api", "orchestration", "internal-contract"),
+        "internal-contract" to setOf("public-api", "internal-contract"),
+        "platform-adapter" to setOf("public-api", "orchestration", "internal-contract", "native-bridge"),
+        "native-bridge" to setOf("native-abi", "native-adapter"),
+        "native-adapter" to setOf("native-abi", "immutable-upstream"),
     )
 }
