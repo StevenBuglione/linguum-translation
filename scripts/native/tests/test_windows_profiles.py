@@ -40,9 +40,11 @@ class WindowsProfileLockTests(unittest.TestCase):
         self.assertEqual("19.44.35228", document["toolchain"]["compiler"])
         self.assertEqual(set(windows_profiles.PROFILE_IDS), set(profiles))
         self.assertEqual(["AVX2"], profiles["windows-x64-avx2"]["requiredCpuFeatures"])
+        self.assertEqual("AVX2", profiles["windows-x64-avx2"]["intgemmMaximumCpu"])
         baseline = profiles["windows-x64-baseline"]
         self.assertFalse(baseline["fbgemm"])
         self.assertTrue(baseline["intgemmBaselineOnly"])
+        self.assertEqual("SSSE3", baseline["intgemmMaximumCpu"])
         self.assertEqual(["SSSE3"], baseline["requiredCpuFeatures"])
         self.assertIn("AVX2", baseline["prohibitedInstructionFamilies"])
 
@@ -56,6 +58,7 @@ class WindowsProfileLockTests(unittest.TestCase):
             self.assertEqual("fbgemm-intgemm-avx2", acceleration)
             self.assertIn("-DUSE_FBGEMM=ON", arguments)
             self.assertIn("-DLINGUUM_INTGEMM_BASELINE_ONLY=OFF", arguments)
+            self.assertIn("-DLINGUUM_INTGEMM_AVX2_ONLY=ON", arguments)
 
             build_arch, acceleration, arguments = run_host_canary.host_profile(
                 "windows-x64-baseline"
@@ -65,6 +68,7 @@ class WindowsProfileLockTests(unittest.TestCase):
             self.assertIn("-DUSE_FBGEMM=OFF", arguments)
             self.assertIn("-DUSE_ONNX_SGEMM=ON", arguments)
             self.assertIn("-DLINGUUM_INTGEMM_BASELINE_ONLY=ON", arguments)
+            self.assertIn("-DLINGUUM_INTGEMM_AVX2_ONLY=OFF", arguments)
 
     def test_configure_emits_compiler_commands_for_evidence(self):
         with mock.patch.object(run_host_canary.platform, "system", return_value="Windows"), \
@@ -80,12 +84,13 @@ class WindowsProfileLockTests(unittest.TestCase):
             )
         self.assertIn("-DCMAKE_EXPORT_COMPILE_COMMANDS=ON", arguments)
 
-    def test_external_patch_excludes_avx_kernels_only_for_baseline(self):
+    def test_external_patch_caps_intgemm_kernels_for_locked_profiles(self):
         patch = (
             ROOT / "native" / "patches" / "0001-reproducible-flattened-source-build.patch"
         ).read_text(encoding="utf-8")
         self.assertIn("intgemm/CMakeLists.txt", patch)
         self.assertIn("if(LINGUUM_INTGEMM_BASELINE_ONLY)", patch)
+        self.assertIn("elseif(LINGUUM_INTGEMM_AVX2_ONLY)", patch)
         for name in (
             "INTGEMM_COMPILER_SUPPORTS_AVX2",
             "INTGEMM_COMPILER_SUPPORTS_AVX512BW",
@@ -94,6 +99,42 @@ class WindowsProfileLockTests(unittest.TestCase):
             self.assertIn("set({} FALSE)".format(name), patch)
         self.assertIn("else()", patch)
         self.assertIn("try_compile(INTGEMM_COMPILER_SUPPORTS_AVX2", patch)
+        self.assertIn("The AVX2 candidate must not opportunistically dispatch AVX-512", patch)
+
+    def test_profile_failures_do_not_mask_the_other_locked_profile(self):
+        profiles = windows_profiles.profile_map(windows_profiles.load_lock())
+        baseline_result = {"profile": "windows-x64-baseline"}
+        baseline_package = {"profile": "windows-x64-baseline", "jar": "baseline.jar"}
+        with mock.patch.object(
+            windows_profiles.run_host_canary,
+            "execute",
+            side_effect=[
+                windows_profiles.run_host_canary.HostCanaryError("optimized failed"),
+                baseline_result,
+            ],
+        ) as execute_canary, mock.patch.object(
+            windows_profiles,
+            "package_profile",
+            return_value=baseline_package,
+        ) as package_profile:
+            with self.assertRaisesRegex(
+                windows_profiles.WindowsProfileError,
+                "windows-x64-avx2: optimized failed",
+            ):
+                windows_profiles.execute_profile_set(
+                    profiles,
+                    windows_profiles.load_lock()["toolchain"],
+                    ROOT / "build" / "windows-profile-test",
+                    100,
+                    True,
+                )
+        self.assertEqual(2, execute_canary.call_count)
+        package_profile.assert_called_once_with(
+            baseline_result,
+            profiles["windows-x64-baseline"],
+            windows_profiles.load_lock()["toolchain"],
+            ROOT / "build" / "windows-profile-test",
+        )
 
     def test_external_patch_selects_the_msvc_static_pcre2_filename(self):
         patch = (

@@ -21,6 +21,7 @@
       "fbgemm": true,
       "onnxSgemm": true,
       "intgemmBaselineOnly": false,
+      "intgemmMaximumCpu": "AVX2",
       "requiredCpuFeatures": [
         "AVX2"
       ],
@@ -33,6 +34,7 @@
       "fbgemm": false,
       "onnxSgemm": true,
       "intgemmBaselineOnly": true,
+      "intgemmMaximumCpu": "SSSE3",
       "requiredCpuFeatures": [
         "SSSE3"
       ],

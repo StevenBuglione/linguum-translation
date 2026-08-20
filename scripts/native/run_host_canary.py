@@ -96,12 +96,14 @@ def host_profile(profile_name: str = "host") -> Tuple[str, str, List[str]]:
                 "-DUSE_FBGEMM=ON",
                 "-DUSE_ONNX_SGEMM=ON",
                 "-DLINGUUM_INTGEMM_BASELINE_ONLY=OFF",
+                "-DLINGUUM_INTGEMM_AVX2_ONLY=ON",
             ]
         if requested == "windows-x64-baseline":
             return "core2", "intgemm-ssse3-onnx-sgemm-baseline", [
                 "-DUSE_FBGEMM=OFF",
                 "-DUSE_ONNX_SGEMM=ON",
                 "-DLINGUUM_INTGEMM_BASELINE_ONLY=ON",
+                "-DLINGUUM_INTGEMM_AVX2_ONLY=OFF",
             ]
         raise HostCanaryError("unsupported Windows native profile: {}".format(requested))
     raise HostCanaryError("unsupported desktop canary host: {} {}".format(system, machine))

@@ -21,9 +21,16 @@ set(LINGUUM_ACCELERATION_PROFILE "host-unknown" CACHE STRING "Resolved native ac
 set(LINGUUM_CANARY_MODEL_DIR "" CACHE PATH "Directory containing the pinned es-en canary model")
 set(LINGUUM_CANARY_ITERATIONS "100" CACHE STRING "Full canary lifecycle repetitions")
 set(LINGUUM_INTGEMM_BASELINE_ONLY OFF CACHE BOOL "Exclude AVX-family intgemm kernels")
+set(LINGUUM_INTGEMM_AVX2_ONLY OFF CACHE BOOL "Exclude intgemm kernels above AVX2")
 
 if(LINGUUM_INTGEMM_BASELINE_ONLY AND NOT MSVC)
   message(FATAL_ERROR "LINGUUM_INTGEMM_BASELINE_ONLY is currently proven only with MSVC")
+endif()
+if(LINGUUM_INTGEMM_AVX2_ONLY AND NOT MSVC)
+  message(FATAL_ERROR "LINGUUM_INTGEMM_AVX2_ONLY is currently proven only with MSVC")
+endif()
+if(LINGUUM_INTGEMM_BASELINE_ONLY AND LINGUUM_INTGEMM_AVX2_ONLY)
+  message(FATAL_ERROR "intgemm baseline-only and AVX2-only modes are mutually exclusive")
 endif()
 
 if(NOT IS_DIRECTORY "${LINGUUM_TRANSLATIONS_SOURCE}/inference")

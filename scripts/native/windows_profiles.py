@@ -69,10 +69,18 @@ def load_lock(path: Path = LOCK_PATH) -> Dict[str, object]:
     by_id = {profile.get("id"): profile for profile in profiles if isinstance(profile, dict)}
     if tuple(sorted(by_id)) != tuple(sorted(PROFILE_IDS)) or len(profiles) != len(by_id):
         raise WindowsProfileError("Windows profile IDs must be exact and unique")
-    if by_id["windows-x64-avx2"].get("requiredCpuFeatures") != ["AVX2"]:
-        raise WindowsProfileError("optimized Windows profile must require AVX2")
+    optimized = by_id["windows-x64-avx2"]
+    if (
+        optimized.get("requiredCpuFeatures") != ["AVX2"]
+        or optimized.get("intgemmMaximumCpu") != "AVX2"
+    ):
+        raise WindowsProfileError("optimized Windows profile must cap intgemm at AVX2")
     baseline = by_id["windows-x64-baseline"]
-    if baseline.get("fbgemm") is not False or baseline.get("intgemmBaselineOnly") is not True:
+    if (
+        baseline.get("fbgemm") is not False
+        or baseline.get("intgemmBaselineOnly") is not True
+        or baseline.get("intgemmMaximumCpu") != "SSSE3"
+    ):
         raise WindowsProfileError("baseline profile must exclude FBGEMM and high intgemm kernels")
     return document
 
@@ -409,6 +417,42 @@ def package_profile(
     }
 
 
+PROFILE_EXECUTION_ERRORS = (
+    WindowsProfileError,
+    run_host_canary.HostCanaryError,
+    OSError,
+    subprocess.SubprocessError,
+    ValueError,
+    json.JSONDecodeError,
+)
+
+
+def execute_profile_set(
+    profiles: Mapping[str, Mapping[str, object]],
+    toolchain: Mapping[str, object],
+    output: Path,
+    iterations: int,
+    clean: bool,
+) -> List[Dict[str, object]]:
+    packages = []
+    failures = []
+    for profile_id in PROFILE_IDS:
+        try:
+            result = run_host_canary.execute(
+                ROOT / "build" / "native-canary" / profile_id,
+                iterations,
+                clean,
+                profile_id,
+            )
+            packages.append(package_profile(result, profiles[profile_id], toolchain, output))
+        except PROFILE_EXECUTION_ERRORS as error:
+            failures.append("{}: {}".format(profile_id, error))
+            print("Windows native profile failed: {}: {}".format(profile_id, error), file=sys.stderr)
+    if failures:
+        raise WindowsProfileError("; ".join(failures))
+    return packages
+
+
 def execute(output: Path, iterations: int, clean: bool) -> Dict[str, object]:
     if platform.system().lower() != "windows" or platform.machine().lower() not in {"amd64", "x86_64"}:
         raise WindowsProfileError("Windows x64 is required")
@@ -420,16 +464,8 @@ def execute(output: Path, iterations: int, clean: bool) -> Dict[str, object]:
     toolchain_evidence.update(activated)
     if clean and output.exists():
         shutil.rmtree(str(output))
-    packages = []
     profiles = profile_map(document)
-    for profile_id in PROFILE_IDS:
-        result = run_host_canary.execute(
-            ROOT / "build" / "native-canary" / profile_id,
-            iterations,
-            clean,
-            profile_id,
-        )
-        packages.append(package_profile(result, profiles[profile_id], toolchain_evidence, output))
+    packages = execute_profile_set(profiles, toolchain_evidence, output, iterations, clean)
     summary = {"profiles": packages, "toolchain": toolchain_evidence}
     (output / "M1-WP03-result.json").write_bytes(json_bytes(summary))
     print(json.dumps(summary, indent=2, sort_keys=True))
@@ -444,14 +480,7 @@ def main() -> int:
     arguments = parser.parse_args()
     try:
         execute(arguments.output, arguments.iterations, arguments.clean)
-    except (
-        WindowsProfileError,
-        run_host_canary.HostCanaryError,
-        OSError,
-        subprocess.SubprocessError,
-        ValueError,
-        json.JSONDecodeError,
-    ) as error:
+    except PROFILE_EXECUTION_ERRORS as error:
         print("Windows native profile gate failed: {}".format(error), file=sys.stderr)
         return 1
     return 0

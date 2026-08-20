@@ -140,7 +140,7 @@ diff --git a/inference/marian-fork/src/CMakeLists.txt b/inference/marian-fork/sr
 diff --git a/inference/marian-fork/src/3rd_party/intgemm/CMakeLists.txt b/inference/marian-fork/src/3rd_party/intgemm/CMakeLists.txt
 --- a/inference/marian-fork/src/3rd_party/intgemm/CMakeLists.txt
 +++ b/inference/marian-fork/src/3rd_party/intgemm/CMakeLists.txt
-@@ -32,14 +32,17 @@ endif()
+@@ -32,14 +32,24 @@ endif()
 -# Check if compiler supports AVX2 (this should only catch emscripten)
 -try_compile(INTGEMM_COMPILER_SUPPORTS_AVX2
 -  ${CMAKE_CURRENT_BINARY_DIR}/compile_tests
@@ -159,6 +159,13 @@ diff --git a/inference/marian-fork/src/3rd_party/intgemm/CMakeLists.txt b/infere
 +  # MSVC has no per-function target attributes. A baseline build must exclude
 +  # unsupported kernels rather than compiling them and relying on dispatch.
 +  set(INTGEMM_COMPILER_SUPPORTS_AVX2 FALSE)
++  set(INTGEMM_COMPILER_SUPPORTS_AVX512BW FALSE)
++  set(INTGEMM_COMPILER_SUPPORTS_AVX512VNNI FALSE)
++elseif(LINGUUM_INTGEMM_AVX2_ONLY)
++  # The AVX2 candidate must not opportunistically dispatch AVX-512 kernels.
++  try_compile(INTGEMM_COMPILER_SUPPORTS_AVX2
++    ${CMAKE_CURRENT_BINARY_DIR}/compile_tests
++    ${CMAKE_CURRENT_SOURCE_DIR}/compile_test/avx2.cc)
 +  set(INTGEMM_COMPILER_SUPPORTS_AVX512BW FALSE)
 +  set(INTGEMM_COMPILER_SUPPORTS_AVX512VNNI FALSE)
 +else()

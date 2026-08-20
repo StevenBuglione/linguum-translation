@@ -53,11 +53,11 @@ Shallow clone: NO
 
 | Command | Exit/result | Environment |
 |---|---:|---|
-| `python3 -m unittest discover -s scripts/native/tests -v` | 0; 35 tests passed | local macOS arm64 |
+| `python3 -m unittest discover -s scripts/native/tests -v` | 0; 36 tests passed | local macOS arm64 |
 | `python3 -m py_compile scripts/native/*.py scripts/native/tests/*.py` | 0 | local Python |
 | `python3 scripts/native/stage_source.py --clean` | 0; external patch applied in ignored staging only | local macOS arm64 |
 | `python3 scripts/upstream/snapshot.py verify` | 0; 31 submodules and 88 licenses | immutable source unchanged |
-| `python3 scripts/native/run_host_canary.py --clean --iterations 100` | 0; ABI C/C++ and 100-cycle es→en canary passed; dylib SHA-256 `ff85f29e52de1bc7bf8b349834e31fc98aa99edd965c17aacc255418adf745e0` | macOS 13 arm64 regression profile, CMake 4.0.2, Ninja 1.13.2 |
+| `python3 scripts/native/run_host_canary.py --clean --iterations 100` | 0; ABI C/C++ and 100-cycle es→en canary passed; dylib SHA-256 `9d7ca5975001ba949d7bda57c56e623d83a748a55d1934e1b40474ba9ce322db` | macOS 13 arm64 regression profile, CMake 4.0.2, Ninja 1.13.2 |
 | `./gradlew clean verificationGate --warning-mode=fail` | 0; 17 tasks, architecture/policy/API/format/coverage/quality passed | local Temurin JDK 21 / Gradle 9.5.0 |
 | all 17 `scripts/ci/verify-scope.sh` M1 scopes | 0 each | architecture, quality, API, Kotlin, native, upstream, platform, consumer, model, license, artifact, release, performance |
 | workflow YAML parse | 0 | all GitHub workflow YAML loaded with aliases enabled |
@@ -75,6 +75,7 @@ Shallow clone: NO
 | hosted PR run `32396191855`, Windows job `96513462526` | 1 at optimized-profile DLL link after all objects compiled; pinned PCRE2 installs `pcre2-8-static.lib` on MSVC while the upstream integration assumed `pcre2-8.lib` | staged external patch selects PCRE2's exact MSVC static-library filename without changing non-Windows names |
 | hosted PR run `32397117391`, Windows job `96516421868` | 1 at optimized-profile DLL link; the correct static PCRE2 archive was linked, but `ssplit` compiled PCRE2 calls as DLL imports and produced ten unresolved `__imp_pcre2_*` symbols | staged external patch defines `PCRE2_STATIC` privately for the `ssplit` target on MSVC |
 | hosted PR run `32398081608`, Windows job `96519499238` | 1 after the optimized DLL and both ABI consumers linked and the ABI tests passed; the first real translation lifecycle terminated with Windows fast-fail `0xc0000409` before producing application diagnostics | first-iteration Windows canary breadcrumbs added to localize the exact model/translation/cleanup boundary without weakening the 100-cycle gate |
+| hosted PR run `32399217334`, Windows job `96523135772` | 1 after runtime creation, runtime-info validation, descriptor bounds, model load, translator creation, and invalid-input rejection probes; fast-fail `0xc0000409` occurs inside the first valid translation call before cleanup | optimized intgemm compile support capped at AVX2 instead of opportunistically enabling AVX-512; profile execution made independent so the baseline proof still runs after an optimized-profile failure; hosted result pending |
 
 ## Local test and policy results
 
