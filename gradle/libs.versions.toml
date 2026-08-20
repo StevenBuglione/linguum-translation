@@ -1,5 +1,5 @@
 [versions]
-agp = "9.1.1"
+agp = "9.3.1"
 android-build-tools = "36.0.0"
 android-min-sdk = "26"
 android-ndk = "28.2.13676358"
