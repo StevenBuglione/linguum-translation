@@ -3,7 +3,10 @@
   "runner": "windows-2025",
   "toolchain": {
     "visualStudio": "2026",
-    "visualStudioVersion": "18.9.12112.369",
+    "visualStudioVersions": [
+      "18.8.12023.21",
+      "18.9.12112.369"
+    ],
     "msvcToolset": "14.44.35211",
     "compiler": "19.44.35222",
     "windowsSdk": "10.0.26100.0",

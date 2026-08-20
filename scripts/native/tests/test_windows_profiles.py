@@ -32,6 +32,10 @@ class WindowsProfileLockTests(unittest.TestCase):
     def test_profile_lock_is_exact_and_baseline_excludes_high_kernels(self):
         document = windows_profiles.load_lock()
         profiles = windows_profiles.profile_map(document)
+        self.assertEqual(
+            ["18.8.12023.21", "18.9.12112.369"],
+            document["toolchain"]["visualStudioVersions"],
+        )
         self.assertEqual(set(windows_profiles.PROFILE_IDS), set(profiles))
         self.assertEqual(["AVX2"], profiles["windows-x64-avx2"]["requiredCpuFeatures"])
         baseline = profiles["windows-x64-baseline"]

@@ -53,11 +53,19 @@ def load_lock(path: Path = LOCK_PATH) -> Dict[str, object]:
     if not isinstance(toolchain, dict) or not isinstance(profiles, list):
         raise WindowsProfileError("Windows profile lock is missing toolchain or profiles")
     required_tools = {
-        "visualStudio", "visualStudioVersion", "msvcToolset", "compiler",
+        "visualStudio", "visualStudioVersions", "msvcToolset", "compiler",
         "windowsSdk", "cmake", "ninja"
     }
     if set(toolchain) != required_tools:
         raise WindowsProfileError("Windows profile toolchain keys differ from the contract")
+    visual_studio_versions = toolchain["visualStudioVersions"]
+    if (
+        not isinstance(visual_studio_versions, list)
+        or not visual_studio_versions
+        or len(set(visual_studio_versions)) != len(visual_studio_versions)
+        or not all(isinstance(version, str) and version for version in visual_studio_versions)
+    ):
+        raise WindowsProfileError("Visual Studio versions must be a non-empty unique string list")
     by_id = {profile.get("id"): profile for profile in profiles if isinstance(profile, dict)}
     if tuple(sorted(by_id)) != tuple(sorted(PROFILE_IDS)) or len(profiles) != len(by_id):
         raise WindowsProfileError("Windows profile IDs must be exact and unique")
@@ -171,10 +179,10 @@ def activate_msvc(toolchain: Mapping[str, object]) -> Dict[str, str]:
     installation_version = capture(
         [str(vswhere)] + vswhere_arguments(toolchain, "installationVersion")
     ).strip()
-    if installation_version != toolchain["visualStudioVersion"]:
+    if installation_version not in toolchain["visualStudioVersions"]:
         raise WindowsProfileError(
-            "Visual Studio mismatch: expected {}, got {}".format(
-                toolchain["visualStudioVersion"], installation_version
+            "Visual Studio mismatch: expected one of {}, got {}".format(
+                toolchain["visualStudioVersions"], installation_version
             )
         )
     vcvars = Path(installation) / "VC" / "Auxiliary" / "Build" / "vcvars64.bat"
