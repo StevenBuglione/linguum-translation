@@ -12,11 +12,11 @@ permissions:
   contents: read
 
 jobs:
-  m0-scaffold:
-    name: Native safety / M0 scaffold
+  milestone-gate:
+    name: Native safety / Milestone gate
     runs-on: ubuntu-22.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-gradle
-      - run: bash scripts/ci/verify-m0-scope.sh native
+      - run: bash scripts/ci/verify-scope.sh native

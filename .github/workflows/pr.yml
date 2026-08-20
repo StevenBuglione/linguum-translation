@@ -22,7 +22,7 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/actions/setup-gradle
       - uses: gradle/actions/wrapper-validation@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
-      - run: bash scripts/ci/verify-m0-scope.sh architecture
+      - run: bash scripts/ci/verify-scope.sh architecture
 
   quality:
     name: PR / Formatting, compiler, Detekt
@@ -31,7 +31,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-gradle
-      - run: bash scripts/ci/verify-m0-scope.sh quality
+      - run: bash scripts/ci/verify-scope.sh quality
 
   api-abi:
     name: PR / API and ABI compatibility
@@ -40,7 +40,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-gradle
-      - run: bash scripts/ci/verify-m0-scope.sh api
+      - run: bash scripts/ci/verify-scope.sh api
 
   kotlin-jvm:
     name: PR / Kotlin common and JVM tests
@@ -49,7 +49,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-gradle
-      - run: bash scripts/ci/verify-m0-scope.sh kotlin
+      - run: bash scripts/ci/verify-scope.sh kotlin
 
   windows:
     name: PR / Windows native and JVM integration
@@ -59,7 +59,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-gradle
       - shell: pwsh
-        run: ./scripts/ci/verify-m0-scope.ps1 -Scope windows
+        run: ./scripts/ci/verify-scope.ps1 -Scope windows
 
   linux:
     name: PR / Linux x64 native and JVM integration
@@ -68,7 +68,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-gradle
-      - run: bash scripts/ci/verify-m0-scope.sh linux
+      - run: bash scripts/ci/verify-scope.sh linux
 
   macos:
     name: PR / macOS native and JVM integration
@@ -77,7 +77,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-gradle
-      - run: bash scripts/ci/verify-m0-scope.sh macos
+      - run: bash scripts/ci/verify-scope.sh macos
 
   android:
     name: PR / Android build and emulator integration
@@ -86,7 +86,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-gradle
-      - run: bash scripts/ci/verify-m0-scope.sh android
+      - run: bash scripts/ci/verify-scope.sh android
 
   ios:
     name: PR / iOS build and simulator integration
@@ -95,7 +95,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-gradle
-      - run: bash scripts/ci/verify-m0-scope.sh ios
+      - run: bash scripts/ci/verify-scope.sh ios
 
   consumer-kotlin-java:
     name: PR / Consumer fixtures Kotlin and Java
@@ -104,7 +104,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-gradle
-      - run: bash scripts/ci/verify-m0-scope.sh consumers
+      - run: bash scripts/ci/verify-scope.sh consumers
 
   consumer-swift:
     name: PR / Consumer fixture Swift
@@ -113,7 +113,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-gradle
-      - run: bash scripts/ci/verify-m0-scope.sh swift
+      - run: bash scripts/ci/verify-scope.sh swift
 
   native-safety:
     name: PR / Native safety smoke
@@ -122,7 +122,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-gradle
-      - run: bash scripts/ci/verify-m0-scope.sh native
+      - run: bash scripts/ci/verify-scope.sh native
 
   models:
     name: PR / Model manifest and canary pairs
@@ -130,7 +130,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - run: bash scripts/ci/verify-m0-scope.sh models
+      - run: bash scripts/ci/verify-scope.sh models
 
   license-supply-chain:
     name: PR / License, dependency, SBOM smoke
@@ -139,7 +139,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-gradle
-      - run: bash scripts/ci/verify-m0-scope.sh license
+      - run: bash scripts/ci/verify-scope.sh license
 
   artifact-integrity:
     name: PR / Artifact integrity and publication smoke
@@ -149,4 +149,4 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-gradle
       - uses: gradle/actions/wrapper-validation@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
-      - run: bash scripts/ci/verify-m0-scope.sh artifacts
+      - run: bash scripts/ci/verify-scope.sh artifacts
