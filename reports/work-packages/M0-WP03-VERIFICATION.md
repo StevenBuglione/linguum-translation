@@ -17,8 +17,11 @@ Verifier: Codex
 ```text
 Repository: https://github.com/StevenBuglione/linguum-translation
 Base commit: e1ddd78351e7dd1e909df82e8a82bb5cba7cb156
-Verified commit: recorded by the following evidence checkpoint
-Local/remote SHA matched before work: YES
+Verified commit: 8e3b23f9513a9839cb4b1948d7b96cfaeaed0fcb
+Local HEAD after push: 8e3b23f9513a9839cb4b1948d7b96cfaeaed0fcb
+Remote branch SHA after push: 8e3b23f9513a9839cb4b1948d7b96cfaeaed0fcb
+Remote SHA matches local: YES
+Working tree clean after push: YES
 Shallow clone: NO
 ```
 
@@ -56,6 +59,8 @@ Shallow clone: NO
 | final `verificationGate --write-locks --write-verification-metadata sha256 --warning-mode=fail` | 0 | macOS arm64/JDK 21 | locks/metadata updated; all architecture tests passed |
 | `./gradlew clean verificationGate --warning-mode=fail` | 0 | macOS arm64/JDK 21 | clean gate passed, 13 tasks |
 | repeated `./gradlew verificationGate --warning-mode=fail` | 0 | macOS arm64/JDK 21 | configuration cache reused |
+| staged secret-pattern scan | 0 | staged files | no credential/private-key patterns matched |
+| branch push plus `git ls-remote` equality test | 0 | GitHub/macOS arm64 | local and remote `8e3b23f...` matched |
 
 ## Tests and quality
 
@@ -78,7 +83,7 @@ Configuration cache: PASS, reused
 ```text
 Dependency locks: regenerated intentionally for build-logic/test dependencies
 Dependency verification: SHA-256 metadata regenerated intentionally
-Secret scan: pending staged pre-commit scan
+Secret scan: PASS (no matches)
 Protected architecture source: byte-identical to imported hashes
 Production/runtime dependencies: none introduced
 Network/native/translation behavior: not introduced
