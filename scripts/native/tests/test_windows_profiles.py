@@ -121,9 +121,12 @@ class WindowsProfileLockTests(unittest.TestCase):
         self.assertIn("if(MSVC AND LINGUUM_INTGEMM_BASELINE_ONLY)", cmake)
         self.assertIn("add_compile_definitions(_USE_STD_VECTOR_ALGORITHMS=0)", cmake)
         self.assertIn("add_compile_options(/Oi-)", cmake)
+        self.assertIn("TARGET_DIRECTORY marian", cmake)
+        self.assertIn('PROPERTIES COMPILE_OPTIONS "/Od;/Oi-;/GL-"', cmake)
         self.assertIn("baseline_runtime_shims.c", cmake)
         self.assertIn("/Od /Oi- /GL- /W4 /WX", cmake)
         self.assertIn("/NODEFAULTLIB:libucrt.lib", cmake)
+        self.assertIn("/NODEFAULTLIB:msvcrt.lib", cmake)
         self.assertIn("target_link_libraries(linguum_translation PRIVATE ucrt)", cmake)
         self.assertIn(
             '"/MAP:${CMAKE_CURRENT_BINARY_DIR}/linguum_translation.map"',
@@ -383,7 +386,7 @@ class EvidenceParsingTests(unittest.TestCase):
             for index, name in enumerate(sorted(windows_profiles.BASELINE_SCALAR_SHIM_SYMBOLS))
         ]
         evidence = windows_profiles.baseline_runtime_boundary_evidence(symbols)
-        self.assertEqual(7, evidence["scalarShimCount"])
+        self.assertEqual(6, evidence["scalarShimCount"])
         self.assertTrue(evidence["staticStlVectorAlgorithmsAbsent"])
         with self.assertRaisesRegex(
             windows_profiles.WindowsProfileError, "missing symbols",
@@ -406,6 +409,10 @@ class EvidenceParsingTests(unittest.TestCase):
                     "file": "C:/source/3rd_party/intgemm/intgemm/intgemm.cc",
                 },
                 {
+                    "command": "cl /arch:SSE2 /Oi- /Od /GL- /D_USE_STD_VECTOR_ALGORITHMS=0 /c factored_vocab.cpp",
+                    "file": "C:/source/marian-fork/src/data/factored_vocab.cpp",
+                },
+                {
                     "command": "cl /arch:SSE2 /Oi- /D_USE_STD_VECTOR_ALGORITHMS=0 /DUSE_ONNX_SGEMM=1 /c prod.cpp",
                     "file": "C:/source/marian-fork/src/tensors/cpu/prod.cpp",
                 },
@@ -420,11 +427,12 @@ class EvidenceParsingTests(unittest.TestCase):
             self.assertFalse(evidence["hasIntgemmAvx2Cap"])
             self.assertTrue(evidence["hasOnnxSgemm"])
             self.assertTrue(evidence["hasOnnxSgemmImplementation"])
-            self.assertEqual(3, evidence["cppCompileCommandCount"])
-            self.assertEqual(3, evidence["vectorizedStlDisabledCommandCount"])
+            self.assertEqual(4, evidence["cppCompileCommandCount"])
+            self.assertEqual(4, evidence["vectorizedStlDisabledCommandCount"])
             self.assertTrue(evidence["vectorizedStlDisabledForAllCpp"])
-            self.assertEqual(3, evidence["compilerIntrinsicsDisabledCommandCount"])
+            self.assertEqual(4, evidence["compilerIntrinsicsDisabledCommandCount"])
             self.assertTrue(evidence["compilerIntrinsicsDisabledForAllCommands"])
+            self.assertTrue(evidence["factoredVocabularyScalarBoundary"])
 
             missing_intrinsic_boundary = json.loads(commands.read_text())
             missing_intrinsic_boundary[0]["command"] = missing_intrinsic_boundary[0][
@@ -441,6 +449,10 @@ class EvidenceParsingTests(unittest.TestCase):
                 {
                     "command": "cl /arch:SSE2 /Oi- /D_USE_STD_VECTOR_ALGORITHMS=0 /c intgemm.cc",
                     "file": "C:/source/3rd_party/intgemm/intgemm/intgemm.cc",
+                },
+                {
+                    "command": "cl /arch:SSE2 /Oi- /Od /GL- /D_USE_STD_VECTOR_ALGORITHMS=0 /c factored_vocab.cpp",
+                    "file": "C:/source/marian-fork/src/data/factored_vocab.cpp",
                 },
                 {
                     "command": "cl /arch:SSE2 /Oi- /D_USE_STD_VECTOR_ALGORITHMS=0 /DUSE_ONNX_SGEMM=1 /c prod.cpp",
@@ -461,6 +473,10 @@ class EvidenceParsingTests(unittest.TestCase):
                 {
                     "command": "cl /arch:AVX2 /DLINGUUM_INTGEMM_MAX_AVX2 /c intgemm.cc",
                     "file": "C:/source/3rd_party/intgemm/intgemm/intgemm.cc",
+                },
+                {
+                    "command": "cl /arch:AVX2 /c factored_vocab.cpp",
+                    "file": "C:/source/marian-fork/src/data/factored_vocab.cpp",
                 },
                 {
                     "command": "cl /arch:AVX2 /DUSE_ONNX_SGEMM=1 /c prod.cpp",

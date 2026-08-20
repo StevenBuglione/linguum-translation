@@ -63,7 +63,6 @@ BASELINE_SCALAR_SHIM_SYMBOLS = {
     "memcpy",
     "memmove",
     "memset",
-    "wmemchr",
 }
 NON_AVX_V_MNEMONICS = {"verr", "verw", "vmcall", "vmlaunch", "vmresume", "vmxoff"}
 
@@ -530,6 +529,17 @@ def verify_compile_commands(profile_id: str, build_directory: Path) -> Dict[str,
         raise WindowsProfileError(
             "compile database must contain the native product and ONNX SGEMM implementations"
         )
+    factored_vocab_command_texts = [
+        text
+        for entry, text in zip(commands, command_texts)
+        if str(entry.get("file", "")).replace("\\", "/").lower().endswith(
+            "/marian-fork/src/data/factored_vocab.cpp"
+        )
+    ]
+    if len(factored_vocab_command_texts) != 1:
+        raise WindowsProfileError(
+            "compile database must contain exactly one factored vocabulary command"
+        )
     has_avx2 = re.search(r"(?:^|\s)/arch:AVX2(?:\s|$)", command_text, re.IGNORECASE) is not None
     has_sse2 = re.search(r"(?:^|\s)/arch:SSE2(?:\s|$)", command_text, re.IGNORECASE) is not None
     has_intgemm_avx2_cap = re.search(
@@ -565,6 +575,10 @@ def verify_compile_commands(profile_id: str, build_directory: Path) -> Dict[str,
         compiler_intrinsics_disabled_pattern.search(text) is not None
         for text in command_texts
     )
+    factored_vocab_scalar_boundary = all(
+        flag in factored_vocab_command_texts[0].casefold()
+        for flag in ("/od", "/oi-", "/gl-")
+    )
     if not has_onnx_sgemm:
         raise WindowsProfileError("native product command must enable the ONNX SGEMM backend")
     if profile_id == "windows-x64-avx2" and (not has_avx2 or not has_intgemm_avx2_cap):
@@ -597,6 +611,10 @@ def verify_compile_commands(profile_id: str, build_directory: Path) -> Dict[str,
         raise WindowsProfileError(
             "every baseline compiler command must disable intrinsic substitution"
         )
+    if profile_id == "windows-x64-baseline" and not factored_vocab_scalar_boundary:
+        raise WindowsProfileError(
+            "baseline factored vocabulary command must disable optimization and LTCG"
+        )
     return {
         "compileCommandCount": len(commands),
         "cppCompileCommandCount": len(cpp_command_texts),
@@ -608,6 +626,7 @@ def verify_compile_commands(profile_id: str, build_directory: Path) -> Dict[str,
         "hasArchAvx2": has_avx2,
         "hasArchSse2": has_sse2,
         "hasIntgemmAvx2Cap": has_intgemm_avx2_cap,
+        "factoredVocabularyScalarBoundary": factored_vocab_scalar_boundary,
         "hasOnnxSgemm": has_onnx_sgemm,
         "hasOnnxSgemmImplementation": True,
         "vectorizedStlDisabledCommandCount": vectorized_stl_disabled_count,

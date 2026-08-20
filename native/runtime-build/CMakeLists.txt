@@ -78,6 +78,18 @@ endif()
 
 add_subdirectory("${LINGUUM_TRANSLATIONS_SOURCE}/inference" upstream SYSTEM)
 
+if(MSVC AND LINGUUM_INTGEMM_BASELINE_ONLY)
+  # The pinned source's wide-character vocabulary search causes MSVC to emit a
+  # local wmemchr implementation. Keep this single proven source boundary
+  # scalar and outside LTCG so the compiler cannot auto-vectorize it above the
+  # requested /arch:SSE2 floor.
+  set_source_files_properties(
+    "${LINGUUM_TRANSLATIONS_SOURCE}/inference/marian-fork/src/data/factored_vocab.cpp"
+    TARGET_DIRECTORY marian
+    PROPERTIES COMPILE_OPTIONS "/Od;/Oi-;/GL-"
+  )
+endif()
+
 if(LINGUUM_ARM_NATIVE)
   # Pinned Marian sets these on its own target. Its sibling Bergamot target
   # also includes Marian's ARM SIMD headers, but unrelated dependencies such
@@ -124,6 +136,7 @@ if(MSVC AND LINGUUM_INTGEMM_BASELINE_ONLY)
     "/MAP:${CMAKE_CURRENT_BINARY_DIR}/linguum_translation.map"
     /MAPINFO:EXPORTS
     /NODEFAULTLIB:libucrt.lib
+    /NODEFAULTLIB:msvcrt.lib
   )
 endif()
 target_include_directories(linguum_translation

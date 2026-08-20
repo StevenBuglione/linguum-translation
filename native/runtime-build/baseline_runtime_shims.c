@@ -42,17 +42,6 @@ __declspec(noinline) void* __cdecl memset(void* destination, int value, size_t c
   return destination;
 }
 
-__declspec(noinline) wchar_t* __cdecl wmemchr(
-    const wchar_t* first, wchar_t value, size_t count) {
-  size_t index;
-  for (index = 0; index < count; ++index) {
-    if (first[index] == value) {
-      return (wchar_t*)(first + index);
-    }
-  }
-  return NULL;
-}
-
 __declspec(noinline) const void* __stdcall __std_find_trivial_1(
     const void* first, const void* last, unsigned char value) {
   const unsigned char* current = (const unsigned char*)first;

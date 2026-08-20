@@ -5,7 +5,6 @@
 void* __cdecl memcpy(void* destination, const void* source, size_t count);
 void* __cdecl memmove(void* destination, const void* source, size_t count);
 void* __cdecl memset(void* destination, int value, size_t count);
-wchar_t* __cdecl wmemchr(const wchar_t* first, wchar_t value, size_t count);
 const void* __stdcall __std_find_trivial_1(
     const void* first, const void* last, unsigned char value);
 const void* __stdcall __std_find_trivial_2(
@@ -30,7 +29,6 @@ int main(void) {
   unsigned char copied[4] = {0, 0, 0, 0};
   unsigned char reverse_target[] = {0, 1, 2, 3};
   unsigned short words[] = {10, 20, 30, 40};
-  wchar_t wide[] = {L'a', L'b', L'c'};
 
   if (memmove(bytes + 2, bytes, 4) != bytes + 2 ||
       !bytes_equal(bytes, shifted_right, sizeof(bytes))) {
@@ -50,20 +48,17 @@ int main(void) {
       !bytes_equal(copied, reversed, sizeof(copied))) {
     return 5;
   }
-  if (wmemchr(wide, L'b', 3) != wide + 1 || wmemchr(wide, L'z', 3) != NULL) {
-    return 6;
-  }
   if (__std_find_trivial_1(copied, copied + 4, 2) != copied + 1 ||
       __std_find_trivial_1(copied, copied + 4, 9) != copied + 4) {
-    return 7;
+    return 6;
   }
   if (__std_find_trivial_2(words, words + 4, 30) != words + 2 ||
       __std_find_trivial_2(words, words + 4, 50) != words + 4) {
-    return 8;
+    return 7;
   }
   __std_reverse_trivially_swappable_1(reverse_target, reverse_target + 4);
   if (!bytes_equal(reverse_target, reversed, sizeof(reverse_target))) {
-    return 9;
+    return 8;
   }
   __std_reverse_trivially_swappable_1(reverse_target, reverse_target);
   return 0;
