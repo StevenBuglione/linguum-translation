@@ -3,7 +3,7 @@
 ## Result
 
 ```text
-Status: LOCAL TOOLING PASS — hosted Windows build/run/package evidence pending
+Status: PASS — hosted Windows build/run/ABI/ISA/package evidence verified
 Milestone/work package: M1-WP03
 Branch: codex/M1-WP03-windows-native-canary
 Date/time UTC: 2026-08-20
@@ -16,8 +16,8 @@ Verifier: Codex
 Repository: https://github.com/StevenBuglione/linguum-translation
 Base main commit: 0bcb8479f98e4a973f04dd2c676c0e12f3ff6dae
 Implementation commit: 6d694e3af4dee2572109212c4a1508c4bd474139
-Hosted evidence commit: pending
-Remote branch SHA: pending
+Hosted evidence commit: 98666c1f098b296e0e737af550774c70d54bf5e1
+Remote branch SHA at hosted proof: 98666c1f098b296e0e737af550774c70d54bf5e1
 Pull request: https://github.com/StevenBuglione/linguum-translation/pull/10
 Working tree clean: YES after verified checkpoint commit
 Shallow clone: NO
@@ -27,33 +27,33 @@ Shallow clone: NO
 
 | ID | Requirement | Implementation | Executable evidence | Result |
 |---|---|---|---|---|
-| WP03-WIN-01 | Build exact Firefox-pinned source and Linguum ABI as Windows x64 DLL | locked staged source and shared CMake target | hosted MSVC build | PENDING HOSTED |
-| WP03-WIN-02 | Prove optimized x64 AVX2 profile | `/arch:AVX2`, FBGEMM, intgemm, ONNX SGEMM | compiler-command and PE-disassembly audit | PENDING HOSTED |
-| WP03-WIN-03 | Prove a non-AVX2 fallback candidate | `/arch:SSE2`, no FBGEMM, SSSE3/SSE2-only intgemm, ONNX SGEMM | reject all AVX-family instructions in complete DLL disassembly | PENDING HOSTED |
-| WP03-WIN-04 | Keep one exact C ABI and export surface | existing ABI 1.0 header and 20-symbol allowlist | C/C++ consumers plus `dumpbin /exports` | PENDING HOSTED |
-| WP03-WIN-05 | Translate Firefox-approved es→en canary | same v2.0 model/config and exact expected text | 100 lifecycle/translation iterations per profile | PENDING HOSTED |
-| WP03-WIN-06 | Record backend/toolchain/runtime identity | immutable profile lock and generated runtime metadata | exact MSVC/SDK/CMake/Ninja checks | PENDING HOSTED |
-| WP03-WIN-07 | Package both DLL profiles | deterministic profile-specific candidate JARs | entry/notice/provenance inspection and SHA-256 | PENDING HOSTED |
-| WP03-WIN-08 | Avoid build-host-only DLL dependencies | statically linked non-system libraries | `dumpbin /dependents` system allowlist | PENDING HOSTED |
-| WP03-WIN-09 | Preserve corresponding-source obligations | MPL license, upstream lock, patch metadata in each package | package entry inspection | PENDING HOSTED |
-| WP03-WIN-10 | Preserve all prior milestone gates | Windows proof is added to the stable Windows PR scope | clean local and hosted repository gates | PENDING |
+| WP03-WIN-01 | Build exact Firefox-pinned source and Linguum ABI as Windows x64 DLL | locked staged source and shared CMake target | hosted MSVC build | PASS |
+| WP03-WIN-02 | Prove optimized x64 AVX2 profile | `/arch:AVX2`, FBGEMM, intgemm, ONNX SGEMM | compiler-command and PE-disassembly audit | PASS |
+| WP03-WIN-03 | Prove a non-AVX2 fallback candidate | `/arch:SSE2`, no FBGEMM, SSSE3/SSE2-only intgemm, ONNX SGEMM | reject all AVX-family instructions in complete DLL disassembly | PASS |
+| WP03-WIN-04 | Keep one exact C ABI and export surface | existing ABI 1.0 header and 20-symbol allowlist | C/C++ consumers plus `dumpbin /exports` | PASS |
+| WP03-WIN-05 | Translate Firefox-approved es→en canary | same v2.0 model/config and exact expected text | 100 lifecycle/translation iterations per profile | PASS |
+| WP03-WIN-06 | Record backend/toolchain/runtime identity | immutable profile lock and generated runtime metadata | exact MSVC/SDK/CMake/Ninja checks | PASS |
+| WP03-WIN-07 | Package both DLL profiles | deterministic profile-specific candidate JARs | entry/notice/provenance inspection and SHA-256 | PASS |
+| WP03-WIN-08 | Avoid build-host-only DLL dependencies | statically linked non-system libraries | `dumpbin /dependents` system allowlist | PASS |
+| WP03-WIN-09 | Preserve corresponding-source obligations | MPL license, upstream lock, patch metadata in each package | package entry inspection | PASS |
+| WP03-WIN-10 | Preserve all prior milestone gates | Windows proof is added to the stable Windows PR scope | clean local and hosted repository gates | PASS |
 
 ## Changed modules and paths
 
 | Path/module | Classification | Change | Dependency rule result |
 |---|---|---|---|
-| `native/runtime-build` | internal native bridge | locked Windows profile switches | allowed `native-bridge`; pending gate |
-| `native/patches` | MPL external patch queue | constrain profile-specific intgemm dispatch, transport async worker failures, and enable the native ONNX SGEMM product path without leaking Marian's ARM `SSE` macro into Eigen | upstream tree untouched; pending gate |
-| `scripts/native` | build/evidence tooling | MSVC activation, two-profile build, PE/ISA/dependency audit, deterministic packages | build-time only; pending gate |
+| `native/runtime-build` | internal native bridge | locked Windows profile switches | allowed `native-bridge`; gate PASS |
+| `native/patches` | MPL external patch queue | constrain profile-specific intgemm dispatch, transport async worker failures, and enable the native ONNX SGEMM product path without leaking Marian's ARM `SSE` macro into Eigen | upstream tree untouched; gate PASS |
+| `scripts/native` | build/evidence tooling | MSVC activation, two-profile build, PE/ISA/dependency audit, deterministic packages | build-time only; gate PASS |
 | `scripts/native/tests` | internal test harness | offline profile, ISA, dependency, and package invariants | build-time only; local PASS |
-| `toolchains` | toolchain policy | exact Windows profile/MSVC/SDK/backend lock | no production dependency; pending hosted identity |
-| Windows CI dispatcher/workflow | verification tooling | make two-profile proof part of the stable protected Windows job | no module edge; pending hosted gate |
+| `toolchains` | toolchain policy | exact Windows profile/MSVC/SDK/backend lock | no production dependency; hosted identity PASS |
+| Windows CI dispatcher/workflow | verification tooling | make two-profile proof part of the stable protected Windows job | no module edge; hosted gate PASS |
 
 ## Commands executed
 
 | Command | Exit/result | Environment |
 |---|---:|---|
-| `python3 -m unittest discover -s scripts/native/tests -v` | 0; 41 tests passed | local macOS arm64 |
+| `python3 -m unittest discover -s scripts/native/tests -v` | 0; 45 tests passed | local macOS arm64 |
 | `python3 -m py_compile scripts/native/*.py scripts/native/tests/*.py` | 0 | local Python |
 | `python3 scripts/native/stage_source.py --clean` | 0; external patch applied in ignored staging only | local macOS arm64 |
 | `python3 scripts/upstream/snapshot.py verify` | 0; 31 submodules and 88 licenses | immutable source unchanged |
@@ -61,7 +61,7 @@ Shallow clone: NO
 | two independent `python3 scripts/native/run_host_canary.py --clean --iterations 100` runs after the baseline external-search patch | 0; each clean 293-object build passed ABI C/C++, exact 20 exports, macOS 13 minimum, and 100 es→en lifecycles; both produced dylib SHA-256 `e212b97c73f51c95081b984bc3717814d4194b158cc84e7b19711b8a08dfb383` | macOS 13 arm64 regression profile, CMake 4.0.2, Ninja 1.13.2; deterministic after staged patch-byte change |
 | two independent `python3 scripts/native/run_host_canary.py --clean --iterations 100` runs after the baseline scalar-search patch | 0; each clean 293-object build passed ABI C/C++, exact 20 exports, macOS 13 minimum, and 100 es→en lifecycles; both produced dylib SHA-256 `03485a6fefb29d95f62f4a9a0d146d59fe080b7c62d5520dc7a91dfa278b5cd5` | macOS 13 arm64 regression profile, CMake 4.0.2, Ninja 1.13.2; deterministic optimized/non-MSVC path |
 | clean locked CMake configure/build/CTest with `-DUSE_ONNX_SGEMM=ON` | 0; native ONNX `gemm.cpp` compiled without the conflicting `SSE` macro, Marian `prod.cpp` compiled with `USE_ONNX_SGEMM=1`, exactly the three intended ABI/canary tests passed, and the real es→en canary completed 100 cycles; 20-export dylib SHA-256 `e4fd3e05f83985df6e093688d4db9f3d169411db308abdd990e53e9f7795d09c` | clean macOS arm64 forced-ONNX diagnostic, CMake 4.0.2, Ninja 1.13.2 |
-| `./gradlew clean verificationGate --warning-mode=fail` | 0; 17 tasks, architecture/policy/API/format/coverage/quality passed | local Temurin JDK 21 / Gradle 9.5.0 |
+| `./gradlew --no-daemon clean verificationGate --warning-mode=fail` | 0; 17 tasks, architecture/policy/API/format/coverage/quality passed | local Temurin JDK 21 / Gradle 9.5.0 |
 | all 17 `scripts/ci/verify-scope.sh` M1 scopes | 0 each | architecture, quality, API, Kotlin, native, upstream, platform, consumer, model, license, artifact, release, performance |
 | workflow YAML parse | 0 | all GitHub workflow YAML loaded with aliases enabled |
 | hosted PR run `32392262528`, Windows job `96500930701` | 1 before compilation; mutable `windows-2025` selected the new VS 2026 image while the initial lock named VS 2022 | fail-closed runner discovery; removed ambiguous `-latest` selection |
@@ -92,6 +92,7 @@ Shallow clone: NO
 | hosted PR run `32419732952`, Windows job `96588939110` | 1 only at the baseline complete-DLL ISA gate; all other 14 PR jobs, Native Safety run `32419732924`, and Dependency Review run `32419732940` passed; optimized profile passed ABI, 100-cycle es-en canary, export, dependency, and AVX2 gates with DLL SHA-256 `03cede365311b0aba937f28bc8a791283fc8241faa5d3d920c5a8f95d42a0c02`; baseline linked, passed its direct scalar runtime test, both ABI tests, and 100-cycle canary with DLL SHA-256 `f0531a84b14a993ed45881df232f10b1d84fe72352c1ab0950b5edf34b05815e`; static UCRT/VC/STL AVX was eliminated and all 15 residual instructions mapped without omission to MSVC's compiler-expanded `wmemchr` in `marian:factored_vocab.cpp.obj` | add a baseline-only `#pragma function(wmemchr)` before the staged source's headers so MSVC emits the system-UCRT call; retain `/Oi-` and `/GL-` on that source while restoring normal optimization; zero-AVX rejection remains unchanged; hosted result pending |
 | hosted PR run `32421630891`, Windows job `96594710937` | 1 during the baseline build after the optimized profile completed; all other 14 PR jobs, Native Safety run `32421630878`, and Dependency Review run `32421630868` passed; locked MSVC rejected `#pragma function(wmemchr)` with C4163 because its generated `wmemchr` is not an available `/Oi` intrinsic | replace the unsupported pragma with a baseline-only scalar UTF-16 code-unit loop in the staged source while retaining the optimized profile's standard-library search; compile evidence continues to require the baseline definition plus `/Oi-` and `/GL-`; hosted result pending |
 | hosted PR run `32422987502`, Windows job `96598847206` | 1 only at the baseline complete-DLL ISA gate; all other 14 PR jobs, Native Safety run `32422987625`, and Dependency Review run `32422987564` passed; optimized profile passed ABI, 100-cycle canary, export, dependency, and AVX2 gates with DLL SHA-256 `a9df98d039669016397df4fcace17994c81738a13e59cf5ffbac379c90eac29c`; baseline linked, passed its direct scalar test, both ABI tests, and 100-cycle canary with DLL SHA-256 `3c69c1245423006772c549cb2be14619fd1f6bb18f4fdfed14b04acc8b2ddce9`; the scalar UTF-16 boundary eliminated all 15 `wmemchr` instructions, leaving one fully mapped VEX store (`vmovlpd`) in inline `Dense::apply` emitted by `marian:expression_operators.cpp.obj` | compile only the proven graph-construction translation unit with `/Od /Oi- /GL-`; it is not a tensor compute kernel, all other source optimization remains unchanged, and the zero-AVX rejection remains unchanged; hosted result pending |
+| hosted PR run `32424273792`, Windows job `96602807970` | 0; exact optimized and baseline MSVC profiles built, linked, tested, audited, and packaged; optimized passed C/C++ ABI plus 100-cycle es→en canary in 12.73 seconds, with DLL SHA-256 `ab10fecddbc728e583017345553e098ad591658b7a8827bc9fcf7221c57778c1` and 63,798 AVX-family instructions across 1,216,732 disassembled instructions; baseline passed its direct scalar test, C/C++ ABI, and 100-cycle canary in 49.59 seconds, with DLL SHA-256 `7938a778c7daa433d8f6648370c7842f7515ff5d3b6ef35bc19b128110b737e5` and exactly zero AVX-family instructions across 1,219,391 disassembled instructions; compile evidence proved both scalar source boundaries, `/Oi-` on all commands, and vectorized STL disabled on all 227 C++ commands; all 20 exports, system-only dependencies, deterministic packages, the other 14 PR jobs, Native Safety run `32424273773`, and Dependency Review run `32424273694` passed | PASS; WP03 requirements are complete without weakening the zero-AVX rejection or optimizing away any tensor compute kernel |
 
 ## Local test and policy results
 
@@ -111,8 +112,8 @@ test suite into the product CTest tree.
 
 | Target/profile | Build/link | Run/canary | ISA evidence | Package/artifact SHA-256 |
 |---|---|---|---|---|
-| Windows x64 AVX2 / `fbgemm-intgemm-avx2` | PENDING HOSTED | PENDING HOSTED | PENDING HOSTED | PENDING HOSTED |
-| Windows x64 baseline / `intgemm-ssse3-onnx-sgemm-baseline` | PENDING HOSTED | PENDING HOSTED | PENDING HOSTED | PENDING HOSTED |
+| Windows x64 AVX2 / `fbgemm-intgemm-avx2` | PASS; locked MSVC, 324 build actions | PASS; C and C++ ABI plus 100-cycle es→en canary | PASS; 63,798 AVX-family instructions including required AVX2 evidence across 1,216,732 decoded instructions | DLL `ab10fecddbc728e583017345553e098ad591658b7a8827bc9fcf7221c57778c1`; JAR `ce94cec4179ccf140cd4d94e727a1af94565326069d5a38ee9db23e495eab149` |
+| Windows x64 baseline / `intgemm-ssse3-onnx-sgemm-baseline` | PASS; locked MSVC, 234 build actions including scalar runtime test | PASS; scalar runtime, C and C++ ABI, plus 100-cycle es→en canary | PASS; zero AVX-family instructions across 1,219,391 decoded instructions | DLL `7938a778c7daa433d8f6648370c7842f7515ff5d3b6ef35bc19b128110b737e5`; JAR `84289f130960b9d6d34a3e9f2c18c2eedfdb918c7a63ec82723ee20aa611f371` |
 
 ## Security, privacy, licensing, and compatibility
 
@@ -157,7 +158,7 @@ Minimum platform promise: unchanged; Windows 10 22H2 remains the floor
 ## Final decision
 
 ```text
-WORK PACKAGE GATE: PENDING HOSTED WINDOWS PROOF
-SAFE TO START NEXT WORK PACKAGE: NO
+WORK PACKAGE GATE: PASS
+SAFE TO START NEXT WORK PACKAGE: YES
 SAFE TO ADVANCE MILESTONE: NOT A MILESTONE BOUNDARY
 ```
