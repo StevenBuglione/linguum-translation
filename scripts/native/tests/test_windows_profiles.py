@@ -160,12 +160,15 @@ class WindowsProfileLockTests(unittest.TestCase):
             ROOT / "native" / "runtime-build" / "CMakeLists.txt"
         ).read_text(encoding="utf-8"))
 
-    def test_external_patch_forces_baseline_wmemchr_call(self):
+    def test_external_patch_provides_baseline_scalar_utf16_search(self):
         patch = (
             ROOT / "native" / "patches" / "0001-reproducible-flattened-source-build.patch"
         ).read_text(encoding="utf-8")
         self.assertIn("defined(LINGUUM_MSVC_BASELINE)", patch)
-        self.assertIn("#pragma function(wmemchr)", patch)
+        self.assertIn("findUtf16CodeUnit", patch)
+        self.assertIn("for (size_t index = offset; index < value.size(); ++index)", patch)
+        self.assertIn("return value.find(needle, offset)", patch)
+        self.assertNotIn("#pragma function(wmemchr)", patch)
 
     def test_profile_failures_do_not_mask_the_other_locked_profile(self):
         profiles = windows_profiles.profile_map(windows_profiles.load_lock())
@@ -449,18 +452,18 @@ class EvidenceParsingTests(unittest.TestCase):
             self.assertTrue(evidence["vectorizedStlDisabledForAllCpp"])
             self.assertEqual(4, evidence["compilerIntrinsicsDisabledCommandCount"])
             self.assertTrue(evidence["compilerIntrinsicsDisabledForAllCommands"])
-            self.assertTrue(evidence["factoredVocabularyExternalSearchBoundary"])
+            self.assertTrue(evidence["factoredVocabularyScalarSearchBoundary"])
 
-            missing_external_search_boundary = json.loads(commands.read_text())
-            missing_external_search_boundary[1]["command"] = (
-                missing_external_search_boundary[1]["command"].replace(
+            missing_scalar_search_boundary = json.loads(commands.read_text())
+            missing_scalar_search_boundary[1]["command"] = (
+                missing_scalar_search_boundary[1]["command"].replace(
                     " /DLINGUUM_MSVC_BASELINE=1", ""
                 )
             )
-            commands.write_text(json.dumps(missing_external_search_boundary))
+            commands.write_text(json.dumps(missing_scalar_search_boundary))
             with self.assertRaisesRegex(
                 windows_profiles.WindowsProfileError,
-                "must force the external search boundary",
+                "must enable the scalar search boundary",
             ):
                 windows_profiles.verify_compile_commands("windows-x64-baseline", root)
 
@@ -483,7 +486,7 @@ class EvidenceParsingTests(unittest.TestCase):
                 },
             ]))
             evidence = windows_profiles.verify_compile_commands("windows-x64-baseline", root)
-            self.assertTrue(evidence["factoredVocabularyExternalSearchBoundary"])
+            self.assertTrue(evidence["factoredVocabularyScalarSearchBoundary"])
 
             missing_intrinsic_boundary = json.loads(commands.read_text())
             missing_intrinsic_boundary[0]["command"] = missing_intrinsic_boundary[0][

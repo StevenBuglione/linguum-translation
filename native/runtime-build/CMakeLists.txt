@@ -82,9 +82,9 @@ endif()
 add_subdirectory("${LINGUUM_TRANSLATIONS_SOURCE}/inference" upstream SYSTEM)
 
 if(MSVC AND LINGUUM_INTGEMM_BASELINE_ONLY)
-  # The staged source's baseline-only pragma forces its wide-character search
-  # through the Windows system UCRT. Keep that source outside LTCG so the
-  # external call boundary cannot be regenerated during link-time optimization.
+  # The staged source's baseline-only helper performs its UTF-16 code-unit
+  # search with a scalar loop. Keep that source outside LTCG so the standard
+  # library search cannot be regenerated during link-time optimization.
   set_source_files_properties(
     "${LINGUUM_TRANSLATIONS_SOURCE}/inference/marian-fork/src/data/factored_vocab.cpp"
     TARGET_DIRECTORY marian

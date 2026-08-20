@@ -271,9 +271,21 @@ diff --git a/inference/marian-fork/src/3rd_party/onnxjs/CMakeLists.txt b/inferen
 diff --git a/inference/marian-fork/src/data/factored_vocab.cpp b/inference/marian-fork/src/data/factored_vocab.cpp
 --- a/inference/marian-fork/src/data/factored_vocab.cpp
 +++ b/inference/marian-fork/src/data/factored_vocab.cpp
-@@ -3,0 +4,5 @@
+@@ -598,0 +599,11 @@ std::string FactoredVocab::decodeForDiagnostics(const Words& sentence) const {
++static size_t findUtf16CodeUnit(const std::u16string& value, char16_t needle, size_t offset = 0) {
 +#if defined(_MSC_VER) && defined(LINGUUM_MSVC_BASELINE)
-+#include <wchar.h>
-+#pragma function(wmemchr)
++  for (size_t index = offset; index < value.size(); ++index)
++    if (value[index] == needle)
++      return index;
++  return std::u16string::npos;
++#else
++  return value.find(needle, offset);
 +#endif
++}
 +
+@@ -604 +615 @@ static void unescapeHexEscapes(std::string& utf8Lemma) {
+-  auto pos = lemma.find('\\');
++  auto pos = findUtf16CodeUnit(lemma, u'\\');
+@@ -613 +624 @@ static void unescapeHexEscapes(std::string& utf8Lemma) {
+-    pos = lemma.find('\\', pos+1);
++    pos = findUtf16CodeUnit(lemma, u'\\', pos+1);

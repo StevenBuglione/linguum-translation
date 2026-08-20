@@ -575,7 +575,7 @@ def verify_compile_commands(profile_id: str, build_directory: Path) -> Dict[str,
         compiler_intrinsics_disabled_pattern.search(text) is not None
         for text in command_texts
     )
-    factored_vocab_external_search_boundary = (
+    factored_vocab_scalar_search_boundary = (
         re.search(
             r"(?:^|\s)/Oi-(?:\s|$)",
             factored_vocab_command_texts[0],
@@ -629,10 +629,10 @@ def verify_compile_commands(profile_id: str, build_directory: Path) -> Dict[str,
         )
     if (
         profile_id == "windows-x64-baseline"
-        and not factored_vocab_external_search_boundary
+        and not factored_vocab_scalar_search_boundary
     ):
         raise WindowsProfileError(
-            "baseline factored vocabulary command must force the external search boundary"
+            "baseline factored vocabulary command must enable the scalar search boundary"
         )
     return {
         "compileCommandCount": len(commands),
@@ -645,8 +645,8 @@ def verify_compile_commands(profile_id: str, build_directory: Path) -> Dict[str,
         "hasArchAvx2": has_avx2,
         "hasArchSse2": has_sse2,
         "hasIntgemmAvx2Cap": has_intgemm_avx2_cap,
-        "factoredVocabularyExternalSearchBoundary": (
-            factored_vocab_external_search_boundary
+        "factoredVocabularyScalarSearchBoundary": (
+            factored_vocab_scalar_search_boundary
         ),
         "hasOnnxSgemm": has_onnx_sgemm,
         "hasOnnxSgemmImplementation": True,
