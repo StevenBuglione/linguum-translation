@@ -3,7 +3,7 @@
 ## Result
 
 ```text
-Status: LOCAL IMPLEMENTATION PASS — commit and hosted evidence pending
+Status: WORK PACKAGE PASS — final report checkpoint must pass applicable hosted checks before merge
 Milestone/work package: M1-WP02
 Branch: codex/M1-WP02-minimal-abi-canary
 Date/time UTC: 2026-08-20
@@ -15,11 +15,13 @@ Verifier: Codex
 ```text
 Repository: https://github.com/StevenBuglione/linguum-translation
 Base main commit: a9da9261ca7a1cc593b95ab68e8bc50fbc81a945
-Implementation commit: pending
-Final evidence commit: pending
-Remote branch SHA: pending
-Pull request: pending
-Working tree clean: NO — intentional implementation awaits checkpoint commit
+Initial implementation commit: 1f368f86af375f07d0ae0e4bb5359d7ffdfe78b7
+Final implementation/workflow commit: 29a9d14b22839dea5661785d75bd46ce3cb4d7ea
+Evidence report commit: the report-only commit containing this file in PR 9
+Hosted implementation SHA: 29a9d14b22839dea5661785d75bd46ce3cb4d7ea
+Remote branch matched hosted implementation SHA: YES
+Pull request: https://github.com/StevenBuglione/linguum-translation/pull/9
+Working tree clean after verified implementation push: YES
 Shallow clone: NO
 ```
 
@@ -56,7 +58,7 @@ Shallow clone: NO
 | Command | Exit/result | Environment |
 |---|---:|---|
 | `python3 scripts/native/run_host_canary.py --clean --iterations 100` | 0; run 1, 3/3 CTest tests and 100 lifecycles passed | macOS 26.4 arm64, AppleClang 21.0.0 |
-| `./gradlew clean verificationGate --warning-mode=fail` | 0; 21 tasks, 17 executed | Temurin JDK 21 / Gradle 9.5.0 |
+| `./gradlew clean verificationGate --warning-mode=fail` | 0; 17 tasks (9 executed, 5 from cache, 3 up-to-date) | Temurin JDK 21 / Gradle 9.5.0 |
 | all 17 routed Unix M1 scopes | 0; every scope passed | local macOS arm64 |
 | `python3 scripts/native/run_host_canary.py --clean --iterations 100` | 0; run 2 reproduced the exact dylib hash | clean regenerated build/source stage |
 | `python3 -m unittest discover -s scripts/native/tests -v` | 0; 16 tests passed | Python standard library only |
@@ -93,6 +95,33 @@ Source identity is Firefox `48d55cf7ec80093903e2ef7f58b61a84a22ef716`,
 translations `eea6e5a80aa4ddd86d9cc35ce9a65b79aa3ab96d`, canonical
 source-tree SHA-256 `94e42bbd05187c94dbb8adc04074015faab65d8f648d583b7056e8e4cf59182f`,
 and Bergamot `v0.6.0`.
+
+## Hosted implementation verification
+
+All hosted checks below ran against the final implementation/workflow commit
+`29a9d14b22839dea5661785d75bd46ce3cb4d7ea`. The report-only evidence commit must
+pass every applicable protected check before merge.
+
+| Workflow/run | Hosted result |
+|---|---|
+| Protected PR matrix `32388217160` | PASS; all 15 jobs, including Windows, Linux, macOS, iOS, Android, ABI, consumers, artifacts, licenses, and models |
+| Native safety `32388217207` | PASS in 7m28s; clean macOS 15 arm64 build, 3/3 CTest tests, exact 20 exports, ABI 1.0, macOS 13.0 minimum, and 100 lifecycle iterations |
+| Dependency review `32388217330` | PASS |
+
+The hosted native result independently reported Firefox
+`48d55cf7ec80093903e2ef7f58b61a84a22ef716`, translations
+`eea6e5a80aa4ddd86d9cc35ce9a65b79aa3ab96d`, CMake 4.0.2, Ninja 1.13.2,
+`apple-accelerate-arm64`, and dylib SHA-256
+`e2c0d33072bdf37a7ede604bee64f92a8db2c2045ad70899f2b7ca967ae07b3e`.
+The hosted binary hash is recorded separately from the repeatable local binary hash
+because it was produced by the pinned GitHub runner image and compiler environment.
+
+An exact Linux x64 diagnostic build in an Ubuntu 22.04 container compiled and linked
+the adapter and passed both ABI-header consumers, then intentionally exposed the
+pinned Marian configuration's runtime BLAS requirement at the first floating-point
+GEMM. Linux runtime feasibility is WP05, not WP02. The standalone WP02 acceptance
+gate therefore runs on the locked macOS arm64 target it claims; the protected Linux
+scope remains enabled and passed in the PR matrix.
 
 ## Security, privacy, licensing, and compatibility
 
@@ -143,7 +172,8 @@ downloads. Model runtime diagnostics never include the source or translated text
 ## Final decision
 
 ```text
-WORK PACKAGE GATE: PENDING COMMIT AND HOSTED CHECKS
-SAFE TO START NEXT WORK PACKAGE: NO
+WORK PACKAGE GATE: PASS
+SAFE TO MERGE PR 9: YES, AFTER THE REPORT-ONLY SHA PASSES ALL APPLICABLE HOSTED CHECKS
+SAFE TO START NEXT WORK PACKAGE: YES, AFTER PR 9 MERGES
 SAFE TO ADVANCE MILESTONE: NOT A MILESTONE BOUNDARY
 ```

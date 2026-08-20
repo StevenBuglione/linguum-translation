@@ -19,7 +19,17 @@
 - actionlint, YAML/JSON parsing, shell syntax, source integrity, and helper safety tests passed.
 
 The standalone native-safety workflow independently rebuilds and runs the same
-100-cycle canary on a macOS arm64 GitHub-hosted runner.
+100-cycle canary on a macOS arm64 GitHub-hosted runner. Hosted implementation
+checkpoint `29a9d14b22839dea5661785d75bd46ce3cb4d7ea` passed all 15 protected PR
+jobs, dependency review, and the dedicated 7m28s native build/canary run
+`32388217207` (3/3 CTest tests, ABI 1.0, exact 20 exports, macOS 13.0 minimum,
+and all 100 lifecycles).
+
+An Ubuntu 22.04 x64 diagnostic build also compiled and linked the adapter and both
+ABI consumers, then reached the pinned Marian configuration's expected runtime BLAS
+requirement. Linux runtime feasibility remains WP05; the WP02 standalone acceptance
+gate is deliberately pinned to its claimed macOS arm64 target, while the protected
+Linux PR scope remains enabled and passing.
 
 ## Boundaries
 
