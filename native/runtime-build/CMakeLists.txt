@@ -11,6 +11,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 set(LINGUUM_TRANSLATIONS_SOURCE "" CACHE PATH "Staged Firefox-pinned translations source")
 set(LINGUUM_TRANSLATIONS_REVISION "eea6e5a80aa4ddd86d9cc35ce9a65b79aa3ab96d" CACHE STRING "Pinned translations revision")
@@ -19,6 +20,31 @@ set(LINGUUM_LIBRARY_VERSION "0.0.0-SNAPSHOT" CACHE STRING "Linguum library versi
 set(LINGUUM_ACCELERATION_PROFILE "host-unknown" CACHE STRING "Resolved native acceleration profile")
 set(LINGUUM_CANARY_MODEL_DIR "" CACHE PATH "Directory containing the pinned es-en canary model")
 set(LINGUUM_CANARY_ITERATIONS "100" CACHE STRING "Full canary lifecycle repetitions")
+set(LINGUUM_INTGEMM_BASELINE_ONLY OFF CACHE BOOL "Exclude AVX-family intgemm kernels")
+set(LINGUUM_INTGEMM_AVX2_ONLY OFF CACHE BOOL "Exclude intgemm kernels above AVX2")
+
+if(LINGUUM_INTGEMM_BASELINE_ONLY AND NOT MSVC)
+  message(FATAL_ERROR "LINGUUM_INTGEMM_BASELINE_ONLY is currently proven only with MSVC")
+endif()
+if(LINGUUM_INTGEMM_AVX2_ONLY AND NOT MSVC)
+  message(FATAL_ERROR "LINGUUM_INTGEMM_AVX2_ONLY is currently proven only with MSVC")
+endif()
+if(LINGUUM_INTGEMM_BASELINE_ONLY AND LINGUUM_INTGEMM_AVX2_ONLY)
+  message(FATAL_ERROR "intgemm baseline-only and AVX2-only modes are mutually exclusive")
+endif()
+if(MSVC AND LINGUUM_INTGEMM_BASELINE_ONLY)
+  # The static MSVC STL contains runtime-dispatched AVX2 vector algorithms.
+  # Keep that object out of the non-AVX candidate by disabling vectorized STL
+  # call sites across every C++ target in this build tree. /O2 also enables
+  # intrinsic substitution, so explicitly disable it before any upstream
+  # targets are created; otherwise MSVC can synthesize AVX2 wmemchr code even
+  # when /arch:SSE2 is selected.
+  add_compile_definitions(
+    _USE_STD_VECTOR_ALGORITHMS=0
+    LINGUUM_MSVC_BASELINE=1
+  )
+  add_compile_options(/Oi-)
+endif()
 
 if(NOT IS_DIRECTORY "${LINGUUM_TRANSLATIONS_SOURCE}/inference")
   message(FATAL_ERROR "LINGUUM_TRANSLATIONS_SOURCE must name a staged translations checkout")
@@ -43,20 +69,66 @@ set(COMPILE_CUDA OFF CACHE BOOL "Disable CUDA" FORCE)
 set(COMPILE_TESTS OFF CACHE BOOL "Disable upstream integration tests" FORCE)
 set(COMPILE_UNIT_TESTS OFF CACHE BOOL "Disable upstream unit tests" FORCE)
 set(COMPILE_PYTHON OFF CACHE BOOL "Disable upstream Python binding" FORCE)
+set(USE_DOXYGEN OFF CACHE BOOL "Disable host-dependent upstream documentation" FORCE)
 set(GIT_SUBMODULE OFF CACHE BOOL "Never mutate flattened source submodules" FORCE)
 
 if(CMAKE_OSX_ARCHITECTURES MATCHES "(^|;)arm64(;|$)" OR
    CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64|ARM64)$")
-  # Pinned Marian applies these only inside its own directory, while the
-  # sibling Bergamot target includes Marian's ARM SIMD headers as well.
-  add_compile_definitions(ARM FMA SSE)
+  set(LINGUUM_ARM_NATIVE ON)
+else()
+  set(LINGUUM_ARM_NATIVE OFF)
 endif()
 
-add_subdirectory("${LINGUUM_TRANSLATIONS_SOURCE}/inference" upstream)
+add_subdirectory("${LINGUUM_TRANSLATIONS_SOURCE}/inference" upstream SYSTEM)
+
+if(MSVC AND LINGUUM_INTGEMM_BASELINE_ONLY)
+  # The staged source's baseline-only helper performs its UTF-16 code-unit
+  # search with a scalar loop. Keep that source outside LTCG so the standard
+  # library search cannot be regenerated during link-time optimization.
+  set_source_files_properties(
+    "${LINGUUM_TRANSLATIONS_SOURCE}/inference/marian-fork/src/data/factored_vocab.cpp"
+    TARGET_DIRECTORY marian
+    PROPERTIES COMPILE_OPTIONS "/Oi-;/GL-"
+  )
+  # Locked MSVC emitted one VEX-encoded store while optimizing the inline
+  # Dense graph-construction function in this translation unit. This is not a
+  # tensor compute kernel, so keep only this proven source unoptimized and
+  # outside LTCG for the zero-AVX candidate.
+  set_source_files_properties(
+    "${LINGUUM_TRANSLATIONS_SOURCE}/inference/marian-fork/src/graph/expression_operators.cpp"
+    TARGET_DIRECTORY marian
+    PROPERTIES COMPILE_OPTIONS "/Od;/Oi-;/GL-"
+  )
+endif()
+
+if(LINGUUM_ARM_NATIVE)
+  # Pinned Marian sets these on its own target. Its sibling Bergamot target
+  # also includes Marian's ARM SIMD headers, but unrelated dependencies such
+  # as Eigen must not inherit the SSE preprocessor macro.
+  target_compile_definitions(bergamot-translator-source PRIVATE ARM FMA SSE)
+endif()
 
 add_library(linguum_translation SHARED
   ../mozilla-adapter/src/linguum_translation.cpp
 )
+if(MSVC AND LINGUUM_INTGEMM_BASELINE_ONLY)
+  # Keep the VC runtime static while resolving UCRT math/string functions
+  # through the Windows 10+ system UCRT. The small scalar object supplies the
+  # memory and STL ABI entry points that otherwise pull AVX-dispatched static
+  # VC/STL archive members into this DLL.
+  add_library(linguum_baseline_runtime_shims OBJECT
+    baseline_runtime_shims.c
+  )
+  target_compile_options(linguum_baseline_runtime_shims PRIVATE
+    /Od /Oi- /GL- /W4 /WX
+  )
+  target_sources(linguum_translation PRIVATE
+    $<TARGET_OBJECTS:linguum_baseline_runtime_shims>
+  )
+endif()
+if(LINGUUM_ARM_NATIVE)
+  target_compile_definitions(linguum_translation PRIVATE ARM FMA SSE)
+endif()
 target_compile_definitions(linguum_translation PRIVATE
   LINGUUM_TRANSLATION_BUILD
   LINGUUM_LIBRARY_VERSION="${LINGUUM_LIBRARY_VERSION}"
@@ -68,11 +140,26 @@ target_compile_options(linguum_translation PRIVATE
   $<$<CXX_COMPILER_ID:AppleClang,Clang,GNU>:-Wall;-Wextra;-Wpedantic;-Werror>
   $<$<CXX_COMPILER_ID:MSVC>:/W4;/WX>
 )
+if(MSVC AND LINGUUM_INTGEMM_BASELINE_ONLY)
+  # Keep address-to-symbol and archive-member provenance available to the
+  # complete-DLL ISA audit. The map is build evidence and is not packaged.
+  target_link_options(linguum_translation PRIVATE
+    "/MAP:${CMAKE_CURRENT_BINARY_DIR}/linguum_translation.map"
+    /MAPINFO:EXPORTS
+    /NODEFAULTLIB:libucrt.lib
+    /NODEFAULTLIB:msvcrt.lib
+  )
+endif()
 target_include_directories(linguum_translation
   PUBLIC ../abi/include
-  PRIVATE "${LINGUUM_TRANSLATIONS_SOURCE}/inference/src"
+)
+target_include_directories(linguum_translation SYSTEM PRIVATE
+  "${LINGUUM_TRANSLATIONS_SOURCE}/inference/src"
 )
 target_link_libraries(linguum_translation PRIVATE bergamot-translator-source)
+if(MSVC AND LINGUUM_INTGEMM_BASELINE_ONLY)
+  target_link_libraries(linguum_translation PRIVATE ucrt)
+endif()
 set_target_properties(linguum_translation PROPERTIES
   C_VISIBILITY_PRESET hidden
   CXX_VISIBILITY_PRESET hidden
@@ -91,6 +178,15 @@ elseif(UNIX)
 endif()
 
 if(BUILD_TESTING)
+  if(MSVC AND LINGUUM_INTGEMM_BASELINE_ONLY)
+    add_executable(linguum_baseline_runtime_shims_test
+      ../../testing/native/baseline_runtime_shims_test.c
+      $<TARGET_OBJECTS:linguum_baseline_runtime_shims>
+    )
+    target_compile_options(linguum_baseline_runtime_shims_test PRIVATE /W4 /WX)
+    add_test(NAME baseline-runtime-shims COMMAND linguum_baseline_runtime_shims_test)
+  endif()
+
   add_executable(linguum_translation_abi_header_c ../../testing/native/abi_header_c.c)
   target_link_libraries(linguum_translation_abi_header_c PRIVATE linguum_translation)
   target_compile_options(linguum_translation_abi_header_c PRIVATE

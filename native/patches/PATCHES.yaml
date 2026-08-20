@@ -19,15 +19,25 @@
     "ios-simulator-x64"
   ],
   "affectedPaths": [
+    "inference/3rd_party/ssplit-cpp/CMakeLists.txt",
     "inference/3rd_party/ssplit-cpp/cmake/FindPCRE2.cmake",
     "inference/cmake/GetVersionFromFile.cmake",
     "inference/marian-fork/cmake/GetVersionFromFile.cmake",
     "inference/marian-fork/cmake/TargetArch.cmake",
+    "inference/marian-fork/CMakeLists.txt",
     "inference/marian-fork/src/CMakeLists.txt",
+    "inference/marian-fork/src/data/factored_vocab.cpp",
+    "inference/marian-fork/src/3rd_party/intgemm/CMakeLists.txt",
+    "inference/marian-fork/src/3rd_party/intgemm/intgemm/intgemm.cc",
+    "inference/marian-fork/src/3rd_party/intgemm/intgemm/intgemm.h",
     "inference/marian-fork/src/3rd_party/ExceptionWithCallStack.cpp",
+    "inference/marian-fork/src/3rd_party/onnxjs/CMakeLists.txt",
     "inference/marian-fork/src/3rd_party/sentencepiece/src/unicode_script.h",
     "inference/marian-fork/src/3rd_party/simd_utils/simd_utils.h",
-    "inference/marian-fork/src/3rd_party/zlib/zutil.h"
+    "inference/marian-fork/src/3rd_party/zlib/zutil.h",
+    "inference/marian-fork/src/tensors/cpu/prod.cpp",
+    "inference/src/translator/service.cpp",
+    "inference/src/translator/service.h"
   ],
   "upstreamIssue": null,
   "introducedIn": "0.1.0-M1",
@@ -35,5 +45,5 @@
   "license": "MPL-2.0",
   "approvedBy": "Steven Buglione",
   "approvalReference": "Repository-owner standing delivery and patch authorization in Codex task 01a01dba-bb5f-7272-b179-7a6e6db206f3 on 2026-08-20",
-  "patchSha256": "39fdeee61d7b327adc3b54e5d4ec1dc0e4180acb59a2420e97859f8930044b39"
+  "patchSha256": "823bf36a4c94acce2fcf398cccf6342675587828e3639681f8f0d5f2c1e2ce9d"
 }

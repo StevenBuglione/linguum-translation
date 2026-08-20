@@ -1,3 +1,10 @@
+diff --git a/inference/3rd_party/ssplit-cpp/CMakeLists.txt b/inference/3rd_party/ssplit-cpp/CMakeLists.txt
+--- a/inference/3rd_party/ssplit-cpp/CMakeLists.txt
++++ b/inference/3rd_party/ssplit-cpp/CMakeLists.txt
+@@ -51,0 +52,3 @@ if(SSPLIT_USE_INTERNAL_PCRE2)
++  if(MSVC)
++    target_compile_definitions(ssplit PRIVATE PCRE2_STATIC)
++  endif()
 diff --git a/inference/3rd_party/ssplit-cpp/cmake/FindPCRE2.cmake b/inference/3rd_party/ssplit-cpp/cmake/FindPCRE2.cmake
 --- a/inference/3rd_party/ssplit-cpp/cmake/FindPCRE2.cmake
 +++ b/inference/3rd_party/ssplit-cpp/cmake/FindPCRE2.cmake
@@ -8,7 +15,16 @@ diff --git a/inference/3rd_party/ssplit-cpp/cmake/FindPCRE2.cmake b/inference/3r
 +    -DPCRE2_BUILD_PCRE2GREP=OFF
 +    -DPCRE2_BUILD_TESTS=OFF
 +    -DPCRE2_STATIC_PIC=ON
-@@ -75,0 +82,2 @@ if(SSPLIT_USE_INTERNAL_PCRE2)
+@@ -67,2 +73,7 @@ if(SSPLIT_USE_INTERNAL_PCRE2)
+   # set include dirs and libraries for PCRE2
+-  set(PCRE2_LIBRARIES ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}pcre2-8${CMAKE_STATIC_LIBRARY_SUFFIX})
++  if(MSVC)
++    set(PCRE2_STATIC_LIBRARY_NAME pcre2-8-static)
++  else()
++    set(PCRE2_STATIC_LIBRARY_NAME pcre2-8)
++  endif()
++  set(PCRE2_LIBRARIES ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${PCRE2_STATIC_LIBRARY_NAME}${CMAKE_STATIC_LIBRARY_SUFFIX})
+@@ -75,0 +87,2 @@ if(SSPLIT_USE_INTERNAL_PCRE2)
 +    URL_HASH SHA256=0781bd2536ef5279b1943471fdcdbd9961a2845e1d2c9ad849b9bd98ba1a9bd4
 +    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 diff --git a/inference/cmake/GetVersionFromFile.cmake b/inference/cmake/GetVersionFromFile.cmake
@@ -121,3 +137,155 @@ diff --git a/inference/marian-fork/src/CMakeLists.txt b/inference/marian-fork/sr
 +endif()
 +file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/common/git_revision.h
 +  "#define GIT_REVISION \"${LINGUUM_TRANSLATIONS_REVISION}\"\n")
+diff --git a/inference/marian-fork/src/3rd_party/intgemm/CMakeLists.txt b/inference/marian-fork/src/3rd_party/intgemm/CMakeLists.txt
+--- a/inference/marian-fork/src/3rd_party/intgemm/CMakeLists.txt
++++ b/inference/marian-fork/src/3rd_party/intgemm/CMakeLists.txt
+@@ -32,14 +32,29 @@ endif()
+-# Check if compiler supports AVX2 (this should only catch emscripten)
+-try_compile(INTGEMM_COMPILER_SUPPORTS_AVX2
+-  ${CMAKE_CURRENT_BINARY_DIR}/compile_tests
+-  ${CMAKE_CURRENT_SOURCE_DIR}/compile_test/avx2.cc)
+-
+-# Check if compiler supports AVX512BW
+-try_compile(INTGEMM_COMPILER_SUPPORTS_AVX512BW
+-  ${CMAKE_CURRENT_BINARY_DIR}/compile_tests
+-  ${CMAKE_CURRENT_SOURCE_DIR}/compile_test/avx512bw.cc)
+-
+-# Check if the compiler supports AVX512VNNI
+-try_compile(INTGEMM_COMPILER_SUPPORTS_AVX512VNNI
+-  ${CMAKE_CURRENT_BINARY_DIR}/compile_tests
+-  ${CMAKE_CURRENT_SOURCE_DIR}/compile_test/avx512vnni.cc)
++if(LINGUUM_INTGEMM_BASELINE_ONLY)
++  # MSVC has no per-function target attributes. A baseline build must exclude
++  # unsupported kernels rather than compiling them and relying on dispatch.
++  set(INTGEMM_COMPILER_SUPPORTS_AVX2 FALSE)
++  set(INTGEMM_COMPILER_SUPPORTS_AVX512BW FALSE)
++  set(INTGEMM_COMPILER_SUPPORTS_AVX512VNNI FALSE)
++elseif(LINGUUM_INTGEMM_AVX2_ONLY)
++  # Keep the complete implementation set required by the pinned headers, but
++  # cap runtime dispatch below after configure-file generation.
++  try_compile(INTGEMM_COMPILER_SUPPORTS_AVX2
++    ${CMAKE_CURRENT_BINARY_DIR}/compile_tests
++    ${CMAKE_CURRENT_SOURCE_DIR}/compile_test/avx2.cc)
++  try_compile(INTGEMM_COMPILER_SUPPORTS_AVX512BW
++    ${CMAKE_CURRENT_BINARY_DIR}/compile_tests
++    ${CMAKE_CURRENT_SOURCE_DIR}/compile_test/avx512bw.cc)
++  try_compile(INTGEMM_COMPILER_SUPPORTS_AVX512VNNI
++    ${CMAKE_CURRENT_BINARY_DIR}/compile_tests
++    ${CMAKE_CURRENT_SOURCE_DIR}/compile_test/avx512vnni.cc)
++else()
++  try_compile(INTGEMM_COMPILER_SUPPORTS_AVX2
++    ${CMAKE_CURRENT_BINARY_DIR}/compile_tests
++    ${CMAKE_CURRENT_SOURCE_DIR}/compile_test/avx2.cc)
++  try_compile(INTGEMM_COMPILER_SUPPORTS_AVX512BW
++    ${CMAKE_CURRENT_BINARY_DIR}/compile_tests
++    ${CMAKE_CURRENT_SOURCE_DIR}/compile_test/avx512bw.cc)
++  try_compile(INTGEMM_COMPILER_SUPPORTS_AVX512VNNI
++    ${CMAKE_CURRENT_BINARY_DIR}/compile_tests
++    ${CMAKE_CURRENT_SOURCE_DIR}/compile_test/avx512vnni.cc)
++endif()
+@@ -62 +77,4 @@ endif()
+ add_library(intgemm STATIC intgemm/intgemm.cc)
++if(LINGUUM_INTGEMM_AVX2_ONLY)
++  target_compile_definitions(intgemm PRIVATE LINGUUM_INTGEMM_MAX_AVX2)
++endif()
+diff --git a/inference/marian-fork/src/3rd_party/intgemm/intgemm/intgemm.h b/inference/marian-fork/src/3rd_party/intgemm/intgemm/intgemm.h
+--- a/inference/marian-fork/src/3rd_party/intgemm/intgemm/intgemm.h
++++ b/inference/marian-fork/src/3rd_party/intgemm/intgemm/intgemm.h
+@@ -57,0 +58 @@ struct Unsupported_16bit {
++  using Integer = int16_t;
+@@ -80,0 +82 @@ struct Unsupported_8bit {
++  using Integer = int8_t;
+diff --git a/inference/marian-fork/src/3rd_party/intgemm/intgemm/intgemm.cc b/inference/marian-fork/src/3rd_party/intgemm/intgemm/intgemm.cc
+--- a/inference/marian-fork/src/3rd_party/intgemm/intgemm/intgemm.cc
++++ b/inference/marian-fork/src/3rd_party/intgemm/intgemm/intgemm.cc
+@@ -28 +28 @@ CPUType RealCPUID() {
+-#  ifdef INTGEMM_COMPILER_SUPPORTS_AVX512VNNI
++#  if defined(INTGEMM_COMPILER_SUPPORTS_AVX512VNNI) && !defined(LINGUUM_INTGEMM_MAX_AVX2)
+@@ -31 +31 @@ CPUType RealCPUID() {
+-#  ifdef INTGEMM_COMPILER_SUPPORTS_AVX512BW
++#  if defined(INTGEMM_COMPILER_SUPPORTS_AVX512BW) && !defined(LINGUUM_INTGEMM_MAX_AVX2)
+@@ -44,0 +45 @@ CPUType RealCPUID() {
++  (void)ebx;
+@@ -67 +68 @@ CPUType RealCPUID() {
+-#  ifdef INTGEMM_COMPILER_SUPPORTS_AVX512VNNI
++#  if defined(INTGEMM_COMPILER_SUPPORTS_AVX512VNNI) && !defined(LINGUUM_INTGEMM_MAX_AVX2)
+@@ -70 +71 @@ CPUType RealCPUID() {
+-#  ifdef INTGEMM_COMPILER_SUPPORTS_AVX512BW
++#  if defined(INTGEMM_COMPILER_SUPPORTS_AVX512BW) && !defined(LINGUUM_INTGEMM_MAX_AVX2)
+diff --git a/inference/src/translator/service.h b/inference/src/translator/service.h
+--- a/inference/src/translator/service.h
++++ b/inference/src/translator/service.h
+@@ -3,0 +4,2 @@
++#include <exception>
++#include <functional>
+@@ -114,0 +117,2 @@ class AsyncService {
++    /// Receives failures from worker threads instead of terminating the embedding process.
++    std::function<void(std::exception_ptr)> workerExceptionHandler;
+diff --git a/inference/src/translator/service.cpp b/inference/src/translator/service.cpp
+--- a/inference/src/translator/service.cpp
++++ b/inference/src/translator/service.cpp
+@@ -147 +147,9 @@ AsyncService::AsyncService(const AsyncService::Config &config)
+-        translationModel->translateBatch(cpuId, batch);
++        try {
++          translationModel->translateBatch(cpuId, batch);
++        } catch (...) {
++          if (config_.workerExceptionHandler) {
++            config_.workerExceptionHandler(std::current_exception());
++          } else {
++            throw;
++          }
++        }
+diff --git a/inference/marian-fork/CMakeLists.txt b/inference/marian-fork/CMakeLists.txt
+--- a/inference/marian-fork/CMakeLists.txt
++++ b/inference/marian-fork/CMakeLists.txt
+@@ -63,2 +63,6 @@ CMAKE_DEPENDENT_OPTION(USE_THREADS "Compile with multi-threading support" OFF
+-CMAKE_DEPENDENT_OPTION(USE_ONNX_SGEMM "Compile with wasm compatible blas" ON
+-                       "USE_WASM_COMPATIBLE_SOURCE" OFF)
++set(_USE_ONNX_SGEMM_DEFAULT OFF)
++if(USE_WASM_COMPATIBLE_SOURCE)
++  set(_USE_ONNX_SGEMM_DEFAULT ON)
++endif()
++option(USE_ONNX_SGEMM "Compile with wasm compatible blas"
++       ${_USE_ONNX_SGEMM_DEFAULT})
+diff --git a/inference/marian-fork/src/tensors/cpu/prod.cpp b/inference/marian-fork/src/tensors/cpu/prod.cpp
+--- a/inference/marian-fork/src/tensors/cpu/prod.cpp
++++ b/inference/marian-fork/src/tensors/cpu/prod.cpp
+@@ -33 +33 @@ void Prod(marian::Tensor C,
+-#if BLAS_FOUND || USE_RUY_SGEMM
++#if BLAS_FOUND || USE_ONNX_SGEMM || USE_RUY_SGEMM
+diff --git a/inference/marian-fork/src/3rd_party/onnxjs/CMakeLists.txt b/inference/marian-fork/src/3rd_party/onnxjs/CMakeLists.txt
+--- a/inference/marian-fork/src/3rd_party/onnxjs/CMakeLists.txt
++++ b/inference/marian-fork/src/3rd_party/onnxjs/CMakeLists.txt
+@@ -7,0 +8,6 @@ project(onnx CXX C)
++
++# Marian's ARM SIMD macro conflicts with Eigen::Architecture::SSE. Keep the
++# directory-wide Marian definition out of this isolated ONNX/Eigen subtree.
++if(CMAKE_TARGET_ARCHITECTURE_CODE MATCHES "arm")
++  remove_definitions(-DSSE)
++endif()
+@@ -18,2 +24,3 @@ if(ONNXJS_SGEMM)
+   # Eigen is a dependency for enabling sgemm support
++  set(BUILD_TESTING OFF)
+   add_subdirectory(deps/eigen)
+diff --git a/inference/marian-fork/src/data/factored_vocab.cpp b/inference/marian-fork/src/data/factored_vocab.cpp
+--- a/inference/marian-fork/src/data/factored_vocab.cpp
++++ b/inference/marian-fork/src/data/factored_vocab.cpp
+@@ -598,0 +599,11 @@ std::string FactoredVocab::decodeForDiagnostics(const Words& sentence) const {
++static size_t findUtf16CodeUnit(const std::u16string& value, char16_t needle, size_t offset = 0) {
++#if defined(_MSC_VER) && defined(LINGUUM_MSVC_BASELINE)
++  for (size_t index = offset; index < value.size(); ++index)
++    if (value[index] == needle)
++      return index;
++  return std::u16string::npos;
++#else
++  return value.find(needle, offset);
++#endif
++}
++
+@@ -604 +615 @@ static void unescapeHexEscapes(std::string& utf8Lemma) {
+-  auto pos = lemma.find('\\');
++  auto pos = findUtf16CodeUnit(lemma, u'\\');
+@@ -613 +624 @@ static void unescapeHexEscapes(std::string& utf8Lemma) {
+-    pos = lemma.find('\\', pos+1);
++    pos = findUtf16CodeUnit(lemma, u'\\', pos+1);

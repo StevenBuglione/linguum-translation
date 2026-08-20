@@ -47,6 +47,7 @@ case "$scope" in
     python3 -m json.tool native/patches/PATCHES.yaml >/dev/null
     python3 -m json.tool testing/native/fixtures/es-en-v2.0.json >/dev/null
     python3 -m json.tool toolchains/native-tools.lock.json >/dev/null
+    python3 -m json.tool toolchains/windows-native-profiles.lock.json >/dev/null
     python3 scripts/upstream/snapshot.py verify
     ./gradlew architectureCheck --warning-mode=fail
     ;;

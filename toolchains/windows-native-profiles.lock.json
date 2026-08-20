@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "runner": "windows-2025",
+  "toolchain": {
+    "visualStudio": "2026",
+    "visualStudioVersions": [
+      "18.8.12023.21",
+      "18.9.12112.369"
+    ],
+    "msvcToolset": "14.44.35207",
+    "compiler": "19.44.35228",
+    "windowsSdk": "10.0.26100.0",
+    "cmake": "4.0.2",
+    "ninja": "1.13.2"
+  },
+  "profiles": [
+    {
+      "id": "windows-x64-avx2",
+      "buildArch": "native",
+      "accelerationProfile": "fbgemm-intgemm-avx2",
+      "fbgemm": true,
+      "onnxSgemm": true,
+      "intgemmBaselineOnly": false,
+      "intgemmMaximumCpu": "AVX2",
+      "requiredCpuFeatures": [
+        "AVX2"
+      ],
+      "prohibitedInstructionFamilies": []
+    },
+    {
+      "id": "windows-x64-baseline",
+      "buildArch": "core2",
+      "accelerationProfile": "intgemm-ssse3-onnx-sgemm-baseline",
+      "fbgemm": false,
+      "onnxSgemm": true,
+      "intgemmBaselineOnly": true,
+      "intgemmMaximumCpu": "SSSE3",
+      "requiredCpuFeatures": [
+        "SSSE3"
+      ],
+      "prohibitedInstructionFamilies": [
+        "AVX",
+        "AVX2",
+        "AVX-512"
+      ]
+    }
+  ]
+}
