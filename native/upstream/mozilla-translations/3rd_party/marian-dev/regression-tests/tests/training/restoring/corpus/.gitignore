@@ -1,0 +1,6 @@
+corpus*
+corpus*.expected
+sqlite*
+sqlite*.expected
+finetune*
+finetune*.expected

@@ -1,0 +1,159 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+---
+
+loader: taskgraph.loader.transform:loader
+
+transforms:
+    - translations_taskgraph.transforms.continuation
+    - translations_taskgraph.transforms.training_continuation:evaluate_stage
+    - translations_taskgraph.transforms.from_datasets:per_dataset
+    - translations_taskgraph.transforms.worker_selection
+    - taskgraph.transforms.from_deps
+    - taskgraph.transforms.task_context
+    - taskgraph.transforms.run:transforms
+    - translations_taskgraph.transforms.cached_tasks:transforms
+    - taskgraph.transforms.task:transforms
+
+kind-dependencies:
+    - dataset
+    - train-teacher-model
+    - toolchain
+
+tasks:
+    "{provider}-{dataset_sanitized}-{src_locale}-{trg_locale}":
+        description: >
+            Evaluate the teacher ensemble using a devset. This generates a
+            COMET, bleu, and chrF score. Note that the teacher ensemble is only
+            relevant when more than one teacher model is used. Multiple teachers
+            very slightly improve teacher quality for about double the expense in
+            training. Marian is able to beam search across the probabilities of
+            multiple models.
+        attributes:
+            stage: evaluate-teacher-ensemble
+            dataset-category: test
+            cache:
+                type: evaluate-teacher-ensemble
+                resources:
+                    - pipeline/eval/eval.py
+        dataset-config:
+            category: test
+            substitution-fields:
+                - description
+                - name
+                - dependencies
+                - fetches
+                - worker.env
+                - task-context
+                - run.command
+        task-context:
+            substitution-fields:
+                - fetches
+                - run.command
+                - worker.env
+            from-parameters:
+                best_model: training_config.experiment.best-model
+                src_locale: training_config.experiment.src
+                trg_locale: training_config.experiment.trg
+                wandb_publication: training_config.wandb-publication
+                owner: owner
+
+        worker-type: b-gpu
+        worker:
+            chain-of-trust: true
+            docker-image: {"in-tree": "train"}
+            volumes:
+                - /builds/worker/artifacts
+            artifacts:
+                - name: public/build
+                  path: /builds/worker/artifacts
+                  type: volume
+            max-run-time: 2592000
+            env:
+                # This is a separate environment variable so tests can override it.
+                MARIAN: $MOZ_FETCHES_DIR
+
+                # Weight & Biases trigger
+                WANDB_PUBLICATION: "{wandb_publication}"
+                WANDB_AUTHOR: "{owner}"
+
+                # Weight & Biases publication token is stored in that secret
+                TASKCLUSTER_SECRET: project/translations/level-1/weights-and-biases
+
+            # Taskcluster proxy is required to read secrets
+            taskcluster-proxy: true
+            # 128 happens when cloning this repository fails
+            # 75 - EX_TEMPFAIL, used for when the GPUs aren't available on the machine.
+            retry-exit-status: [128, 75]
+
+        # The task needs to be able to read that secret to publish on Weight & Biases
+        scopes:
+          - secrets:get:project/translations/level-1/weights-and-biases
+
+        # Don't run unless explicitly scheduled
+        run-on-tasks-for: []
+
+        run:
+            using: run-task
+            use-caches: [checkout, pip]
+            # The two sed commands here are the unfortunate result of us consuming
+            # a marian config that was produced by an earlier step. These configs
+            # have hardcoded absolute paths to the models they were trained on,
+            # and end invalid when used on a different machine. In theory it is
+            # possible to adjust them at generation time to use relative paths,
+            # but in practice we have not been able to make this work.
+            command:
+                - bash
+                - -c
+                - >-
+                    export PATH=$PATH:~/.local/bin &&
+                    export PYTHONPATH=$PYTHONPATH:$VCS_PATH &&
+                    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$MOZ_FETCHES_DIR/cuda-toolkit/lib64" &&
+                    pip install --upgrade pip &&
+                    pip install -r $VCS_PATH/pipeline/eval/requirements/eval.txt &&
+                    pip install $VCS_PATH/tracking &&
+                    sed -i -e "s,- .*fetches,- $MOZ_FETCHES_DIR," $TASK_WORKDIR/fetches/*.yml &&
+                    sed -i -e "s,- .*artifacts,- $MOZ_FETCHES_DIR," $TASK_WORKDIR/fetches/*.yml &&
+                    $VCS_PATH/pipeline/eval/eval.py
+                    --src              {src_locale}
+                    --trg              {trg_locale}
+                    --dataset_prefix   "$MOZ_FETCHES_DIR/{dataset_sanitized}"
+                    --marian_config    "$MOZ_FETCHES_DIR/final.model.npz.best-{best_model}.npz.decoder.yml"
+                    --models           "$MOZ_FETCHES_DIR/model*/*.npz"
+                    --artifacts_prefix "$TASK_WORKDIR/artifacts/{dataset_sanitized}"
+                    --marian           "$MARIAN"
+                    --workspace        "$WORKSPACE"
+                    --gpus             "$GPUS"
+                    --model_variant    gpu
+
+        # Run after the teacher ensemble models are trained.
+        from-deps:
+            group-by: all
+            set-name: null
+            unique-kinds: false
+            kinds:
+                - train-teacher-model
+            fetches:
+                train-teacher-model:
+                    - artifact: final.model.npz.best-{best_model}.npz
+                      dest: model{this_chunk}
+                      extract: false
+                    - artifact: final.model.npz.best-chrf.npz.decoder.yml
+                    - artifact: vocab.{src_locale}.spm
+                      extract: false
+                    - artifact: vocab.{trg_locale}.spm
+                      extract: false
+
+        dependencies:
+            dataset: dataset-{provider}-{dataset_sanitized}-{src_locale}-{trg_locale}
+
+        fetches:
+            dataset:
+                - artifact: "{dataset_sanitized}.{src_locale}.zst"
+                  extract: false
+                - artifact: "{dataset_sanitized}.{trg_locale}.zst"
+                  extract: false
+            toolchain:
+                - marian
+                - cuda-toolkit

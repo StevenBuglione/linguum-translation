@@ -27,13 +27,17 @@ Write-Host "Running checkpoint gate: $GateCommand"
 & powershell -NoProfile -Command $GateCommand
 if ($LASTEXITCODE -ne 0) { throw "Checkpoint gate failed" }
 
-& git diff --check
+& git diff --check -- . ":(exclude)native/upstream/mozilla-translations/**"
 if ($LASTEXITCODE -ne 0) { throw "Working-tree diff check failed" }
 & git status --short
 
 & git add -- $Paths
 if ($LASTEXITCODE -ne 0) { throw "git add failed" }
-& git diff --cached --check
+if (Test-Path "native/upstream/mozilla-translations") {
+    & python .\scripts\upstream\snapshot.py stage
+    if ($LASTEXITCODE -ne 0) { throw "byte-exact upstream staging failed" }
+}
+& git diff --cached --check -- . ":(exclude)native/upstream/mozilla-translations/**"
 if ($LASTEXITCODE -ne 0) { throw "Staged diff check failed" }
 
 & git diff --cached --quiet

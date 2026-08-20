@@ -15,3 +15,7 @@
 *.ps1 text eol=crlf
 *.zip binary
 *.jar binary
+
+# The Firefox-pinned upstream snapshot is byte-for-byte immutable. Its own mixed
+# line endings and recursive source files must not be normalized by this repository.
+native/upstream/mozilla-translations/** -text

@@ -1,0 +1,111 @@
+.settings {
+  border-radius: 3px;
+  margin: 10px;
+  padding: 10px;
+  border: 1px solid #aaa;
+}
+
+.attachments {
+  display: none;
+  position: absolute;
+  background: #fff;
+  padding: 10px;
+  border-radius: 7px;
+  overflow: hidden;
+  box-shadow: 2px 2px 10px #adadad;
+  margin-top: 6px;
+
+  & a {
+    display: block;
+    margin: 6px 0;
+  }
+}
+
+#error {
+  display: none;
+}
+
+#counts {
+  margin: 10px 0 30px;
+}
+
+body:not(.showAdditionalDetails) {
+  :is(.sizeColumn, .architectureColumn, .parametersColumn, .versionColumn) {
+    display: none;
+  }
+}
+
+.models {
+  margin: 1rem;
+
+  td {
+    white-space: nowrap;
+  }
+
+  /* Language Name */
+  & :is(th, td):nth-child(1) {
+    border-right: 2px solid #aaa;
+    font-weight: bold;
+  }
+
+  & :is(th, td):nth-child(9) {
+    border-left: 2px solid #aaa;
+  }
+
+  /* Version Name */
+  td.versionColumn {
+    text-align: right;
+  }
+
+  /* models */
+  td.modelColumn {
+    background-color: #0001;
+    font-family: monospace;
+  }
+
+  /* Size */
+  td.sizeColumn {
+    text-align: right;
+  }
+
+  /* Scores */
+  td.scoreColumn {
+    font-family: monospace;
+    text-align: right;
+  }
+}
+
+.noodles {
+  position: relative;
+
+  img {
+    position: absolute;
+    z-index: -1;
+    width: 293px;
+    top: -94px;
+    left: -80px;
+
+    @media (max-width: 991.98px) {
+      & {
+        display: none;
+      }
+    }
+  }
+}
+
+.empty {
+  background: linear-gradient(#c7c9cf, #e2e2e2 46%);
+  border: #00000045 1px solid;
+  border-left: none;
+  border-right: none;
+}
+
+.models-container {
+  margin-bottom: 4em;
+}
+
+.metadataPre {
+  background: #eee;
+  padding: 15px;
+  border-radius: 7px;
+}

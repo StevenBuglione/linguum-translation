@@ -1,0 +1,25 @@
+# Model options
+type: s2s
+dim-emb: 16
+dim-rnn: 32
+enc-type: alternating
+enc-cell-depth: 2
+enc-depth: 4
+dec-cell-base-depth: 4
+dec-cell-high-depth: 2
+dec-depth: 4
+skip: true
+layer-normalization: true
+tied-embeddings: true
+# Training options
+cost-type: ce-mean-words
+after-batches: 2
+mini-batch: 8
+mini-batch-fit: true
+maxi-batch: 1000
+sync-sgd: true
+learn-rate: 0.0003
+lr-decay-inv-sqrt:
+label-smoothing: 0.1
+clip-norm: 0
+exponential-smoothing: 0.0001

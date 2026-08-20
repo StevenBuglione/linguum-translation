@@ -1,0 +1,130 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+---
+loader: taskgraph.loader.transform:loader
+
+kind-dependencies:
+    - fetch
+
+transforms:
+    - translations_taskgraph.transforms.continuation
+    - translations_taskgraph.transforms.worker_selection
+    - taskgraph.transforms.run:transforms
+    - taskgraph.transforms.cached_tasks:transforms
+    - taskgraph.transforms.task:transforms
+
+task-defaults:
+    worker-type: b-cpu
+    worker:
+        chain-of-trust: true
+        docker-image: {"in-tree": "toolchain-build"}
+        max-run-time: 3600
+        env: {}
+        # 128 happens when cloning this repository fails
+        retry-exit-status: [128]
+    run:
+        using: toolchain-script
+
+tasks:
+    cuda-toolkit:
+        description: Build CUDA Toolkit 12.
+        run:
+            script: build-cuda-toolkit.sh
+            resources:
+                - taskcluster/scripts/toolchain/build-cuda-toolkit.sh
+            toolchain-artifact: public/build/cuda-toolkit.tar.zst
+        fetches:
+            fetch:
+                - cuda
+
+    marian:
+        description: Build Marian to run on a GPU machine.
+        worker-type: b-cpu
+        run:
+            script: build-marian.sh
+            resources:
+                - taskcluster/scripts/toolchain/build-marian.sh
+                - pipeline/setup/compile-marian.sh
+            toolchain-artifact: public/build/marian.tar.zst
+        fetches:
+            fetch:
+                - marian
+            toolchain:
+                - cuda-toolkit
+
+    marian-cpu:
+        description: Build Marian to run on a CPU machine.
+        worker-type: b-cpu
+        run:
+            script: build-marian.sh
+            arguments:
+                - none
+                - "false"
+            resources:
+                - taskcluster/scripts/toolchain/build-marian.sh
+                - pipeline/setup/compile-marian.sh
+            toolchain-artifact: public/build/marian.tar.zst
+        fetches:
+            fetch:
+                - marian
+
+    fast-align:
+        description: >
+            Build fast_align - https://github.com/clab/fast_align
+        run:
+            script: build-fast-align.sh
+            resources:
+                - taskcluster/scripts/toolchain/build-fast-align.sh
+            toolchain-artifact: public/build/fast-align.tar.zst
+        fetches:
+            fetch:
+                - fast-align
+
+    preprocess:
+        description: >
+            Build the "preprocess" tool: https://github.com/kpu/preprocess
+        run:
+            script: build-preprocess.sh
+            resources:
+                - taskcluster/scripts/toolchain/build-preprocess.sh
+            toolchain-artifact: public/build/dedupe.tar.zst
+        fetches:
+            fetch:
+                - preprocess
+
+    extract-lex:
+        description: >
+            Build the extract-lex tool: https://github.com/marian-nmt/extract-lex
+        run:
+            script: build-extract-lex.sh
+            resources:
+                - taskcluster/scripts/toolchain/build-extract-lex.sh
+            toolchain-artifact: public/build/extract_lex.tar.zst
+        fetches:
+            fetch:
+                - extract-lex
+
+    kenlm:
+        description: >
+            Build the kenlm tool: https://github.com/kpu/kenlm/
+        run:
+            script: build-kenlm.sh
+            resources:
+                - taskcluster/scripts/toolchain/build-kenlm.sh
+            toolchain-artifact: public/build/kenlm-0.0.0-cp310-cp310-linux_x86_64.whl
+        fetches:
+            fetch:
+                - kenlm
+
+    cyhunspell:
+        description: >
+            Build the cyhunspell binary wheel: https://pypi.org/project/cyhunspell/
+        run:
+            script: build-hunspell.sh
+            resources:
+                - taskcluster/scripts/toolchain/build-hunspell.sh
+            toolchain-artifact: public/build/cyhunspell-2.0.3-cp310-cp310-linux_x86_64.whl
+        fetches:
+            fetch:
+                - cyhunspell

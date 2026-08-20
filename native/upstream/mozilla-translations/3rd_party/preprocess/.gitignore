@@ -1,0 +1,4 @@
+build/
+util/file_piece.cc.gz
+*.swp
+*.o

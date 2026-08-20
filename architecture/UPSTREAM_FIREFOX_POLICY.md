@@ -8,6 +8,7 @@ Initial pin:
 
 ```text
 Firefox repository:         mozilla-firefox/firefox
+Firefox pin source SHA:     48d55cf7ec80093903e2ef7f58b61a84a22ef716
 pin file:                   toolkit/components/translations/bergamot-translator/moz.yaml
 translations repository:    mozilla/translations
 revision:                   eea6e5a80aa4ddd86d9cc35ce9a65b79aa3ab96d
@@ -30,7 +31,7 @@ Vendored path:
 native/upstream/mozilla-translations/
 ```
 
-The update tool creates a clean recursive checkout, strips Git administrative data, normalizes only archive metadata—not source bytes—and records:
+The update tool creates a clean recursive checkout, strips Git administrative data, normalizes only canonical archive metadata—not source bytes—and records:
 
 ```text
 native/UPSTREAM.json
@@ -38,14 +39,22 @@ native/UPSTREAM_LOCK.json
 native/SOURCE_TREE.sha256
 ```
 
-`UPSTREAM_LOCK.json` records:
+The metadata pair records:
 
 - top-level repository URL and SHA;
 - every recursive submodule path, URL, and SHA;
-- source archive SHA-256;
+- a `linguum-source-tree-v1` canonical source-archive SHA-256;
 - license identities;
-- pin metadata source SHA;
+- Firefox pin metadata source SHA;
 - generated timestamp and workflow run identity.
+
+`UPSTREAM_LOCK.json` contains the schema-bound recursive source and license lock.
+`UPSTREAM.json` contains the Firefox pin source and generation identity in addition
+to the same source digest. The canonical archive hashes sorted paths, source bytes,
+Git executable modes, and symlink targets. The expanded snapshot is staged without
+Git clean filters. Verification installs a clone-local `.git/info/attributes`
+boundary so attributes from a flattened parent submodule cannot change bytes from a
+formerly separate nested submodule.
 
 Normal PRs fail if files under the upstream path differ from the lock.
 

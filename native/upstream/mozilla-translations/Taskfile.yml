@@ -1,0 +1,383 @@
+version: '3'
+
+tasks:
+  poetry-install-*:
+    internal: true
+    desc: Install only the group need for the dependencies of a task.
+    vars:
+      GROUP: '{{index .MATCH 0}}'
+    cmds:
+      - poetry install --only {{.GROUP}} --no-root
+
+  clean-venvs:
+    desc: Remove the virtual envs created by the test runner.
+    cmds:
+      - rm -rf data/task-venvs/*
+
+  download-logs:
+    desc: Download the logs for taskcluster. Requires --task-group-id
+    summary: |
+      The logs will be saved to: ./data/taskcluster-logs
+
+      Example:
+        task download-logs -- --task-group-id GU9ZyWFhRDe_nxlAHcen8g
+    deps: [poetry-install-utils]
+    cmds:
+      - >-
+          poetry run python -W ignore utils/taskcluster_downloader.py
+          --mode=logs {{.CLI_ARGS}}
+
+  download-evals:
+    desc: Downloads evaluation results from Taskcluster
+    summary: |
+      The evals will be saved to: ./data/taskcluster-evals
+      Example: `task download-evals -- --task-group-id GU9ZyWFhRDe_nxlAHcen8g`
+    deps: [poetry-install-utils]
+    cmds:
+      - >-
+          poetry run python -W ignore utils/taskcluster_downloader.py
+          --mode=evals {{.CLI_ARGS}}
+
+  download-models:
+    desc: Downloads models from Taskcluster
+    summary: |
+      The models will be saved to: ./data/taskcluster-model
+      Example: `task download-models -- --task-group-id GU9ZyWFhRDe_nxlAHcen8g`
+    deps: [poetry-install-utils]
+    cmds:
+      - >-
+          poetry run python -W ignore utils/taskcluster_downloader.py
+          --mode=model {{.CLI_ARGS}}
+
+  local-remote-settings:
+    desc: Runs models for use within Firefox via local Remote Settings.
+    summary: |
+      The artifacts will be saved to: ./data/artifacts
+      Example: `task local-remote-settings -- --task-group-ids GU9ZyWFhRDe_nxlAHcen8g`
+    deps: [poetry-install-utils]
+    cmds:
+      - >-
+        PYTHONPATH=$(pwd) poetry run python -W ignore
+        utils/local_remote_settings {{.CLI_ARGS}}
+
+  config-generator:
+    desc: Create a training config for a language pair
+    summary: |
+      The models will be saved to: ./data/taskcluster-model
+      Example: `task config-generator -- en fi`
+    deps: [poetry-install-utils]
+    cmds:
+      # deps run in parallel
+      - task: poetry-install-utils-docker
+      - >-
+          PYTHONPATH=$(pwd) poetry run python -W ignore utils/config_generator.py {{.CLI_ARGS}}
+
+  build-mono-nllb:
+    desc: Build a monolingual NLLB datasets.
+    summary: |
+      The dataset will be saved to: ./data/nllb/nllb-mono-{lang}.txt.gz
+      Example: `task build-mono-nllb -- sl`
+    deps: [poetry-install-utils]
+    cmds:
+      - >-
+          PYTHONPATH=$(pwd) poetry run python -W ignore utils/build-mono-nllb.py {{.CLI_ARGS}}
+
+  opuscleaner:
+    desc: Run the opuscleaner tool.
+    deps: [poetry-install-opuscleaner]
+    cmds:
+      - poetry run opuscleaner-server
+
+  inference-clean:
+    desc: Clean build artifacts from the inference directory.
+    cmds:
+      - >-
+          ./inference/scripts/clean.sh
+
+  inference-build:
+    desc: Build inference engine.
+    summary: |
+      Build the inference engine natively. This uses our marian-fork which includes
+      the --int8shiftAlphaAll quantization, which is used in our production models.
+
+      - Run the build
+        task inference-build
+        ls inference/build
+
+      - Build the tests as well
+        task inference-build -- --test
+    cmds:
+      - >-
+          python3 ./inference/scripts/build.py {{.CLI_ARGS}}
+
+  inference-build-wasm:
+    desc: Build inference engine WASM.
+    cmds:
+      - >-
+          ./inference/scripts/build-wasm.py {{.CLI_ARGS}}
+
+  inference-test:
+    desc: Run the inference engine's C++ tests.
+    cmds:
+      - >-
+          ./inference/scripts/unit-tests.sh
+
+  inference-test-wasm:
+    desc: Run inference build-wasm JS tests.
+    cmds:
+      - >-
+          ./inference/scripts/test-wasm.py {{.CLI_ARGS}}
+
+  lint-eslint:
+    desc: Checks the styling of the JS code with eslint.
+    cmds:
+      - cd ./inference/wasm/tests && npm install && npm run lint
+
+  lint-eslint-fix:
+    desc: Fixes the styling of the JS code with eslint.
+    cmds:
+      - cd ./inference/wasm/tests && npm install && npm run lint:fix
+
+  lint-black:
+    desc: Checks the styling of the Python code with Black.
+    deps: [poetry-install-black]
+    cmds:
+      - ./utils/tasks/black-check.sh
+
+  lint-black-fix:
+    desc: Fixes the styling of the Python code with Black.
+    deps: [poetry-install-black]
+    cmds:
+      - poetry run black . {{.CLI_ARGS}}
+
+  lint-pyright:
+    desc: Runs type checking on python files.
+    deps:
+    cmds:
+      # For type checking, all of the various packages need to be installed
+      - poetry install --no-root
+      - poetry run pyright {{.CLI_ARGS}}
+
+  lint-ruff:
+    desc: Lints the Python code with the ruff linter.
+    deps: [poetry-install-lint]
+    cmds:
+      - poetry run ruff --version
+      - poetry run ruff check . {{.CLI_ARGS}}
+
+  lint-ruff-fix:
+    desc: Fixes Python code lint errors with the ruff linter.
+    deps: [poetry-install-lint]
+    cmds:
+      - poetry run ruff --version
+      - poetry run ruff check . --fix {{.CLI_ARGS}}
+
+  lint-fix:
+    desc: Fix all automatically fixable errors. This is useful to run before pushing.
+    cmds:
+      - task: lint-eslint-fix
+      - task: lint-black-fix
+      - task: lint-ruff-fix
+
+  lint:
+    desc: Run all available linting tools.
+    cmds:
+      - task: lint-eslint
+      - task: lint-black
+      - task: lint-ruff
+      - task: lint-pyright
+
+  test:
+    desc: Run python pytests in the current host.
+    summary: |
+      Some tests only pass in Docker. You can run this command outside of docker for
+      some of the tests, or after running `task docker` to run them in the docker image.
+      Without any arguments, it runs all of the tests searching the paths specifiied in
+      testpaths in pyproject.toml.
+
+      You can also specificy a specific test to run:
+
+        task test -- tests/test_alignments.py
+    cmds:
+      - poetry install --only tests --only utils --no-root
+      - PYTHONPATH="$(pwd):$(pwd)/taskcluster/scripts/pipeline" poetry run pytest -vv {{.CLI_ARGS}}
+
+  test-fast:
+    desc: Re-run tests in a faster configuration.
+    summary: |
+      This command skips taskgraph generation and skips the poetry install in order to
+      re-run tests quickly. If the taskgraph or dependencies are out of date, then tests
+      may incorrectly fail. It also outputs the captured stdout.
+
+        task test-fast -- tests/test_alignments.py
+    cmds:
+      - >-
+        SKIP_TASKGRAPH=1 PYTHONPATH="$(pwd):$(pwd)/taskcluster/scripts/pipeline"
+        poetry run pytest -vv -s {{.CLI_ARGS}}
+
+  test-docker:
+    desc: Run the unit tests in the docker image. Some tests require the pre-built Linux executables.
+    cmds:
+      - task docker-run -- task test
+
+  train:
+    desc: Start a training run
+    summary: Open up the train task from the CLI based on your current branch.
+    deps: [poetry-install-utils, poetry-install-taskcluster]
+    cmds:
+      - >-
+          poetry run python -W ignore utils/trigger_training.py {{.CLI_ARGS}}
+
+  eval:
+    desc: Start an evaluation
+    summary: |
+      Run a final evaluation
+      
+        task eval -- --config taskcluster/configs/eval.yml
+    deps: [poetry-install-utils, poetry-install-taskcluster]
+    cmds:
+      - >-
+          PYTHONPATH="$(pwd)" poetry run python -W ignore utils/trigger_eval.py {{.CLI_ARGS}}
+
+  docker:
+    desc: Interactively run the local docker test image.
+    deps: [docker-build]
+    summary: |
+      The local docker image includes the Linux x86 image, and pre-built binaries
+      that are used in training, and for building the inference engine.
+      The "translations-local-dev" container will be reused for each run.
+
+      - Start with a fresh container
+        task docker -- --clean
+
+      - Create a container with a different name
+        task docker -- --name translations-inference
+    cmds:
+      - utils/tasks/docker-run.py {{.CLI_ARGS}} bash
+
+  docker-run:
+    desc: Run a command in the local docker instance. e.g. `docker-run -- echo "hello"`
+    deps: [docker-build]
+    summary: |
+      The local docker image includes the Linux x86 image, and pre-built binaries
+      that are used in training.
+    cmds:
+      - utils/tasks/docker-run.py {{.CLI_ARGS}}
+
+  docker-build:
+    desc: Build the local docker image that includes the proper Linux binaries for training
+    cmds:
+      - ./utils/tasks/docker-build.sh
+
+  taskgraph-validate:
+    desc: Validates Taskcluster task graph locally
+    deps: [poetry-install-tests]
+    cmds:
+      - >-
+        TASKCLUSTER_ROOT_URL=""
+        poetry run --directory ./taskgraph --
+        taskgraph full
+
+  taskgraph-diff:
+    desc: Validates Taskcluster task graph locally
+    summary: |
+      Generates diffs of the full taskgraph against BASE_REV. Any parameters that were
+      different between the current code and BASE_REV will have their diffs logged
+      to OUTPUT_DIR.
+    deps: [poetry-install-tests]
+    vars:
+      OUTPUT_FILE: '{{.OUTPUT_FILE | default "./data/taskgraph.diff"}}'
+      BASE_REV: '{{.BASE_REV | default "main"}}'
+    cmds:
+      - >-
+        TASKCLUSTER_ROOT_URL=""
+        poetry run --directory ./taskgraph --
+        taskgraph full --json
+        --parameters "taskcluster/test/params"
+        --output-file "{{.OUTPUT_FILE}}"
+        --diff "{{.BASE_REV}}"
+
+  taskgraph-test:
+    desc: Run tests and validations against task generation
+    cmds:
+      - >-
+        poetry run --directory taskgraph --
+        pytest taskcluster/test
+
+  serve-docs:
+    desc: Run the docs locally
+    deps: [poetry-install-utils]
+    cmds:
+      - poetry run mkdocs serve
+
+  build-docs:
+    desc: Build the static files for the docs at `site/docs`
+    deps: [poetry-install-utils]
+    cmds:
+      - poetry run python utils/tasks/copy-kind-descriptions.py
+      - poetry run mkdocs build
+
+  serve-site:
+    desc: Serve the GitHub Pages website locally
+    cmds:
+      - poetry run python utils/site_server.py
+
+  preflight-check:
+    desc: Perform pre-flight checks for a training run.
+    deps: [poetry-install-utils]
+    cmds:
+      - poetry run python -W ignore utils/preflight_check.py {{.CLI_ARGS}}
+
+  tensorboard:
+    desc: Visualize training logs from task `download-logs` at http://localhost:6006
+    summary: |
+      Runs Tensorboard for Marian training logs in the ./data/taskcluster-logs directory.
+      The logs are converted to tensorboard in the ./data/tensorboard-logs directory.
+    deps: [poetry-install-tensorboard]
+    cmds:
+      - mkdir -p data/tensorboard-logs
+      - >-
+        poetry run marian-tensorboard
+        --offline
+        --log-file data/taskcluster-logs/**/*.log
+        --work-dir data/tensorboard-logs
+
+  find-corpus:
+    desc: Finds all datasets for a language pair
+    deps: [poetry-install-utils]
+    cmds:
+      - poetry run python -W ignore utils/find_corpus.py {{.CLI_ARGS}}
+
+  run-model:
+    desc: Run a Marian server that loads a model from data/models/$MODEL_TASK
+    deps: [poetry-install-utils]
+    cmds:
+      - >-
+        PYTHONPATH=$(pwd) poetry run python -W ignore utils/run_model.py {{.CLI_ARGS}}
+
+  update-requirements:
+    desc: Update the requirements.txt file for a pipeline script.
+    summary: |
+      Example usage:
+      task update-requirements -- pipeline/eval/requirements/eval.in
+    cmds:
+      # Make sure a file was given to update.
+      - >-
+        if [[ -z "{{.CLI_ARGS}}" ]]; then
+          echo "Provide a path to the .in file";
+          echo "For example:"
+          echo "task update-requirements -- pipeline/eval/requirements/eval.in";
+          exit 1
+        fi
+      # Make sure the command is being run for docker
+      - >-
+        if [[ -z "$IS_DOCKER" ]]; then
+          task docker-run -- task update-requirements -- {{.CLI_ARGS}} && exit
+        fi
+      # Make sure pip-tools are available in docker.
+      - >-
+        if ! command -v pip-compile &> /dev/null; then
+          pip install pip-tools
+        fi
+      # Finally generate the hashes.
+      - pip-compile --generate-hashes {{.CLI_ARGS}} --allow-unsafe
