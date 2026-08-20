@@ -284,7 +284,8 @@ class EvidenceParsingTests(unittest.TestCase):
         unsafe = safe + "runtime_dispatch:\n  0000000180001004: vzeroupper\n"
         with self.assertRaisesRegex(
             windows_profiles.WindowsProfileError,
-            r"1 AVX-family instructions; first records: runtime_dispatch -> .*vzeroupper",
+            r"1 AVX-family instructions; provenance: unavailable; "
+            r"first records: runtime_dispatch -> .*vzeroupper",
         ):
             windows_profiles.verify_isa("windows-x64-baseline", unsafe)
 
@@ -302,9 +303,24 @@ class EvidenceParsingTests(unittest.TestCase):
             "__std_find_trivial_2 [libcpmt:vector_algorithms.obj] +0x5b",
             windows_profiles.linker_symbol_at(0x18000105B, symbols),
         )
-        unsafe = "  000000018000105B: vpbroadcastw ymm0,xmm0\n"
+        unsafe = (
+            "  000000018000105B: vpbroadcastw ymm0,xmm0\n"
+            "  0000000180002050: vzeroupper\n"
+        )
+        provenance = windows_profiles.avx_provenance(
+            windows_profiles.avx_records(windows_profiles.instruction_records(unsafe)),
+            symbols,
+        )
+        self.assertEqual(2, provenance["mappedInstructionCount"])
+        self.assertEqual(2, provenance["sourceCount"])
+        self.assertEqual(0, provenance["unmappedInstructionCount"])
+        self.assertEqual(
+            {"instructionCount": 1, "source": "adapter.obj"},
+            provenance["sources"][0],
+        )
         with self.assertRaisesRegex(
             windows_profiles.WindowsProfileError,
+            r"provenance: .*__std_find_trivial_2.*"
             r"__std_find_trivial_2 \[libcpmt:vector_algorithms.obj\] \+0x5b",
         ):
             windows_profiles.verify_isa("windows-x64-baseline", unsafe, symbols)

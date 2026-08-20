@@ -13,6 +13,7 @@ import sys
 import tempfile
 import zipfile
 from bisect import bisect_right
+from collections import Counter
 from pathlib import Path
 from typing import Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
@@ -333,6 +334,54 @@ def linker_symbol_at(
     return "{} [{}] +0x{:x}".format(name, source, address - symbol_address)
 
 
+def avx_provenance(
+    records: Sequence[Tuple[str, str, str]],
+    symbols: Sequence[Tuple[int, str, str]],
+    limit: int = 25,
+) -> Dict[str, object]:
+    """Summarize every rejected instruction by closest mapped symbol/object."""
+    addresses = [symbol[0] for symbol in symbols]
+    source_counts = Counter()
+    symbol_counts = Counter()
+    unmapped_count = 0
+    for _, _, line in records:
+        address_match = re.match(r"^\s*([0-9A-Fa-f`]+):", line)
+        if address_match is None:
+            unmapped_count += 1
+            continue
+        address = int(address_match.group(1).replace("`", ""), 16)
+        index = bisect_right(addresses, address) - 1
+        if index < 0:
+            unmapped_count += 1
+            continue
+        _, name, source = symbols[index]
+        source_counts[source] += 1
+        symbol_counts[(name, source)] += 1
+
+    ordered_sources = sorted(
+        source_counts.items(), key=lambda item: (-item[1], item[0])
+    )
+    ordered_symbols = sorted(
+        symbol_counts.items(), key=lambda item: (-item[1], item[0][1], item[0][0])
+    )
+    return {
+        "mappedInstructionCount": sum(source_counts.values()),
+        "sourceCount": len(ordered_sources),
+        "sources": [
+            {"instructionCount": count, "source": source}
+            for source, count in ordered_sources[:limit]
+        ],
+        "sourcesOmitted": max(0, len(ordered_sources) - limit),
+        "symbolCount": len(ordered_symbols),
+        "symbols": [
+            {"instructionCount": count, "source": source, "symbol": name}
+            for (name, source), count in ordered_symbols[:limit]
+        ],
+        "symbolsOmitted": max(0, len(ordered_symbols) - limit),
+        "unmappedInstructionCount": unmapped_count,
+    }
+
+
 def verify_isa(
     profile_id: str,
     disassembly: str,
@@ -343,9 +392,13 @@ def verify_isa(
         raise WindowsProfileError("dumpbin produced no disassembly records")
     avx = avx_records(records)
     if profile_id == "windows-x64-baseline" and avx:
+        provenance = avx_provenance(avx, linker_symbols) if linker_symbols else None
         raise WindowsProfileError(
-            "baseline DLL contains {} AVX-family instructions; first records: {}".format(
+            "baseline DLL contains {} AVX-family instructions; provenance: {}; "
+            "first records: {}".format(
                 len(avx),
+                json.dumps(provenance, sort_keys=True, separators=(",", ":"))
+                if provenance is not None else "unavailable",
                 "; ".join(avx_diagnostics(disassembly, avx, linker_symbols)),
             )
         )
@@ -541,6 +594,11 @@ def package_profile(
                 "vector_algorithms.obj" in source.casefold()
                 for _, _, source in linker_symbols
             ),
+            "vectorAlgorithmsFunctions": sorted({
+                name
+                for _, name, source in linker_symbols
+                if "vector_algorithms.obj" in source.casefold()
+            }),
         }
         print(json.dumps(
             {"linkerMapEvidence": linker_map_evidence, "profile": profile_id},
