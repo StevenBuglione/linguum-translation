@@ -4,6 +4,7 @@ runners:
   linux_default: ubuntu-24.04
   linux_native_compatibility: ubuntu-22.04
   macos_default: macos-15
+  macos_intel: macos-15-intel
   windows_default: windows-2025
 policy:
   floating_labels: forbidden

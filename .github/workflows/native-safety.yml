@@ -7,6 +7,7 @@ on:
       - 'scripts/native/**'
       - 'testing/native/**'
       - 'toolchains/native-tools.lock.json'
+      - 'toolchains/macos-native-profiles.lock.json'
       - 'toolchains/windows-native-profiles.lock.json'
       - '.github/workflows/native-safety.yml'
   workflow_dispatch:
@@ -18,9 +19,17 @@ jobs:
   milestone-gate:
     name: Native safety / Milestone gate
     runs-on: macos-15
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-gradle
       - run: bash scripts/ci/verify-scope.sh native
-      - run: python3 scripts/native/run_host_canary.py --clean --iterations 100
+      - run: python3 scripts/native/macos_profiles.py --profile macos-arm64 --clean --iterations 100
+
+  intel-profile:
+    name: Native safety / macOS Intel profile
+    runs-on: macos-15-intel
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: python3 scripts/native/macos_profiles.py --profile macos-x64 --clean --iterations 100

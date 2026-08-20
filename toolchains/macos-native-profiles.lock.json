@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "deploymentTarget": "13.0",
+  "toolchain": {
+    "compilerVendor": "AppleClang",
+    "sdk": "macosx",
+    "xcodeSelection": "runner-default",
+    "cmake": "4.0.2",
+    "ninja": "1.13.2"
+  },
+  "profiles": [
+    {
+      "id": "macos-arm64",
+      "runner": "macos-15",
+      "architecture": "arm64",
+      "binaryNamespace": "aarch64",
+      "buildArch": "armv8-a",
+      "accelerationProfile": "apple-accelerate-arm64",
+      "matrixMultiplicationBackend": "Accelerate",
+      "quantizedBackend": "Ruy",
+      "intgemmRuntimeDispatch": false,
+      "minimumCpuFeatures": [
+        "ARMv8-A"
+      ]
+    },
+    {
+      "id": "macos-x64",
+      "runner": "macos-15-intel",
+      "architecture": "x86_64",
+      "binaryNamespace": "x86_64",
+      "buildArch": "nehalem",
+      "accelerationProfile": "apple-accelerate-intgemm-runtime-x64",
+      "matrixMultiplicationBackend": "Accelerate",
+      "quantizedBackend": "intgemm-runtime-dispatch",
+      "intgemmRuntimeDispatch": true,
+      "minimumCpuFeatures": [
+        "SSE4.2"
+      ]
+    }
+  ]
+}
