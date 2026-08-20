@@ -14,7 +14,7 @@ Verifier: Codex
 
 ```text
 Base main commit: 48d2718b1d894aea9cd50d7f08401de286261a73
-Implementation commit: pending
+Implementation commit: b1c8345aaecefb5781ec1d57a1132717c2d926d1
 Final evidence commit: pending
 Remote branch SHA: pending
 Pull request: pending
@@ -73,6 +73,12 @@ merge-marker scans because rewriting those bytes is prohibited; their complete
 contents are covered by the canonical source digest. PowerShell is unavailable on
 the local macOS verifier, so Windows script execution and cross-platform index
 verification remain mandatory hosted checks before merge.
+
+The first hosted run (`32373365366`) correctly exposed two platform assumptions in
+the test harness: POSIX executable-bit mutation and POSIX-only absolute-path parsing.
+The implementation itself had prepared the Windows snapshot successfully. The tests
+now keep byte sensitivity platform-neutral, exercise mode sensitivity where chmod is
+supported, and reject both POSIX and drive-qualified Windows absolute paths.
 
 ## Compatibility, security, and limitations
 

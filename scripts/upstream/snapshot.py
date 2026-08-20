@@ -69,7 +69,14 @@ def normalize_repository_url(url: str) -> str:
 
 def safe_relative_path(value: str) -> str:
     path = Path(value)
-    if path.is_absolute() or not value or ".." in path.parts or any(character in value for character in "\x00\r\n\t"):
+    windows_or_posix_absolute = bool(re.match(r"^(?:[A-Za-z]:[\\/]|[\\/])", value))
+    if (
+        path.is_absolute()
+        or windows_or_posix_absolute
+        or not value
+        or ".." in path.parts
+        or any(character in value for character in "\x00\r\n\t")
+    ):
         raise SnapshotError("unsafe relative path: {!r}".format(value))
     normalized = path.as_posix()
     if normalized in (".", ""):

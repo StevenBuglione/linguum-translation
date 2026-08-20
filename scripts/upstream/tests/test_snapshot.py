@@ -28,9 +28,10 @@ class SnapshotTest(unittest.TestCase):
             executable.chmod(executable.stat().st_mode | stat.S_IXUSR)
             first = snapshot.source_tree_sha256(root)
             self.assertEqual(first, snapshot.source_tree_sha256(root))
-            executable.chmod(executable.stat().st_mode & ~stat.S_IXUSR)
-            self.assertNotEqual(first, snapshot.source_tree_sha256(root))
-            executable.chmod(executable.stat().st_mode | stat.S_IXUSR)
+            if os.name != "nt":
+                executable.chmod(executable.stat().st_mode & ~stat.S_IXUSR)
+                self.assertNotEqual(first, snapshot.source_tree_sha256(root))
+                executable.chmod(executable.stat().st_mode | stat.S_IXUSR)
             executable.write_bytes(b"#!/bin/sh\nexit 0\n")
             self.assertNotEqual(first, snapshot.source_tree_sha256(root))
 
@@ -96,7 +97,7 @@ class SnapshotTest(unittest.TestCase):
 
     def test_safe_relative_path_rejects_traversal_and_absolute_paths(self):
         self.assertEqual("nested/file", snapshot.safe_relative_path("nested/file"))
-        for value in ("", "../outside", "nested/../../outside", "/absolute"):
+        for value in ("", "../outside", "nested/../../outside", "/absolute", "C:\\absolute"):
             with self.subTest(value=value):
                 with self.assertRaises(snapshot.SnapshotError):
                     snapshot.safe_relative_path(value)
