@@ -25,7 +25,8 @@ A milestone is done only when:
 - all required platforms/artifacts exist;
 - verification report contains actual command output summaries;
 - no unresolved blocker contradicts the milestone promise;
-- PR required checks and reviews are green;
+- every required PR check is green and every existing review thread is resolved;
+- local and hosted evidence belongs to the exact merged head SHA;
 - milestone PR is merged;
 - remote main contains verification report;
 - current milestone advances in a dedicated verified commit.

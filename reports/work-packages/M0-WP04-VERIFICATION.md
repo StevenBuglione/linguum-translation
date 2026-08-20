@@ -136,3 +136,38 @@ WORK PACKAGE GATE: PASS
 SAFE TO START NEXT WORK PACKAGE: YES, AFTER THE M0 MILESTONE PR MERGES
 SAFE TO ADVANCE MILESTONE: NO
 ```
+
+## Post-merge correction and autonomous-delivery authorization
+
+PR 1 merged M0 at `3c304f57b6a12248fc1137994c86bece74e99843`.
+The first post-merge CodeQL run exposed that Java/Kotlin analysis cannot use
+`build-mode: none`. The correction uses `build-mode: manual`, performs the same clean
+Kotlin verification build used by the repository, and then analyzes the compiled
+sources. The owner also granted standing authorization for tested autonomous delivery;
+the versioned and live rulesets therefore require zero human approvals while retaining
+all 15 strict checks, conversation resolution, squash-only history, no force-push or
+deletion, and no bypass actors.
+
+```text
+Correction branch: codex/M0-WP04-codeql-manual-build
+Correction PR: https://github.com/StevenBuglione/linguum-translation/pull/5
+Verified implementation commit: a20df2c46d808b33808f5be5a938dce2e3575651
+Remote branch SHA: a20df2c46d808b33808f5be5a938dce2e3575651
+Local/remote SHA match: YES
+Required PR run: 32367291423 — PASS, all 15 jobs
+CodeQL run: 32367314880 — PASS, compiled Java/Kotlin analysis
+Live ruleset: 21078407 — ACTIVE, zero bypass actors, zero required approvals
+```
+
+Additional local evidence on the verified implementation commit:
+
+- `./gradlew clean verificationGate --warning-mode=fail`: PASS;
+- all 17 M0 scope checks: PASS;
+- actionlint 1.7.12 after release-checksum verification: PASS;
+- JSON, YAML, and shell parsing: PASS;
+- versioned and live ruleset assertions: PASS;
+- diff whitespace and credential/private-key pattern scan: PASS.
+
+No product architecture, API, ABI, schema, native source, model, dependency, platform
+minimum, coverage threshold, or release baseline changed. The evidence-only commit
+containing this addendum must pass the same local and hosted gates before PR 5 merges.

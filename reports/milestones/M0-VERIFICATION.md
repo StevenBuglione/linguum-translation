@@ -34,3 +34,12 @@ SAFE TO ADVANCE TO M1: NO
 ```
 
 All M0 work-package and remote gates pass. PR 1 is safe to merge; M1 remains locked until that merge completes.
+
+## Post-merge correction
+
+PR 1 merged as `3c304f57b6a12248fc1137994c86bece74e99843`. PR 5 records
+the CodeQL manual-build correction and the owner's standing authorization for tested
+autonomous delivery. Its implementation commit `a20df2c46d808b33808f5be5a938dce2e3575651`
+passed all 15 required jobs in run 32367291423 and compiled CodeQL analysis in run
+32367314880. M1 remains locked until PR 5 and the dedicated milestone-advance commit
+are merged.
