@@ -1,0 +1,17 @@
+name: Performance
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  m0-evidence:
+    name: Performance / M0 retained evidence
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: bash scripts/ci/verify-m0-scope.sh performance
+      - run: shasum -a 256 -c MANIFEST.sha256

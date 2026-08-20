@@ -1,0 +1,47 @@
+config:
+  validation: true
+  warningsAsErrors: true
+
+complexity:
+  CognitiveComplexMethod:
+    active: true
+    allowedComplexity: 12
+  CyclomaticComplexMethod:
+    active: true
+    allowedComplexity: 10
+  LongMethod:
+    active: true
+    allowedLines: 40
+  LongParameterList:
+    active: true
+    allowedFunctionParameters: 5
+    allowedConstructorParameters: 7
+  NestedBlockDepth:
+    active: true
+    allowedDepth: 3
+  TooManyFunctions:
+    active: true
+    allowedFunctionsPerFile: 12
+    allowedFunctionsPerClass: 12
+    allowedFunctionsPerObject: 12
+
+style:
+  ForbiddenComment:
+    active: true
+    comments:
+      - reason: Release TODOs are forbidden.
+        value: 'TODO:'
+      - reason: Release FIXMEs are forbidden.
+        value: 'FIXME:'
+  MagicNumber:
+    active: true
+    ignoreNumbers:
+      - '-1'
+      - '0'
+      - '1'
+      - '2'
+  MaxLineLength:
+    active: true
+    maxLineLength: 120
+  WildcardImport:
+    active: true

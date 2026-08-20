@@ -1,0 +1,17 @@
+version: 1
+critical_modules:
+  line_percent: 95
+  branch_percent: 90
+platform_kotlin:
+  line_percent: 90
+  branch_percent: 85
+java_swift_facades:
+  scenario_coverage_required: true
+  measured_line_percent: 90
+native:
+  unit_contract_sanitizer_fuzz_soak_required: true
+excluded:
+  - generated code
+  - immutable vendored upstream
+baseline_updates:
+  normal_pull_request: forbidden

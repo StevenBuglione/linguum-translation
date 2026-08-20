@@ -1,0 +1,41 @@
+# Gradle and Kotlin
+.gradle/
+.kotlin/
+build/
+**/build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDEs and local configuration
+.idea/
+*.iml
+.vscode/
+local.properties
+
+# Native build outputs and package-manager state
+.cxx/
+.konan/
+CMakeFiles/
+CMakeCache.txt
+cmake-build-*/
+DerivedData/
+.swiftpm/
+
+# Platform files
+.DS_Store
+Thumbs.db
+
+# Secrets and signing material
+.env
+.env.*
+*.asc
+*.gpg
+*.jks
+*.keystore
+*.p12
+*.pem
+
+# Logs and temporary files
+*.log
+*.tmp
+*.swp
+*.swo

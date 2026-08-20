@@ -1,0 +1,10 @@
+Linguum Translation
+Copyright 2026 Linguum Translation contributors
+
+This product includes original software licensed under the Apache License,
+Version 2.0. Native release artifacts are intended to include components from
+Mozilla's translations project under the Mozilla Public License, Version 2.0;
+those components are not present in the M0 repository scaffold.
+
+Exact upstream identity, corresponding-source locations, and third-party
+notices are release-gated and must be recorded before native artifacts ship.

@@ -1,0 +1,22 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Candidate SemVer; M0 performs no publication
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  m0-hard-stop:
+    name: Release / M0 hard stop
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: bash scripts/ci/verify-m0-scope.sh release
+      - run: test -n '${{ inputs.version }}'

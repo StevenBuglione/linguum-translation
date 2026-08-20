@@ -1,0 +1,136 @@
+# M0-WP02 Verification Report
+
+## Result
+
+```text
+Status: PASS
+Milestone: M0 — Repository and governance
+Work package: M0-WP02 — Gradle/toolchain skeleton
+Branch: codex/M0-WP01-repository-governance
+Draft PR: https://github.com/StevenBuglione/linguum-translation/pull/1
+Date/time UTC: 2026-08-20
+Verifier: Codex
+```
+
+## Source and remote identity
+
+```text
+Repository: https://github.com/StevenBuglione/linguum-translation
+Base commit: d7b185087ae4d429d359ebf781a42a076c3287e5
+Verified commit: 727893044b939da101186c540b811a405cfb2703
+Local HEAD after push: 727893044b939da101186c540b811a405cfb2703
+Remote branch SHA after push: 727893044b939da101186c540b811a405cfb2703
+Remote SHA matches local: YES
+Working tree clean after push: YES
+Shallow clone: NO
+```
+
+## Requirement traceability
+
+| Requirement | Implementation | Test/evidence | Result |
+|---|---|---|---|
+| Gradle 9.5.0 | Wrapper URL plus official distribution SHA-256 | `./gradlew --version`; `./gradlew help --warning-mode=fail` | PASS |
+| JDK 21 build runtime | Daemon JVM criteria requires Adoptium 21 | wrapper launched from JDK 25 and selected compatible JDK 21 daemon | PASS |
+| Java 17 bytecode policy | `toolchains.lock.yaml`; build-logic source/target and Kotlin JVM target | Gradle script compilation | PASS |
+| Kotlin 2.4.10 / AGP 9.1.1 | Version catalog and resolved toolchain proof | `verifyToolchain` with warnings as errors | PASS |
+| Pinned M0 tooling | Version catalog and toolchain lock | exact-version inspection; no dynamic versions | PASS |
+| Dependency locking | root, settings, and included-build lock files | strict `verifyToolchain` resolution | PASS |
+| Dependency verification | SHA-256 verification metadata | clean repeat resolution without metadata writes | PASS |
+| Reproducible archives | root archive task policy | Gradle configuration | PASS |
+| Configuration cache | enabled and cache-safe | second identical gate reused configuration cache | PASS |
+
+## Changed modules and paths
+
+| Path/module | Classification | Change | Dependency rule result |
+|---|---|---|---|
+| Root Gradle build | build tooling | repository policy, pinned plugin declarations, toolchain proof, initial gate | PASS |
+| `build-logic` | build tooling | empty included build with JDK 21/Java 17 and strict locks | PASS |
+| `gradle/` | build tooling/supply chain | catalog, wrapper, daemon criteria, checksums | PASS |
+| `toolchains/` | governance | machine-readable toolchain lock | PASS |
+
+## Commands executed
+
+| Command | Exit | Environment/runner | Evidence/log |
+|---|---:|---|---|
+| `JAVA_HOME="$(/usr/libexec/java_home -v 21)" gradle wrapper --gradle-version=9.5.0 --distribution-type=bin` | 0 | macOS arm64 | initial wrapper generated |
+| `curl .../gradle-9.5.0-bin.zip.sha256` | 0 | services.gradle.org | distribution SHA `553c78f...b746` |
+| `JAVA_HOME=... ./gradlew help --warning-mode=fail` | 0 | macOS arm64 | Gradle 9.5.0 help passed |
+| first `verifyToolchain --write-locks ...` | 1 | macOS arm64 | exposed invalid locking + dynamic-version mode combination; corrected |
+| second/third metadata attempts | 1 | macOS arm64 | exposed missing Java variant attributes; corrected with standard-JVM runtime attributes |
+| `./gradlew verifyToolchain --write-locks --write-verification-metadata sha256` | 0 | macOS arm64/JDK 21 | locks and 117 KiB SHA-256 metadata generated |
+| first clean cached `help verifyToolchain` | 1 | macOS arm64/JDK 21 | exposed task closure cache violation; corrected |
+| repeated `help verifyToolchain` | 0 | macOS arm64/JDK 21 | first stored and second reused configuration cache |
+| `updateDaemonJvm --jvm-version=21 --jvm-vendor=ADOPTIUM --no-configuration-cache` | 0 | macOS arm64 | cross-platform daemon criteria generated |
+| `./gradlew --version` from default JDK 25 shell | 0 | macOS arm64 | launcher 25; daemon criteria Java 21/Temurin |
+| `./gradlew wrapper --gradle-version=9.5.0 --distribution-type=bin` | 0 | Gradle 9.5 daemon | wrapper JAR upgraded by target Gradle version |
+| final `./gradlew help --warning-mode=fail` | 0 | macOS arm64 | configuration cache reused |
+| `./gradlew verificationGate --warning-mode=fail` | 0 | macOS arm64/JDK 21 daemon | M0-WP02 narrow gate passed |
+| staged secret-pattern scan | 0 | staged files | no credential/private-key patterns matched |
+| branch push plus `git ls-remote` equality test | 0 | GitHub/macOS arm64 | local and remote `7278930...` matched |
+
+## Tests and quality
+
+```text
+Gradle wrapper 9.5.0: PASS
+JDK 21 daemon selection from JDK 25 launcher: PASS
+Warnings-as-errors help gate: PASS
+Pinned toolchain dependency resolution: PASS
+Strict dependency locks: PASS
+SHA-256 dependency verification: PASS
+Configuration cache store/reuse: PASS
+Formatting/Detekt/Kover/API scaffolding: M0-WP04
+Architecture checks: M0-WP03
+Translation/native/platform implementation: NOT INTRODUCED IN M0
+```
+
+## Artifacts
+
+| Artifact | SHA-256 | Source identity/provenance |
+|---|---|---|
+| `gradle-wrapper.jar` | `497c8c2a7e5031f6aa847f88104aa80a93532ec32ee17bdb8d1d2f67a194a9c7` | generated by Gradle 9.5.0 |
+| Gradle 9.5.0 binary distribution | `553c78f50dafcd54d65b9a444649057857469edf836431389695608536d6b746` | official services.gradle.org checksum |
+| `gradle.lockfile` | generated lock | Gradle 9.5.0 strict locking |
+| `gradle/verification-metadata.xml` | generated SHA-256 inventory | Gradle 9.5.0 dependency verification |
+
+## Security, privacy, licensing, supply chain
+
+```text
+Dependency verification: PASS
+Dynamic/snapshot build versions: absent
+Repository allowlist: Google, Maven Central, Gradle Plugin Portal as scoped
+Secret scan: PASS (no matches)
+Production/runtime dependencies: none introduced
+Translation text/network/native behavior: not introduced
+```
+
+## Compatibility impact
+
+```text
+Kotlin/Java/Swift/C ABI: none
+Model manifest/schema: none
+Minimum OS/API versions: preserved in lock files
+Translation output drift: none
+```
+
+## Known limitations
+
+- The Android plugin is resolved and locked during M0; Android compilation and SDK/NDK execution are later platform gates.
+- PowerShell wrapper execution remains a Windows CI requirement in M0-WP04.
+
+## Gate immutability declaration
+
+```text
+[x] No protected architecture/product decision was changed.
+[x] No test, threshold, baseline, platform, or check was weakened.
+[x] No dynamic version, snapshot, or unapproved production dependency was added.
+[x] Firefox pin, Mozilla source, OS minimums, and public API remained unchanged.
+[x] Dependency verification and reproducibility controls are enabled.
+```
+
+## Final decision
+
+```text
+WORK PACKAGE GATE: PASS
+SAFE TO START NEXT WORK PACKAGE: YES
+SAFE TO ADVANCE MILESTONE: NO
+```
