@@ -268,8 +268,11 @@ class EvidenceParsingTests(unittest.TestCase):
         result = windows_profiles.verify_isa("windows-x64-baseline", safe)
         self.assertTrue(result["baselineAvxFamilyAbsent"])
 
-        unsafe = safe + "  0000000180001004: vzeroupper\n"
-        with self.assertRaises(windows_profiles.WindowsProfileError):
+        unsafe = safe + "runtime_dispatch:\n  0000000180001004: vzeroupper\n"
+        with self.assertRaisesRegex(
+            windows_profiles.WindowsProfileError,
+            r"1 AVX-family instructions; first records: runtime_dispatch -> .*vzeroupper",
+        ):
             windows_profiles.verify_isa("windows-x64-baseline", unsafe)
 
     def test_optimized_disassembly_requires_avx2_evidence(self):
@@ -282,8 +285,11 @@ class EvidenceParsingTests(unittest.TestCase):
         self.assertEqual(1, len(result["avx2Evidence"]))
 
     def test_dependency_parser_allows_only_system_dlls(self):
-        output = "    KERNEL32.dll\n    SHLWAPI.dll\n"
-        self.assertEqual(["KERNEL32.DLL", "SHLWAPI.DLL"], windows_profiles.parse_dependencies(output))
+        output = "    DBGHELP.dll\n    KERNEL32.dll\n    SHLWAPI.dll\n"
+        self.assertEqual(
+            ["DBGHELP.DLL", "KERNEL32.DLL", "SHLWAPI.DLL"],
+            windows_profiles.parse_dependencies(output),
+        )
         with self.assertRaises(windows_profiles.WindowsProfileError):
             windows_profiles.parse_dependencies(output + "    accidental.dll\n")
 

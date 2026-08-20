@@ -29,6 +29,7 @@ PROFILE_IDS = ("windows-x64-avx2", "windows-x64-baseline")
 SYSTEM_DLLS = {
     "ADVAPI32.DLL",
     "BCRYPT.DLL",
+    "DBGHELP.DLL",
     "KERNEL32.DLL",
     "OLE32.DLL",
     "SHELL32.DLL",
@@ -264,13 +265,40 @@ def avx_records(records: Iterable[Tuple[str, str, str]]) -> List[Tuple[str, str,
     ]
 
 
+def avx_diagnostics(
+    disassembly: str,
+    records: Sequence[Tuple[str, str, str]],
+    limit: int = 20,
+) -> List[str]:
+    wanted = {record[2] for record in records[:limit]}
+    diagnostics = []
+    current_symbol = "<unknown-symbol>"
+    instruction_pattern = re.compile(r"^\s*[0-9A-Fa-f`]+:\s+[A-Za-z][A-Za-z0-9.]*")
+    for line in disassembly.splitlines():
+        stripped = line.strip()
+        if not stripped:
+            continue
+        if instruction_pattern.match(line):
+            if stripped in wanted:
+                diagnostics.append("{} -> {}".format(current_symbol, stripped))
+            continue
+        if stripped.endswith(":"):
+            current_symbol = stripped[:-1]
+    return diagnostics
+
+
 def verify_isa(profile_id: str, disassembly: str) -> Dict[str, object]:
     records = instruction_records(disassembly)
     if not records:
         raise WindowsProfileError("dumpbin produced no disassembly records")
     avx = avx_records(records)
     if profile_id == "windows-x64-baseline" and avx:
-        raise WindowsProfileError("baseline DLL contains AVX-family instructions")
+        raise WindowsProfileError(
+            "baseline DLL contains {} AVX-family instructions; first records: {}".format(
+                len(avx),
+                "; ".join(avx_diagnostics(disassembly, avx)),
+            )
+        )
     avx2 = [
         record for record in avx
         if "ymm" in record[1] and (record[0].startswith("vp") or record[0].startswith("vgather"))
