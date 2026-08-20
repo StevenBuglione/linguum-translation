@@ -120,12 +120,32 @@ class WindowsProfileLockTests(unittest.TestCase):
         )
         self.assertIn("if(MSVC AND LINGUUM_INTGEMM_BASELINE_ONLY)", cmake)
         self.assertIn("add_compile_definitions(_USE_STD_VECTOR_ALGORITHMS=0)", cmake)
+        self.assertIn("add_compile_options(/Oi-)", cmake)
+        self.assertIn("baseline_runtime_shims.c", cmake)
+        self.assertIn("/Od /Oi- /GL- /W4 /WX", cmake)
+        self.assertIn("/NODEFAULTLIB:libucrt.lib", cmake)
+        self.assertIn("target_link_libraries(linguum_translation PRIVATE ucrt)", cmake)
         self.assertIn(
             '"/MAP:${CMAKE_CURRENT_BINARY_DIR}/linguum_translation.map"',
             cmake,
         )
         self.assertIn("/MAPINFO:EXPORTS", cmake)
         self.assertNotIn("/VERBOSE:LIB", cmake)
+
+    def test_baseline_scalar_shims_cover_the_provenance_boundary(self):
+        shims = (
+            ROOT / "native" / "runtime-build" / "baseline_runtime_shims.c"
+        ).read_text(encoding="utf-8")
+        test = (
+            ROOT / "testing" / "native" / "baseline_runtime_shims_test.c"
+        ).read_text(encoding="utf-8")
+        for name in windows_profiles.BASELINE_SCALAR_SHIM_SYMBOLS:
+            self.assertIn(name, shims)
+            self.assertIn(name, test)
+        self.assertIn("__declspec(noinline)", shims)
+        self.assertIn("baseline-runtime-shims", (
+            ROOT / "native" / "runtime-build" / "CMakeLists.txt"
+        ).read_text(encoding="utf-8"))
 
     def test_profile_failures_do_not_mask_the_other_locked_profile(self):
         profiles = windows_profiles.profile_map(windows_profiles.load_lock())
@@ -341,13 +361,40 @@ class EvidenceParsingTests(unittest.TestCase):
         self.assertEqual(1, len(result["avx2Evidence"]))
 
     def test_dependency_parser_allows_only_system_dlls(self):
-        output = "    DBGHELP.dll\n    KERNEL32.dll\n    SHLWAPI.dll\n"
+        output = (
+            "    api-ms-win-crt-runtime-l1-1-0.dll\n"
+            "    DBGHELP.dll\n    KERNEL32.dll\n    SHLWAPI.dll\n"
+        )
         self.assertEqual(
-            ["DBGHELP.DLL", "KERNEL32.DLL", "SHLWAPI.DLL"],
+            [
+                "API-MS-WIN-CRT-RUNTIME-L1-1-0.DLL",
+                "DBGHELP.DLL",
+                "KERNEL32.DLL",
+                "SHLWAPI.DLL",
+            ],
             windows_profiles.parse_dependencies(output),
         )
         with self.assertRaises(windows_profiles.WindowsProfileError):
             windows_profiles.parse_dependencies(output + "    accidental.dll\n")
+
+    def test_baseline_runtime_boundary_requires_all_shims_and_no_vector_archive(self):
+        symbols = [
+            (0x180001000 + index, name, "runtime:baseline_runtime_shims.c.obj")
+            for index, name in enumerate(sorted(windows_profiles.BASELINE_SCALAR_SHIM_SYMBOLS))
+        ]
+        evidence = windows_profiles.baseline_runtime_boundary_evidence(symbols)
+        self.assertEqual(7, evidence["scalarShimCount"])
+        self.assertTrue(evidence["staticStlVectorAlgorithmsAbsent"])
+        with self.assertRaisesRegex(
+            windows_profiles.WindowsProfileError, "missing symbols",
+        ):
+            windows_profiles.baseline_runtime_boundary_evidence(symbols[:-1])
+        with self.assertRaisesRegex(
+            windows_profiles.WindowsProfileError, "vector-algorithm object",
+        ):
+            windows_profiles.baseline_runtime_boundary_evidence(symbols + [
+                (0x180002000, "__std_find_trivial_4", "libcpmt:vector_algorithms.obj")
+            ])
 
     def test_compile_command_profile_flags_are_enforced(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -355,15 +402,15 @@ class EvidenceParsingTests(unittest.TestCase):
             commands = root / "compile_commands.json"
             commands.write_text(json.dumps([
                 {
-                    "command": "cl /arch:SSE2 /D_USE_STD_VECTOR_ALGORITHMS=0 /c intgemm.cc",
+                    "command": "cl /arch:SSE2 /Oi- /D_USE_STD_VECTOR_ALGORITHMS=0 /c intgemm.cc",
                     "file": "C:/source/3rd_party/intgemm/intgemm/intgemm.cc",
                 },
                 {
-                    "command": "cl /arch:SSE2 /D_USE_STD_VECTOR_ALGORITHMS=0 /DUSE_ONNX_SGEMM=1 /c prod.cpp",
+                    "command": "cl /arch:SSE2 /Oi- /D_USE_STD_VECTOR_ALGORITHMS=0 /DUSE_ONNX_SGEMM=1 /c prod.cpp",
                     "file": "C:/source/marian-fork/src/tensors/cpu/prod.cpp",
                 },
                 {
-                    "command": "cl /arch:SSE2 /D_USE_STD_VECTOR_ALGORITHMS=0 /c gemm.cpp",
+                    "command": "cl /arch:SSE2 /Oi- /D_USE_STD_VECTOR_ALGORITHMS=0 /c gemm.cpp",
                     "file": "C:/source/onnxjs/src/wasm-ops/gemm.cpp",
                 },
             ]))
@@ -376,18 +423,31 @@ class EvidenceParsingTests(unittest.TestCase):
             self.assertEqual(3, evidence["cppCompileCommandCount"])
             self.assertEqual(3, evidence["vectorizedStlDisabledCommandCount"])
             self.assertTrue(evidence["vectorizedStlDisabledForAllCpp"])
+            self.assertEqual(3, evidence["compilerIntrinsicsDisabledCommandCount"])
+            self.assertTrue(evidence["compilerIntrinsicsDisabledForAllCommands"])
+
+            missing_intrinsic_boundary = json.loads(commands.read_text())
+            missing_intrinsic_boundary[0]["command"] = missing_intrinsic_boundary[0][
+                "command"
+            ].replace(" /Oi-", "")
+            commands.write_text(json.dumps(missing_intrinsic_boundary))
+            with self.assertRaisesRegex(
+                windows_profiles.WindowsProfileError,
+                "every baseline compiler command must disable intrinsic",
+            ):
+                windows_profiles.verify_compile_commands("windows-x64-baseline", root)
 
             commands.write_text(json.dumps([
                 {
-                    "command": "cl /arch:SSE2 /D_USE_STD_VECTOR_ALGORITHMS=0 /c intgemm.cc",
+                    "command": "cl /arch:SSE2 /Oi- /D_USE_STD_VECTOR_ALGORITHMS=0 /c intgemm.cc",
                     "file": "C:/source/3rd_party/intgemm/intgemm/intgemm.cc",
                 },
                 {
-                    "command": "cl /arch:SSE2 /D_USE_STD_VECTOR_ALGORITHMS=0 /DUSE_ONNX_SGEMM=1 /c prod.cpp",
+                    "command": "cl /arch:SSE2 /Oi- /D_USE_STD_VECTOR_ALGORITHMS=0 /DUSE_ONNX_SGEMM=1 /c prod.cpp",
                     "file": "C:/source/marian-fork/src/tensors/cpu/prod.cpp",
                 },
                 {
-                    "command": "cl /arch:SSE2 /c gemm.cpp",
+                    "command": "cl /arch:SSE2 /Oi- /c gemm.cpp",
                     "file": "C:/source/onnxjs/src/wasm-ops/gemm.cpp",
                 },
             ]))

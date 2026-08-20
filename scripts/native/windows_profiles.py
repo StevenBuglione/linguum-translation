@@ -30,6 +30,21 @@ DEFAULT_OUTPUT = ROOT / "build" / "native-packages" / "windows"
 PROFILE_IDS = ("windows-x64-avx2", "windows-x64-baseline")
 SYSTEM_DLLS = {
     "ADVAPI32.DLL",
+    "API-MS-WIN-CRT-CONIO-L1-1-0.DLL",
+    "API-MS-WIN-CRT-CONVERT-L1-1-0.DLL",
+    "API-MS-WIN-CRT-ENVIRONMENT-L1-1-0.DLL",
+    "API-MS-WIN-CRT-FILESYSTEM-L1-1-0.DLL",
+    "API-MS-WIN-CRT-HEAP-L1-1-0.DLL",
+    "API-MS-WIN-CRT-LOCALE-L1-1-0.DLL",
+    "API-MS-WIN-CRT-MATH-L1-1-0.DLL",
+    "API-MS-WIN-CRT-MULTIBYTE-L1-1-0.DLL",
+    "API-MS-WIN-CRT-PRIVATE-L1-1-0.DLL",
+    "API-MS-WIN-CRT-PROCESS-L1-1-0.DLL",
+    "API-MS-WIN-CRT-RUNTIME-L1-1-0.DLL",
+    "API-MS-WIN-CRT-STDIO-L1-1-0.DLL",
+    "API-MS-WIN-CRT-STRING-L1-1-0.DLL",
+    "API-MS-WIN-CRT-TIME-L1-1-0.DLL",
+    "API-MS-WIN-CRT-UTILITY-L1-1-0.DLL",
     "BCRYPT.DLL",
     "DBGHELP.DLL",
     "KERNEL32.DLL",
@@ -37,8 +52,18 @@ SYSTEM_DLLS = {
     "SHELL32.DLL",
     "SHLWAPI.DLL",
     "USER32.DLL",
+    "UCRTBASE.DLL",
     "VERSION.DLL",
     "WS2_32.DLL",
+}
+BASELINE_SCALAR_SHIM_SYMBOLS = {
+    "__std_find_trivial_1",
+    "__std_find_trivial_2",
+    "__std_reverse_trivially_swappable_1",
+    "memcpy",
+    "memmove",
+    "memset",
+    "wmemchr",
 }
 NON_AVX_V_MNEMONICS = {"verr", "verw", "vmcall", "vmlaunch", "vmresume", "vmxoff"}
 
@@ -430,6 +455,38 @@ def parse_dependencies(output: str) -> List[str]:
     return dependencies
 
 
+def baseline_runtime_boundary_evidence(
+    symbols: Sequence[Tuple[int, str, str]],
+) -> Dict[str, object]:
+    shim_sources = {
+        name: source
+        for _, name, source in symbols
+        if name in BASELINE_SCALAR_SHIM_SYMBOLS
+        and "baseline_runtime_shims.c.obj" in source.casefold()
+    }
+    missing = BASELINE_SCALAR_SHIM_SYMBOLS - set(shim_sources)
+    if missing:
+        raise WindowsProfileError(
+            "baseline scalar runtime boundary is missing symbols: {}".format(sorted(missing))
+        )
+    vector_algorithms = sorted({
+        name
+        for _, name, source in symbols
+        if "vector_algorithms.obj" in source.casefold()
+    })
+    if vector_algorithms:
+        raise WindowsProfileError(
+            "baseline still links the static STL vector-algorithm object: {}".format(
+                vector_algorithms
+            )
+        )
+    return {
+        "scalarShimCount": len(shim_sources),
+        "scalarShimSymbols": sorted(shim_sources),
+        "staticStlVectorAlgorithmsAbsent": True,
+    }
+
+
 def verify_compile_commands(profile_id: str, build_directory: Path) -> Dict[str, object]:
     path = build_directory / "compile_commands.json"
     commands = json.loads(path.read_text(encoding="utf-8"))
@@ -501,6 +558,13 @@ def verify_compile_commands(profile_id: str, build_directory: Path) -> Dict[str,
         vectorized_stl_definition_pattern.search(text) is not None
         for text in cpp_command_texts
     )
+    compiler_intrinsics_disabled_pattern = re.compile(
+        r"(?:^|\s)/Oi-(?:\s|$)", re.IGNORECASE
+    )
+    compiler_intrinsics_disabled_count = sum(
+        compiler_intrinsics_disabled_pattern.search(text) is not None
+        for text in command_texts
+    )
     if not has_onnx_sgemm:
         raise WindowsProfileError("native product command must enable the ONNX SGEMM backend")
     if profile_id == "windows-x64-avx2" and (not has_avx2 or not has_intgemm_avx2_cap):
@@ -510,6 +574,10 @@ def verify_compile_commands(profile_id: str, build_directory: Path) -> Dict[str,
     if profile_id == "windows-x64-avx2" and has_vectorized_stl_definition:
         raise WindowsProfileError(
             "optimized compiler commands must retain the default vectorized MSVC STL"
+        )
+    if profile_id == "windows-x64-avx2" and compiler_intrinsics_disabled_count:
+        raise WindowsProfileError(
+            "optimized compiler commands must retain intrinsic substitution"
         )
     if profile_id == "windows-x64-baseline" and (
         has_avx2 or not has_sse2 or has_intgemm_avx2_cap
@@ -522,10 +590,21 @@ def verify_compile_commands(profile_id: str, build_directory: Path) -> Dict[str,
         raise WindowsProfileError(
             "every baseline C++ command must disable the vectorized MSVC STL"
         )
+    if (
+        profile_id == "windows-x64-baseline"
+        and compiler_intrinsics_disabled_count != len(command_texts)
+    ):
+        raise WindowsProfileError(
+            "every baseline compiler command must disable intrinsic substitution"
+        )
     return {
         "compileCommandCount": len(commands),
         "cppCompileCommandCount": len(cpp_command_texts),
         "compileCommandsSha256": run_host_canary.file_sha256(path),
+        "compilerIntrinsicsDisabledCommandCount": compiler_intrinsics_disabled_count,
+        "compilerIntrinsicsDisabledForAllCommands": (
+            compiler_intrinsics_disabled_count == len(command_texts)
+        ),
         "hasArchAvx2": has_avx2,
         "hasArchSse2": has_sse2,
         "hasIntgemmAvx2Cap": has_intgemm_avx2_cap,
@@ -579,6 +658,7 @@ def package_profile(
     ))
     linker_symbols = []
     linker_map_evidence = None
+    baseline_boundary_evidence = None
     if profile_id == "windows-x64-baseline":
         linker_map_path = build_directory / "linguum_translation.map"
         if not linker_map_path.is_file():
@@ -586,6 +666,7 @@ def package_profile(
         linker_symbols = parse_linker_map(
             linker_map_path.read_text(encoding="utf-8-sig")
         )
+        baseline_boundary_evidence = baseline_runtime_boundary_evidence(linker_symbols)
         linker_map_evidence = {
             "fileName": linker_map_path.name,
             "functionSymbolCount": len(linker_symbols),
@@ -599,6 +680,7 @@ def package_profile(
                 for _, name, source in linker_symbols
                 if "vector_algorithms.obj" in source.casefold()
             }),
+            "runtimeBoundary": baseline_boundary_evidence,
         }
         print(json.dumps(
             {"linkerMapEvidence": linker_map_evidence, "profile": profile_id},
@@ -610,6 +692,11 @@ def package_profile(
     dependencies = parse_dependencies(
         capture(["dumpbin.exe", "/nologo", "/DEPENDENTS", str(library)])
     )
+    if profile_id == "windows-x64-baseline" and not any(
+        dependency == "UCRTBASE.DLL" or dependency.startswith("API-MS-WIN-CRT-")
+        for dependency in dependencies
+    ):
+        raise WindowsProfileError("baseline DLL does not resolve through the system UCRT")
     headers = capture(["dumpbin.exe", "/nologo", "/HEADERS", str(library)])
     if re.search(r"\b8664 machine \(x64\)", headers, re.IGNORECASE) is None:
         raise WindowsProfileError("DLL is not PE x64")

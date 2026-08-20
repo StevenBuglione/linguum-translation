@@ -35,8 +35,12 @@ endif()
 if(MSVC AND LINGUUM_INTGEMM_BASELINE_ONLY)
   # The static MSVC STL contains runtime-dispatched AVX2 vector algorithms.
   # Keep that object out of the non-AVX candidate by disabling vectorized STL
-  # call sites across every C++ target in this build tree.
+  # call sites across every C++ target in this build tree. /O2 also enables
+  # intrinsic substitution, so explicitly disable it before any upstream
+  # targets are created; otherwise MSVC can synthesize AVX2 wmemchr code even
+  # when /arch:SSE2 is selected.
   add_compile_definitions(_USE_STD_VECTOR_ALGORITHMS=0)
+  add_compile_options(/Oi-)
 endif()
 
 if(NOT IS_DIRECTORY "${LINGUUM_TRANSLATIONS_SOURCE}/inference")
@@ -84,6 +88,21 @@ endif()
 add_library(linguum_translation SHARED
   ../mozilla-adapter/src/linguum_translation.cpp
 )
+if(MSVC AND LINGUUM_INTGEMM_BASELINE_ONLY)
+  # Keep the VC runtime static while resolving UCRT math/string functions
+  # through the Windows 10+ system UCRT. The small scalar object supplies the
+  # memory and STL ABI entry points that otherwise pull AVX-dispatched static
+  # VC/STL archive members into this DLL.
+  add_library(linguum_baseline_runtime_shims OBJECT
+    baseline_runtime_shims.c
+  )
+  target_compile_options(linguum_baseline_runtime_shims PRIVATE
+    /Od /Oi- /GL- /W4 /WX
+  )
+  target_sources(linguum_translation PRIVATE
+    $<TARGET_OBJECTS:linguum_baseline_runtime_shims>
+  )
+endif()
 if(LINGUUM_ARM_NATIVE)
   target_compile_definitions(linguum_translation PRIVATE ARM FMA SSE)
 endif()
@@ -104,6 +123,7 @@ if(MSVC AND LINGUUM_INTGEMM_BASELINE_ONLY)
   target_link_options(linguum_translation PRIVATE
     "/MAP:${CMAKE_CURRENT_BINARY_DIR}/linguum_translation.map"
     /MAPINFO:EXPORTS
+    /NODEFAULTLIB:libucrt.lib
   )
 endif()
 target_include_directories(linguum_translation
@@ -113,6 +133,9 @@ target_include_directories(linguum_translation SYSTEM PRIVATE
   "${LINGUUM_TRANSLATIONS_SOURCE}/inference/src"
 )
 target_link_libraries(linguum_translation PRIVATE bergamot-translator-source)
+if(MSVC AND LINGUUM_INTGEMM_BASELINE_ONLY)
+  target_link_libraries(linguum_translation PRIVATE ucrt)
+endif()
 set_target_properties(linguum_translation PROPERTIES
   C_VISIBILITY_PRESET hidden
   CXX_VISIBILITY_PRESET hidden
@@ -131,6 +154,15 @@ elseif(UNIX)
 endif()
 
 if(BUILD_TESTING)
+  if(MSVC AND LINGUUM_INTGEMM_BASELINE_ONLY)
+    add_executable(linguum_baseline_runtime_shims_test
+      ../../testing/native/baseline_runtime_shims_test.c
+      $<TARGET_OBJECTS:linguum_baseline_runtime_shims>
+    )
+    target_compile_options(linguum_baseline_runtime_shims_test PRIVATE /W4 /WX)
+    add_test(NAME baseline-runtime-shims COMMAND linguum_baseline_runtime_shims_test)
+  endif()
+
   add_executable(linguum_translation_abi_header_c ../../testing/native/abi_header_c.c)
   target_link_libraries(linguum_translation_abi_header_c PRIVATE linguum_translation)
   target_compile_options(linguum_translation_abi_header_c PRIVATE
