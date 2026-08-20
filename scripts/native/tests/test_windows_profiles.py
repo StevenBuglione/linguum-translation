@@ -114,6 +114,13 @@ class WindowsProfileLockTests(unittest.TestCase):
         self.assertIn("remove_definitions(-DSSE)", patch)
         self.assertIn("set(BUILD_TESTING OFF)", patch)
 
+    def test_runtime_build_disables_vectorized_msvc_stl_only_for_baseline(self):
+        cmake = (ROOT / "native" / "runtime-build" / "CMakeLists.txt").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("if(MSVC AND LINGUUM_INTGEMM_BASELINE_ONLY)", cmake)
+        self.assertIn("add_compile_definitions(_USE_STD_VECTOR_ALGORITHMS=0)", cmake)
+
     def test_profile_failures_do_not_mask_the_other_locked_profile(self):
         profiles = windows_profiles.profile_map(windows_profiles.load_lock())
         baseline_result = {"profile": "windows-x64-baseline"}
@@ -299,15 +306,15 @@ class EvidenceParsingTests(unittest.TestCase):
             commands = root / "compile_commands.json"
             commands.write_text(json.dumps([
                 {
-                    "command": "cl /arch:SSE2 /c intgemm.cc",
+                    "command": "cl /arch:SSE2 /D_USE_STD_VECTOR_ALGORITHMS=0 /c intgemm.cc",
                     "file": "C:/source/3rd_party/intgemm/intgemm/intgemm.cc",
                 },
                 {
-                    "command": "cl /arch:SSE2 /DUSE_ONNX_SGEMM=1 /c prod.cpp",
+                    "command": "cl /arch:SSE2 /D_USE_STD_VECTOR_ALGORITHMS=0 /DUSE_ONNX_SGEMM=1 /c prod.cpp",
                     "file": "C:/source/marian-fork/src/tensors/cpu/prod.cpp",
                 },
                 {
-                    "command": "cl /arch:SSE2 /c gemm.cpp",
+                    "command": "cl /arch:SSE2 /D_USE_STD_VECTOR_ALGORITHMS=0 /c gemm.cpp",
                     "file": "C:/source/onnxjs/src/wasm-ops/gemm.cpp",
                 },
             ]))
@@ -317,6 +324,29 @@ class EvidenceParsingTests(unittest.TestCase):
             self.assertFalse(evidence["hasIntgemmAvx2Cap"])
             self.assertTrue(evidence["hasOnnxSgemm"])
             self.assertTrue(evidence["hasOnnxSgemmImplementation"])
+            self.assertEqual(3, evidence["cppCompileCommandCount"])
+            self.assertEqual(3, evidence["vectorizedStlDisabledCommandCount"])
+            self.assertTrue(evidence["vectorizedStlDisabledForAllCpp"])
+
+            commands.write_text(json.dumps([
+                {
+                    "command": "cl /arch:SSE2 /D_USE_STD_VECTOR_ALGORITHMS=0 /c intgemm.cc",
+                    "file": "C:/source/3rd_party/intgemm/intgemm/intgemm.cc",
+                },
+                {
+                    "command": "cl /arch:SSE2 /D_USE_STD_VECTOR_ALGORITHMS=0 /DUSE_ONNX_SGEMM=1 /c prod.cpp",
+                    "file": "C:/source/marian-fork/src/tensors/cpu/prod.cpp",
+                },
+                {
+                    "command": "cl /arch:SSE2 /c gemm.cpp",
+                    "file": "C:/source/onnxjs/src/wasm-ops/gemm.cpp",
+                },
+            ]))
+            with self.assertRaisesRegex(
+                windows_profiles.WindowsProfileError,
+                "every baseline C\\+\\+ command must disable",
+            ):
+                windows_profiles.verify_compile_commands("windows-x64-baseline", root)
 
             commands.write_text(json.dumps([
                 {
@@ -337,6 +367,15 @@ class EvidenceParsingTests(unittest.TestCase):
             self.assertTrue(evidence["hasIntgemmAvx2Cap"])
             with self.assertRaises(windows_profiles.WindowsProfileError):
                 windows_profiles.verify_compile_commands("windows-x64-baseline", root)
+
+            optimized_with_baseline_stl = json.loads(commands.read_text())
+            optimized_with_baseline_stl[0]["command"] += " /D_USE_STD_VECTOR_ALGORITHMS=0"
+            commands.write_text(json.dumps(optimized_with_baseline_stl))
+            with self.assertRaisesRegex(
+                windows_profiles.WindowsProfileError,
+                "retain the default vectorized MSVC STL",
+            ):
+                windows_profiles.verify_compile_commands("windows-x64-avx2", root)
 
 
 class PackageTests(unittest.TestCase):

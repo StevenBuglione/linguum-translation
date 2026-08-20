@@ -334,6 +334,15 @@ def verify_compile_commands(profile_id: str, build_directory: Path) -> Dict[str,
         entry.get("command", " ".join(entry.get("arguments", []))) for entry in commands
     ]
     command_text = "\n".join(command_texts)
+    cpp_command_texts = [
+        text
+        for entry, text in zip(commands, command_texts)
+        if str(entry.get("file", "")).replace("\\", "/").lower().endswith(
+            (".cc", ".cpp", ".cxx", ".c++")
+        )
+    ]
+    if not cpp_command_texts:
+        raise WindowsProfileError("compile database contains no C++ commands")
     intgemm_command_texts = [
         text
         for entry, text in zip(commands, command_texts)
@@ -373,24 +382,56 @@ def verify_compile_commands(profile_id: str, build_directory: Path) -> Dict[str,
         prod_command_texts[0],
         re.IGNORECASE,
     ) is not None
+    vectorized_stl_disabled_pattern = re.compile(
+        r"(?:^|\s)(?:/D|-D)_USE_STD_VECTOR_ALGORITHMS=0(?:\s|$)",
+        re.IGNORECASE,
+    )
+    vectorized_stl_definition_pattern = re.compile(
+        r"(?:^|\s)(?:/D|-D)_USE_STD_VECTOR_ALGORITHMS(?:=[^\s]+)?(?:\s|$)",
+        re.IGNORECASE,
+    )
+    vectorized_stl_disabled_count = sum(
+        vectorized_stl_disabled_pattern.search(text) is not None
+        for text in cpp_command_texts
+    )
+    has_vectorized_stl_definition = any(
+        vectorized_stl_definition_pattern.search(text) is not None
+        for text in cpp_command_texts
+    )
     if not has_onnx_sgemm:
         raise WindowsProfileError("native product command must enable the ONNX SGEMM backend")
     if profile_id == "windows-x64-avx2" and (not has_avx2 or not has_intgemm_avx2_cap):
         raise WindowsProfileError(
             "optimized compiler commands must contain /arch:AVX2 and the intgemm AVX2 cap"
         )
+    if profile_id == "windows-x64-avx2" and has_vectorized_stl_definition:
+        raise WindowsProfileError(
+            "optimized compiler commands must retain the default vectorized MSVC STL"
+        )
     if profile_id == "windows-x64-baseline" and (
         has_avx2 or not has_sse2 or has_intgemm_avx2_cap
     ):
         raise WindowsProfileError("baseline compiler commands are not restricted to /arch:SSE2")
+    if (
+        profile_id == "windows-x64-baseline"
+        and vectorized_stl_disabled_count != len(cpp_command_texts)
+    ):
+        raise WindowsProfileError(
+            "every baseline C++ command must disable the vectorized MSVC STL"
+        )
     return {
         "compileCommandCount": len(commands),
+        "cppCompileCommandCount": len(cpp_command_texts),
         "compileCommandsSha256": run_host_canary.file_sha256(path),
         "hasArchAvx2": has_avx2,
         "hasArchSse2": has_sse2,
         "hasIntgemmAvx2Cap": has_intgemm_avx2_cap,
         "hasOnnxSgemm": has_onnx_sgemm,
         "hasOnnxSgemmImplementation": True,
+        "vectorizedStlDisabledCommandCount": vectorized_stl_disabled_count,
+        "vectorizedStlDisabledForAllCpp": (
+            vectorized_stl_disabled_count == len(cpp_command_texts)
+        ),
     }
 
 

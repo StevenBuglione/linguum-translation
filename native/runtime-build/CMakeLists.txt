@@ -32,6 +32,12 @@ endif()
 if(LINGUUM_INTGEMM_BASELINE_ONLY AND LINGUUM_INTGEMM_AVX2_ONLY)
   message(FATAL_ERROR "intgemm baseline-only and AVX2-only modes are mutually exclusive")
 endif()
+if(MSVC AND LINGUUM_INTGEMM_BASELINE_ONLY)
+  # The static MSVC STL contains runtime-dispatched AVX2 vector algorithms.
+  # Keep that object out of the non-AVX candidate by disabling vectorized STL
+  # call sites across every C++ target in this build tree.
+  add_compile_definitions(_USE_STD_VECTOR_ALGORITHMS=0)
+endif()
 
 if(NOT IS_DIRECTORY "${LINGUUM_TRANSLATIONS_SOURCE}/inference")
   message(FATAL_ERROR "LINGUUM_TRANSLATIONS_SOURCE must name a staged translations checkout")
