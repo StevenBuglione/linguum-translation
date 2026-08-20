@@ -1,0 +1,23 @@
+version: 1
+build:
+  gradle: 9.5.0
+  jdk:
+    major: 21
+    distribution: Eclipse Temurin
+    resolver: org.gradle.toolchains.foojay-resolver-convention:1.0.0
+  jvm_bytecode: 17
+kotlin:
+  compiler: 2.4.10
+  coroutines: 1.11.0
+android:
+  gradle_plugin: 9.1.1
+  build_tools: 36.0.0
+  ndk: 28.2.13676358
+  min_sdk: 26
+documentation:
+  dokka: 2.2.0
+quality:
+  detekt: 2.0.0-alpha.6
+  kover: 0.9.9
+publishing:
+  vanniktech_maven_publish: 0.36.0
