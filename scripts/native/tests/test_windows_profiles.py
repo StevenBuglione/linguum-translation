@@ -95,6 +95,14 @@ class WindowsProfileLockTests(unittest.TestCase):
         self.assertIn("else()", patch)
         self.assertIn("try_compile(INTGEMM_COMPILER_SUPPORTS_AVX2", patch)
 
+    def test_external_patch_selects_the_msvc_static_pcre2_filename(self):
+        patch = (
+            ROOT / "native" / "patches" / "0001-reproducible-flattened-source-build.patch"
+        ).read_text(encoding="utf-8")
+        self.assertIn("set(PCRE2_STATIC_LIBRARY_NAME pcre2-8-static)", patch)
+        self.assertIn("set(PCRE2_STATIC_LIBRARY_NAME pcre2-8)", patch)
+        self.assertIn("${PCRE2_STATIC_LIBRARY_NAME}${CMAKE_STATIC_LIBRARY_SUFFIX}", patch)
+
     def test_runtime_build_disables_host_dependent_documentation(self):
         cmake = (ROOT / "native" / "runtime-build" / "CMakeLists.txt").read_text(
             encoding="utf-8"

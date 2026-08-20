@@ -8,7 +8,16 @@ diff --git a/inference/3rd_party/ssplit-cpp/cmake/FindPCRE2.cmake b/inference/3r
 +    -DPCRE2_BUILD_PCRE2GREP=OFF
 +    -DPCRE2_BUILD_TESTS=OFF
 +    -DPCRE2_STATIC_PIC=ON
-@@ -75,0 +82,2 @@ if(SSPLIT_USE_INTERNAL_PCRE2)
+@@ -67,2 +73,7 @@ if(SSPLIT_USE_INTERNAL_PCRE2)
+   # set include dirs and libraries for PCRE2
+-  set(PCRE2_LIBRARIES ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}pcre2-8${CMAKE_STATIC_LIBRARY_SUFFIX})
++  if(MSVC)
++    set(PCRE2_STATIC_LIBRARY_NAME pcre2-8-static)
++  else()
++    set(PCRE2_STATIC_LIBRARY_NAME pcre2-8)
++  endif()
++  set(PCRE2_LIBRARIES ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${PCRE2_STATIC_LIBRARY_NAME}${CMAKE_STATIC_LIBRARY_SUFFIX})
+@@ -75,0 +87,2 @@ if(SSPLIT_USE_INTERNAL_PCRE2)
 +    URL_HASH SHA256=0781bd2536ef5279b1943471fdcdbd9961a2845e1d2c9ad849b9bd98ba1a9bd4
 +    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 diff --git a/inference/cmake/GetVersionFromFile.cmake b/inference/cmake/GetVersionFromFile.cmake
