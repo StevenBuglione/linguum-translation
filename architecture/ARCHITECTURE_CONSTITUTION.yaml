@@ -1,0 +1,192 @@
+version: 1
+library:
+  name: Linguum Translation
+  repository: StevenBuglione/linguum-translation
+  package_root: io.linguum.translation
+  maven_group: io.linguum
+  primary_artifact: translation
+  testing_artifact: translation-testing
+  license_original_code: Apache-2.0
+  license_upstream_code: MPL-2.0
+source_of_truth:
+  decisions: architecture/LOCKED_DECISIONS.md
+  constitution: architecture/ARCHITECTURE_CONSTITUTION.yaml
+  modules: architecture/MODULE_CATALOG.yaml
+  public_api: architecture/PUBLIC_API_SPEC.md
+  native_abi: architecture/NATIVE_ABI_SPEC.md
+  model_manifest: architecture/MODEL_MANIFEST_SPEC.md
+  upstream_policy: architecture/UPSTREAM_FIREFOX_POLICY.md
+upstream:
+  firefox_repository: mozilla-firefox/firefox
+  translations_repository: mozilla/translations
+  firefox_pinned_revision: eea6e5a80aa4ddd86d9cc35ce9a65b79aa3ab96d
+  bergamot_version: v0.6.0
+  source_path: native/upstream/mozilla-translations
+  immutable: true
+  direct_edits_forbidden: true
+  update_requires_workflow: upstream-firefox-compatibility
+runtime:
+  provider_neutral_public_api: true
+  native_execution_v1: in_process
+  private_runtime_abstraction_required: true
+  c_abi_required: true
+  cxx_abi_public: false
+  network_on_translate: forbidden
+  telemetry_user_text: forbidden
+  native_workers_per_model: 1
+  native_cache_entries: 0
+platforms:
+  desktop_jvm:
+    java_bytecode: 17
+    build_jdk: 21
+    targets:
+      - windows-x64
+      - macos-arm64
+      - macos-x64
+      - linux-x64
+      - linux-arm64
+  android:
+    min_sdk: 26
+    targets:
+      - arm64-v8a
+      - x86_64
+  ios:
+    minimum_version: "15.0"
+    targets:
+      - ios-arm64
+      - ios-simulator-arm64
+      - ios-simulator-x64
+public_api:
+  stable_package: io.linguum.translation
+  internal_package_prefix: io.linguum.translation.internal
+  primary_types:
+    - TranslationService
+    - Translator
+    - TranslationRequest
+    - TranslationResult
+    - TranslationOutcome
+    - TranslationFailure
+    - LanguageTag
+    - LanguagePair
+    - TranslationCatalog
+  implementation_types_in_public_signatures: forbidden
+  explicit_api_mode: required
+  java_facade: required
+  swift_facade: required
+  experimental_opt_in: required
+model_rules:
+  direct_pairs_only: true
+  silent_pivot: forbidden
+  release_manifest_immutable: true
+  runtime_live_registry_resolution: forbidden
+  integrity_algorithm: SHA-256
+  installation_transactional: true
+  partial_install_visible: false
+  network_source_trusted: false
+  manifest_is_trust_anchor: true
+  loaded_pool: memory_budgeted_lru
+  disk_store: byte_budgeted_lru
+  active_model_eviction: forbidden
+  pinned_model_eviction: forbidden
+  retained_model_disk_eviction: forbidden
+module_types:
+  public-api:
+    may_depend_on:
+      - public-api
+    prohibited:
+      - platform-api
+      - native-api
+      - network-api
+      - mozilla-api
+  orchestration:
+    may_depend_on:
+      - public-api
+      - orchestration
+      - internal-contract
+    prohibited:
+      - direct-platform-api
+      - direct-native-api
+      - direct-network-api
+  internal-contract:
+    may_depend_on:
+      - public-api
+      - internal-contract
+  platform-adapter:
+    may_depend_on:
+      - public-api
+      - orchestration
+      - internal-contract
+      - native-bridge
+      - approved-platform-api
+  native-bridge:
+    may_depend_on:
+      - native-abi
+      - native-adapter
+  native-abi:
+    public_c_only: true
+    cxx_public: false
+  native-adapter:
+    may_depend_on:
+      - native-abi
+      - immutable-upstream
+      - approved_patch_queue
+  immutable-upstream:
+    hand_editing_allowed: false
+  test-harness:
+    production_dependency_target: false
+  publication:
+    business_logic_allowed: false
+codex_rules:
+  protected_files_mutable_by_normal_task: false
+  accepted_adr_mutable_by_normal_task: false
+  weaken_test_or_gate: false
+  update_baseline_to_fit_code: false
+  add_global_suppression: false
+  create_detekt_baseline: false
+  edit_upstream_tree: false
+  change_firefox_pin_outside_workflow: false
+  add_unapproved_dependency: false
+  use_dynamic_dependency_version: false
+  skip_supported_platform: false
+  change_minimum_os_silently: false
+  force_push: false
+  work_beyond_current_milestone: false
+  verified_checkpoint_push_required: true
+  clean_milestone_gate_required: true
+quality_gates:
+  - formatting
+  - compiler_warnings_as_errors
+  - detekt_no_baseline
+  - custom_architecture_rules
+  - dependency_locking
+  - dependency_verification
+  - api_compatibility
+  - jvm_binary_compatibility
+  - swift_surface_compatibility
+  - c_abi_compatibility
+  - unit_tests
+  - property_tests
+  - contract_tests
+  - platform_integration_tests
+  - native_sanitizers
+  - fuzz_regressions
+  - model_manifest_validation
+  - model_drift_validation
+  - performance_smoke
+  - dedicated_performance_gate
+  - license_policy
+  - sbom
+  - provenance
+  - artifact_reproducibility
+milestones:
+  M0: repository_and_governance
+  M1: platform_and_packaging_feasibility
+  M2: native_abi_and_runtime_foundation
+  M3: public_api_and_consumer_facades
+  M4: scheduler_lifecycle_and_model_pool
+  M5: model_manifest_acquisition_and_storage
+  M6: platform_bindings_and_end_to_end_runtime
+  M7: structured_text_segmentation_batch_and_switching
+  M8: full_platform_quality_and_security_validation
+  M9: publishing_release_candidate_and_docs
+  M10: release_1_0_and_linguum_consumer_validation

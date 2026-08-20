@@ -1,0 +1,192 @@
+version: 1
+modules:
+  - path: :translation
+    directory: translation
+    type: publication
+    visibility: public
+    artifact: io.linguum:translation
+    introduced: M3
+    responsibility: public KMP umbrella and target publication
+
+  - path: :translation-api
+    directory: translation-api
+    type: public-api
+    visibility: public
+    introduced: M3
+    responsibility: canonical provider-neutral KMP contracts
+
+  - path: :translation-runtime
+    directory: translation-runtime
+    type: orchestration
+    visibility: internal
+    introduced: M4
+    responsibility: service composition, scheduler, lifecycle, model generations
+
+  - path: :translation-model-contracts
+    directory: translation-model-contracts
+    type: internal-contract
+    visibility: internal
+    introduced: M3
+    responsibility: manifest, installation, catalog, and storage contracts
+
+  - path: :translation-model-management
+    directory: translation-model-management
+    type: orchestration
+    visibility: internal
+    introduced: M5
+    responsibility: acquisition, transactional installation, cache and activation policies
+
+  - path: :translation-structured-text
+    directory: translation-structured-text
+    type: orchestration
+    visibility: internal
+    introduced: M7
+    responsibility: semantic spans, segmentation and deterministic reassembly
+
+  - path: :translation-diagnostics
+    directory: translation-diagnostics
+    type: internal-contract
+    visibility: internal
+    introduced: M3
+    responsibility: privacy-safe diagnostics, runtime info and metrics contracts
+
+  - path: :translation-detection-api
+    directory: translation-detection-api
+    type: public-api
+    visibility: public-experimental
+    introduced: M7
+    responsibility: optional language-detection capability contract only
+
+  - path: :translation-testing
+    directory: translation-testing
+    type: test-harness
+    visibility: public
+    artifact: io.linguum:translation-testing
+    introduced: M3
+    responsibility: contract-faithful fakes, fixtures and consumer test support
+
+  - path: :platform:jvm
+    directory: platform/jvm
+    type: platform-adapter
+    visibility: internal
+    introduced: M6
+    responsibility: desktop JVM factory, storage, transport, JNI loader and native runtime binding
+
+  - path: :platform:android
+    directory: platform/android
+    type: platform-adapter
+    visibility: internal
+    introduced: M6
+    responsibility: Android factory, Context-backed storage/network and AAR JNI binding
+
+  - path: :platform:apple
+    directory: platform/apple
+    type: platform-adapter
+    visibility: internal
+    introduced: M6
+    responsibility: iOS Foundation storage/network and Kotlin/Native cinterop binding
+
+  - path: :facades:java
+    directory: facades/java
+    type: publication
+    visibility: public-through-main
+    introduced: M3
+    responsibility: idiomatic Java facade and CompletionStage mapping
+
+  - path: :facades:apple-export
+    directory: facades/apple-export
+    type: publication
+    visibility: public-through-xcframework
+    introduced: M3
+    responsibility: Objective-C-compatible umbrella framework export
+
+  - path: :native:abi
+    directory: native/abi
+    type: native-abi
+    visibility: public-native
+    introduced: M1
+    responsibility: stable C header, ABI versioning and C contract tests
+
+  - path: :native:mozilla-adapter
+    directory: native/mozilla-adapter
+    type: native-adapter
+    visibility: internal
+    introduced: M1
+    responsibility: C++ adapter from stable C ABI to Firefox-pinned Mozilla inference
+
+  - path: :native:runtime-build
+    directory: native/runtime-build
+    type: native-bridge
+    visibility: internal
+    introduced: M1
+    responsibility: CMake presets, toolchains, CPU dispatch and native artifact assembly
+
+  - path: :native:upstream
+    directory: native/upstream/mozilla-translations
+    type: immutable-upstream
+    visibility: vendored
+    introduced: M1
+    responsibility: byte-preserved Firefox-pinned Mozilla source snapshot
+
+  - path: :testing:architecture
+    directory: testing/architecture
+    type: test-harness
+    visibility: internal
+    introduced: M0
+    responsibility: module graph, package boundary, dependency and protected-file checks
+
+  - path: :testing:contracts
+    directory: testing/contracts
+    type: test-harness
+    visibility: internal
+    introduced: M3
+    responsibility: shared production/fake behavioral contract suite
+
+  - path: :testing:native
+    directory: testing/native
+    type: test-harness
+    visibility: internal
+    introduced: M1
+    responsibility: C ABI canary, hostile input, sanitizer and lifecycle harnesses
+
+  - path: :testing:consumer-kotlin
+    directory: testing/consumer-kotlin
+    type: test-harness
+    visibility: internal
+    introduced: M3
+    responsibility: clean Kotlin consumer compilation and runtime fixture
+
+  - path: :testing:consumer-java
+    directory: testing/consumer-java
+    type: test-harness
+    visibility: internal
+    introduced: M3
+    responsibility: clean Java consumer compilation and runtime fixture
+
+  - path: :testing:consumer-swift
+    directory: testing/consumer-swift
+    type: test-harness
+    visibility: internal
+    introduced: M3
+    responsibility: clean SwiftPM/Xcode consumer compilation and runtime fixture
+
+  - path: :testing:consumer-linguum
+    directory: testing/consumer-linguum
+    type: test-harness
+    visibility: internal
+    introduced: M10
+    responsibility: fixture matching io.linguum.services.api consumption style
+
+  - path: :testing:benchmarks
+    directory: testing/benchmarks
+    type: test-harness
+    visibility: internal
+    introduced: M1
+    responsibility: raw native, wrapper, end-to-end and platform performance suites
+
+  - path: :testing:fuzz
+    directory: testing/fuzz
+    type: test-harness
+    visibility: internal
+    introduced: M2
+    responsibility: coverage-guided C ABI/parser fuzzing and permanent corpus

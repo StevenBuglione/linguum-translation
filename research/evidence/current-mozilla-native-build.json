@@ -1,0 +1,23 @@
+{
+  "repository": "mozilla/translations",
+  "revision": "eea6e5a80aa4ddd86d9cc35ce9a65b79aa3ab96d",
+  "bergamotVersion": "v0.6.0",
+  "buildType": "Release",
+  "compiler": "MSVC",
+  "architecture": "x64",
+  "buildArch": "native",
+  "expectedIsa": "AVX2",
+  "service": "AsyncService",
+  "workers": 1,
+  "cacheSize": 0,
+  "useFbgemm": true,
+  "useStaticLibs": true,
+  "compileCpu": true,
+  "compileCuda": false,
+  "compileWasm": false,
+  "useMkl": "OFF",
+  "useIntgemm": "ON",
+  "useOnnxSgemm": "ON",
+  "modelSha256": "4aed7734152ae0045d1a69ae49c86cfda18f53c61f90e95e1d1de1c7c7c3b033",
+  "executable": "native/mozilla-translations-firefox/inference/build-harness/src/app/Release/harness-native-bench.exe"
+}

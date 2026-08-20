@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.linguum.io/translation/release-identity.schema.json",
+  "title": "Linguum Translation Release Identity",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "libraryVersion",
+    "gitTag",
+    "gitCommit",
+    "nativeAbi",
+    "firefox",
+    "modelManifest",
+    "toolchains",
+    "artifacts",
+    "sbom",
+    "provenance"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "libraryVersion": { "$ref": "#/$defs/semver" },
+    "gitTag": { "type": "string", "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$" },
+    "gitCommit": { "$ref": "#/$defs/gitSha" },
+    "nativeAbi": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["major", "minor", "headerSha256", "symbolSnapshotSha256"],
+      "properties": {
+        "major": { "type": "integer", "minimum": 1 },
+        "minor": { "type": "integer", "minimum": 0 },
+        "headerSha256": { "$ref": "#/$defs/sha256" },
+        "symbolSnapshotSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "firefox": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "revision", "bergamotVersion", "sourceTreeSha256"],
+      "properties": {
+        "repository": { "const": "mozilla/translations" },
+        "revision": { "$ref": "#/$defs/gitSha" },
+        "bergamotVersion": { "type": "string", "minLength": 1 },
+        "sourceTreeSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "modelManifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["revision", "sha256", "signatureSha256"],
+      "properties": {
+        "revision": { "type": "integer", "minimum": 1 },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "signatureSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "toolchains": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": { "type": "string", "minLength": 1 }
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "kind", "target", "sha256", "sizeBytes"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "kind": {
+            "type": "string",
+            "enum": ["maven", "native-runtime", "aar", "xcframework", "sources", "documentation", "swiftpm", "license-source"]
+          },
+          "target": { "type": "string", "minLength": 1 },
+          "sha256": { "$ref": "#/$defs/sha256" },
+          "sizeBytes": { "type": "integer", "minimum": 1 },
+          "unsignedPayloadSha256": { "$ref": "#/$defs/sha256" }
+        }
+      }
+    },
+    "sbom": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["format", "sha256"],
+      "properties": {
+        "format": { "type": "string", "enum": ["CycloneDX", "SPDX"] },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["workflow", "runId", "attestationSha256"],
+      "properties": {
+        "workflow": { "type": "string", "minLength": 1 },
+        "runId": { "type": "string", "minLength": 1 },
+        "attestationSha256": { "$ref": "#/$defs/sha256" },
+        "builderIdentity": { "type": "string", "minLength": 1 }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "gitSha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "semver": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
+    }
+  }
+}

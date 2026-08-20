@@ -1,0 +1,28 @@
+CURRENT MOZILLA SOURCE MANIFEST
+repository: mozilla/translations
+HEAD: eea6e5a80aa4ddd86d9cc35ce9a65b79aa3ab96d
+BERGAMOT_VERSION: v0.6.0
+
+submodule status --recursive
+-42fa605b53f32eaf6c6e0b5677255c21c91b3d49 3rd_party/extract-lex
+-cab1e9aac8d3bb02ff5ae58218d8d225a039fa11 3rd_party/fast_align
+-bbf4fc511266c5d4515047055d7bdec659a6e158 3rd_party/kenlm
+-e8a1a2530fb84cbff7383302ebca393e5875c441 3rd_party/marian-dev
+-64307314b4d5a9a0bd529b5c1036b0710d995eec 3rd_party/preprocess
+-2346baa7bb44a4a0571cc75f1986ab9aaa35aa03 inference/3rd_party/emsdk
+ a311f9865ade34db1e8e080e6cc146f55dafb067 inference/3rd_party/ssplit-cpp (heads/master)
+ 0e33146d3e7f070c7de9494efef49147a9d20558 inference/marian-fork/src/3rd_party/fbgemm (0e33146)
+ 4da474ac9aa2689e88d5e40a2f37628f302d7e3c inference/marian-fork/src/3rd_party/fbgemm/third_party/asmjit (4da474a)
+ d5e37adf1406cf899d7d9ec1d317c47506ccb970 inference/marian-fork/src/3rd_party/fbgemm/third_party/cpuinfo (d5e37ad)
+ 0fc5466dbb9e623029b1ada539717d10bd45e99e inference/marian-fork/src/3rd_party/fbgemm/third_party/googletest (0fc5466)
+ f7401513da71758dacce52fed1c7855549abee59 inference/marian-fork/src/3rd_party/intgemm (v1.0)
+-7d3486128ebc865b9f2cad63a5cfd3a8f6abcb5a inference/marian-fork/src/3rd_party/nccl
+ 924924b08e9596b41aeebada4a172f026be95f5a inference/marian-fork/src/3rd_party/onnxjs (heads/master)
+ fff37f4ca0397af9ed7e04f3bd6b893a1ea2b08e inference/marian-fork/src/3rd_party/onnxjs/deps/eigen (fff37f4)
+ 2d950b3bfa7ebfbe7a97ecb44b1cc4da5ac1d6f0 inference/marian-fork/src/3rd_party/ruy (2d950b3)
+ 5916273f79a21551890fd3d56fc5375a78d1598d inference/marian-fork/src/3rd_party/ruy/third_party/cpuinfo (5916273)
+ 6c58c11d5497b6ee1df3cb400ce30deb72fc28c0 inference/marian-fork/src/3rd_party/ruy/third_party/googletest (6c58c11)
+ ae41b7740d7006596bb9257e83340b2620db9d00 inference/marian-fork/src/3rd_party/sentencepiece (heads/master)
+ d0793d86aea9036a5bc77b9ca7791dff024168ca inference/marian-fork/src/3rd_party/simd_utils (d0793d8)
+ 417a2a9e9dbd720b8d2dfa1dafe57cf1b37ca0d7 inference/marian-fork/src/3rd_party/simple-websocket-server (417a2a9)
+

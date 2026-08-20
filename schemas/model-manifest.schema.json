@@ -1,0 +1,173 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.linguum.io/translation/model-manifest.schema.json",
+  "title": "Linguum Translation Approved Model Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "manifestRevision",
+    "libraryVersion",
+    "firefoxCompatibility",
+    "sourceRegistry",
+    "generatedAt",
+    "models"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "manifestRevision": { "type": "integer", "minimum": 1 },
+    "libraryVersion": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
+    },
+    "firefoxCompatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "revision", "bergamotVersion", "sourceTreeSha256"],
+      "properties": {
+        "repository": { "const": "mozilla/translations" },
+        "revision": { "$ref": "#/$defs/gitSha" },
+        "bergamotVersion": { "type": "string", "minLength": 1 },
+        "sourceTreeSha256": { "$ref": "#/$defs/sha256" },
+        "firefoxSourceRevision": { "$ref": "#/$defs/gitSha" },
+        "firefoxReleaseRange": { "type": "string", "minLength": 1 }
+      }
+    },
+    "sourceRegistry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url", "retrievedAt", "sha256"],
+      "properties": {
+        "url": { "type": "string", "format": "uri", "pattern": "^https://" },
+        "retrievedAt": { "type": "string", "format": "date-time" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "generator": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "repository": { "type": "string", "minLength": 1 },
+        "revision": { "$ref": "#/$defs/gitSha" },
+        "workflowRun": { "type": "string", "minLength": 1 }
+      }
+    },
+    "models": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/model" }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "gitSha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "languageTag": {
+      "type": "string",
+      "pattern": "^[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*$"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "url"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["mozilla", "linguum-mirror", "enterprise-mirror", "local"]
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^(https|file)://"
+        }
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "role", "fileName", "compressedBytes", "installedBytes", "sha256", "sources"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]*$" },
+        "role": {
+          "type": "string",
+          "enum": ["model", "vocabulary", "shortlist", "quality-model", "configuration", "sentence-splitter"]
+        },
+        "fileName": { "type": "string", "pattern": "^[^/\\\\]+$" },
+        "archiveFormat": {
+          "type": "string",
+          "enum": ["none", "gzip", "tar-gzip", "zip", "zstd", "tar-zstd"]
+        },
+        "compressedBytes": { "type": "integer", "minimum": 0 },
+        "installedBytes": { "type": "integer", "minimum": 1 },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "installedSha256": { "$ref": "#/$defs/sha256" },
+        "sources": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/source" }
+        }
+      }
+    },
+    "capabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["plainText", "batch", "structuredText"],
+      "properties": {
+        "plainText": { "type": "boolean" },
+        "batch": { "type": "boolean" },
+        "structuredText": { "type": "boolean" },
+        "alignment": { "type": "boolean" },
+        "qualityEstimation": { "type": "boolean" },
+        "pivot": { "type": "boolean" }
+      }
+    },
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "sourceLanguage",
+        "targetLanguage",
+        "mozillaVersion",
+        "architecture",
+        "status",
+        "capabilities",
+        "artifacts",
+        "expectedConfiguration"
+      ],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+        "sourceLanguage": { "$ref": "#/$defs/languageTag" },
+        "targetLanguage": { "$ref": "#/$defs/languageTag" },
+        "mozillaVersion": { "type": "string", "minLength": 1 },
+        "architecture": { "type": "string", "minLength": 1 },
+        "status": { "const": "approved" },
+        "capabilities": { "$ref": "#/$defs/capabilities" },
+        "artifacts": {
+          "type": "array",
+          "minItems": 2,
+          "items": { "$ref": "#/$defs/artifact" }
+        },
+        "expectedConfiguration": {
+          "type": "object",
+          "additionalProperties": { "type": ["string", "number", "integer", "boolean"] }
+        },
+        "qualityEvidence": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "driftReport": { "type": "string" },
+            "benchmarkReport": { "type": "string" },
+            "approvedBy": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}
