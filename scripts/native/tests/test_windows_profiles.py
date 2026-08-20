@@ -102,6 +102,7 @@ class WindowsProfileLockTests(unittest.TestCase):
         self.assertIn("set(PCRE2_STATIC_LIBRARY_NAME pcre2-8-static)", patch)
         self.assertIn("set(PCRE2_STATIC_LIBRARY_NAME pcre2-8)", patch)
         self.assertIn("${PCRE2_STATIC_LIBRARY_NAME}${CMAKE_STATIC_LIBRARY_SUFFIX}", patch)
+        self.assertIn("target_compile_definitions(ssplit PRIVATE PCRE2_STATIC)", patch)
 
     def test_runtime_build_disables_host_dependent_documentation(self):
         cmake = (ROOT / "native" / "runtime-build" / "CMakeLists.txt").read_text(

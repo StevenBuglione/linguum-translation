@@ -19,6 +19,7 @@
     "ios-simulator-x64"
   ],
   "affectedPaths": [
+    "inference/3rd_party/ssplit-cpp/CMakeLists.txt",
     "inference/3rd_party/ssplit-cpp/cmake/FindPCRE2.cmake",
     "inference/cmake/GetVersionFromFile.cmake",
     "inference/marian-fork/cmake/GetVersionFromFile.cmake",
@@ -36,5 +37,5 @@
   "license": "MPL-2.0",
   "approvedBy": "Steven Buglione",
   "approvalReference": "Repository-owner standing delivery and patch authorization in Codex task 01a01dba-bb5f-7272-b179-7a6e6db206f3 on 2026-08-20",
-  "patchSha256": "97e0ae803bac9fd11d363ee0a6e9e2bf29521664a119702dd75f44fd1888c02b"
+  "patchSha256": "6618d2109caba006ea509b752d5f7c75aad09bddd2f2bbf0103e0283848506ef"
 }

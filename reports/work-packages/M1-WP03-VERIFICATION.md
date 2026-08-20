@@ -73,6 +73,7 @@ Shallow clone: NO
 | hosted PR run `32394796302`, Windows job `96509086153` | 1 during optimized-profile CMake configuration; installed Doxygen activated an optional upstream docs branch whose input is absent from the pinned snapshot | upstream documentation forced off so host tool presence cannot change the native build graph |
 | hosted PR run `32395376300`, Windows job `96510842275` | 1 at optimized-profile object 318/319; `/WX` promoted warnings emitted from pinned upstream headers while compiling the Linguum adapter | external target/include boundary marked `SYSTEM`; first-party adapter remains `/W4 /WX` |
 | hosted PR run `32396191855`, Windows job `96513462526` | 1 at optimized-profile DLL link after all objects compiled; pinned PCRE2 installs `pcre2-8-static.lib` on MSVC while the upstream integration assumed `pcre2-8.lib` | staged external patch selects PCRE2's exact MSVC static-library filename without changing non-Windows names |
+| hosted PR run `32397117391`, Windows job `96516421868` | 1 at optimized-profile DLL link; the correct static PCRE2 archive was linked, but `ssplit` compiled PCRE2 calls as DLL imports and produced ten unresolved `__imp_pcre2_*` symbols | staged external patch defines `PCRE2_STATIC` privately for the `ssplit` target on MSVC |
 
 ## Local test and policy results
 
