@@ -52,7 +52,8 @@ def load_lock(path: Path = LOCK_PATH) -> Dict[str, object]:
     if not isinstance(toolchain, dict) or not isinstance(profiles, list):
         raise WindowsProfileError("Windows profile lock is missing toolchain or profiles")
     required_tools = {
-        "visualStudio", "msvcToolset", "compiler", "windowsSdk", "cmake", "ninja"
+        "visualStudio", "visualStudioVersion", "msvcToolset", "compiler",
+        "windowsSdk", "cmake", "ninja"
     }
     if set(toolchain) != required_tools:
         raise WindowsProfileError("Windows profile toolchain keys differ from the contract")
@@ -107,12 +108,16 @@ def parse_environment(output: str) -> Dict[str, str]:
     return environment
 
 
-def vswhere_arguments(toolchain: Mapping[str, object]) -> List[str]:
-    if toolchain.get("visualStudio") != "2022":
+def vswhere_arguments(
+    toolchain: Mapping[str, object], property_name: str = "installationPath"
+) -> List[str]:
+    versions = {"2022": "[17.0,18.0)", "2026": "[18.0,19.0)"}
+    version_range = versions.get(str(toolchain.get("visualStudio")))
+    if version_range is None:
         raise WindowsProfileError("unsupported Visual Studio lock identity")
     return [
-        "-products", "*", "-version", "[17.0,18.0)", "-requires",
-        "Microsoft.VisualStudio.Component.VC.Tools.x86.x64", "-property", "installationPath",
+        "-products", "*", "-version", version_range, "-requires",
+        "Microsoft.VisualStudio.Component.VC.Tools.x86.x64", "-property", property_name,
     ]
 
 
@@ -124,6 +129,15 @@ def activate_msvc(toolchain: Mapping[str, object]) -> Dict[str, str]:
         raise WindowsProfileError("ProgramFiles(x86) is unavailable")
     vswhere = Path(program_files) / "Microsoft Visual Studio" / "Installer" / "vswhere.exe"
     installation = capture([str(vswhere)] + vswhere_arguments(toolchain)).strip()
+    installation_version = capture(
+        [str(vswhere)] + vswhere_arguments(toolchain, "installationVersion")
+    ).strip()
+    if installation_version != toolchain["visualStudioVersion"]:
+        raise WindowsProfileError(
+            "Visual Studio mismatch: expected {}, got {}".format(
+                toolchain["visualStudioVersion"], installation_version
+            )
+        )
     vcvars = Path(installation) / "VC" / "Auxiliary" / "Build" / "vcvars64.bat"
     command = 'call "{}" -vcvars_ver=14.44 -winsdk={} >nul && set'.format(
         vcvars, toolchain["windowsSdk"]
@@ -153,6 +167,7 @@ def activate_msvc(toolchain: Mapping[str, object]) -> Dict[str, str]:
         "compiler": match.group(1),
         "msvcToolset": actual_toolset,
         "visualStudioInstallation": installation,
+        "visualStudioVersion": installation_version,
         "windowsSdk": actual_sdk,
     }
 

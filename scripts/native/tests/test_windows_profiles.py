@@ -99,11 +99,11 @@ class EvidenceParsingTests(unittest.TestCase):
         )
 
     def test_vswhere_selects_the_locked_visual_studio_major(self):
-        arguments = windows_profiles.vswhere_arguments({"visualStudio": "2022"})
-        self.assertIn("[17.0,18.0)", arguments)
+        arguments = windows_profiles.vswhere_arguments({"visualStudio": "2026"})
+        self.assertIn("[18.0,19.0)", arguments)
         self.assertNotIn("-latest", arguments)
         with self.assertRaises(windows_profiles.WindowsProfileError):
-            windows_profiles.vswhere_arguments({"visualStudio": "2026"})
+            windows_profiles.vswhere_arguments({"visualStudio": "future"})
 
     def test_baseline_disassembly_rejects_any_avx_family_instruction(self):
         safe = "  0000000180001000: mov rax,qword ptr [rcx]\n"
