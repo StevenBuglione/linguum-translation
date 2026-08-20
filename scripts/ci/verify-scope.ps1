@@ -36,7 +36,7 @@ if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
 }
 
-& python -m py_compile scripts\native\bootstrap_tools.py scripts\native\fetch_canary_model.py scripts\native\run_host_canary.py scripts\native\stage_source.py scripts\native\tests\test_native_helpers.py
+& python -m py_compile scripts\native\bootstrap_tools.py scripts\native\fetch_canary_model.py scripts\native\run_host_canary.py scripts\native\stage_source.py scripts\native\windows_profiles.py scripts\native\tests\test_native_helpers.py scripts\native\tests\test_windows_profiles.py
 if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
 }
@@ -44,7 +44,8 @@ if ($LASTEXITCODE -ne 0) {
 @(
     "native\patches\PATCHES.yaml",
     "testing\native\fixtures\es-en-v2.0.json",
-    "toolchains\native-tools.lock.json"
+    "toolchains\native-tools.lock.json",
+    "toolchains\windows-native-profiles.lock.json"
 ) | ForEach-Object {
     & python -m json.tool $_ | Out-Null
     if ($LASTEXITCODE -ne 0) {
@@ -53,6 +54,11 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 & python .\scripts\upstream\snapshot.py verify
+if ($LASTEXITCODE -ne 0) {
+    exit $LASTEXITCODE
+}
+
+& python .\scripts\native\windows_profiles.py --clean --iterations 100
 if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
 }

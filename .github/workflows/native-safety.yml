@@ -7,6 +7,7 @@ on:
       - 'scripts/native/**'
       - 'testing/native/**'
       - 'toolchains/native-tools.lock.json'
+      - 'toolchains/windows-native-profiles.lock.json'
       - '.github/workflows/native-safety.yml'
   workflow_dispatch:
 

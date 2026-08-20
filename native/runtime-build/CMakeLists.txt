@@ -11,6 +11,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 set(LINGUUM_TRANSLATIONS_SOURCE "" CACHE PATH "Staged Firefox-pinned translations source")
 set(LINGUUM_TRANSLATIONS_REVISION "eea6e5a80aa4ddd86d9cc35ce9a65b79aa3ab96d" CACHE STRING "Pinned translations revision")
@@ -19,6 +20,11 @@ set(LINGUUM_LIBRARY_VERSION "0.0.0-SNAPSHOT" CACHE STRING "Linguum library versi
 set(LINGUUM_ACCELERATION_PROFILE "host-unknown" CACHE STRING "Resolved native acceleration profile")
 set(LINGUUM_CANARY_MODEL_DIR "" CACHE PATH "Directory containing the pinned es-en canary model")
 set(LINGUUM_CANARY_ITERATIONS "100" CACHE STRING "Full canary lifecycle repetitions")
+set(LINGUUM_INTGEMM_BASELINE_ONLY OFF CACHE BOOL "Exclude AVX-family intgemm kernels")
+
+if(LINGUUM_INTGEMM_BASELINE_ONLY AND NOT MSVC)
+  message(FATAL_ERROR "LINGUUM_INTGEMM_BASELINE_ONLY is currently proven only with MSVC")
+endif()
 
 if(NOT IS_DIRECTORY "${LINGUUM_TRANSLATIONS_SOURCE}/inference")
   message(FATAL_ERROR "LINGUUM_TRANSLATIONS_SOURCE must name a staged translations checkout")

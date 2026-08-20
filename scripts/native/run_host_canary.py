@@ -70,9 +70,11 @@ def safe_build_directory(path: Path) -> Path:
     return resolved
 
 
-def host_profile() -> Tuple[str, str, List[str]]:
+def host_profile(profile_name: str = "host") -> Tuple[str, str, List[str]]:
     system = platform.system().lower()
     machine = platform.machine().lower()
+    if profile_name != "host" and system != "windows":
+        raise HostCanaryError("{} is a Windows-only native profile".format(profile_name))
     if system == "darwin" and machine in {"arm64", "aarch64"}:
         return "armv8-a", "apple-accelerate-arm64", [
             "-DCMAKE_OSX_ARCHITECTURES=arm64",
@@ -88,7 +90,20 @@ def host_profile() -> Tuple[str, str, List[str]]:
     if system == "linux" and machine in {"x86_64", "amd64"}:
         return "native", "linux-x64-host-native", []
     if system == "windows" and machine in {"x86_64", "amd64"}:
-        return "native", "windows-x64-host-native", []
+        requested = "windows-x64-avx2" if profile_name == "host" else profile_name
+        if requested == "windows-x64-avx2":
+            return "native", "fbgemm-intgemm-avx2", [
+                "-DUSE_FBGEMM=ON",
+                "-DUSE_ONNX_SGEMM=ON",
+                "-DLINGUUM_INTGEMM_BASELINE_ONLY=OFF",
+            ]
+        if requested == "windows-x64-baseline":
+            return "core2", "intgemm-ssse3-onnx-sgemm-baseline", [
+                "-DUSE_FBGEMM=OFF",
+                "-DUSE_ONNX_SGEMM=ON",
+                "-DLINGUUM_INTGEMM_BASELINE_ONLY=ON",
+            ]
+        raise HostCanaryError("unsupported Windows native profile: {}".format(requested))
     raise HostCanaryError("unsupported desktop canary host: {} {}".format(system, machine))
 
 
@@ -167,8 +182,9 @@ def configure_arguments(
     model: Path,
     build_directory: Path,
     iterations: int,
+    profile_name: str = "host",
 ) -> Tuple[List[str], str]:
-    build_arch, acceleration, platform_arguments = host_profile()
+    build_arch, acceleration, platform_arguments = host_profile(profile_name)
     arguments = [
         str(cmake),
         "-S", str(ROOT / "native" / "runtime-build"),
@@ -176,6 +192,7 @@ def configure_arguments(
         "-G", "Ninja",
         "-DCMAKE_MAKE_PROGRAM={}".format(ninja),
         "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
         "-DBUILD_TESTING=ON",
         "-DBUILD_ARCH={}".format(build_arch),
         "-DLINGUUM_TRANSLATIONS_SOURCE={}".format(source),
@@ -190,7 +207,12 @@ def configure_arguments(
     return arguments, acceleration
 
 
-def execute(build_directory: Path, iterations: int, clean: bool) -> Dict[str, object]:
+def execute(
+    build_directory: Path,
+    iterations: int,
+    clean: bool,
+    profile_name: str = "host",
+) -> Dict[str, object]:
     if iterations < 1 or iterations > 1000:
         raise HostCanaryError("iterations must be between 1 and 1000")
     build_directory = safe_build_directory(build_directory)
@@ -203,7 +225,7 @@ def execute(build_directory: Path, iterations: int, clean: bool) -> Dict[str, ob
     model = fetch_canary_model.fetch()
     cmake, ninja = bootstrap_tools.bootstrap()
     configure, acceleration = configure_arguments(
-        cmake, ninja, source, model, build_directory, iterations
+        cmake, ninja, source, model, build_directory, iterations, profile_name
     )
     run(configure)
     run([
@@ -231,6 +253,7 @@ def execute(build_directory: Path, iterations: int, clean: bool) -> Dict[str, ob
         "iterations": iterations,
         "minimumVersions": minimum_versions,
         "ninja": capture([str(ninja), "--version"]).strip(),
+        "profile": profile_name if profile_name != "host" else acceleration,
         "translationsRevision": TRANSLATIONS_REVISION,
     }
     print(json.dumps(result, indent=2, sort_keys=True))
@@ -242,9 +265,19 @@ def main() -> int:
     parser.add_argument("--build-dir", type=Path, default=DEFAULT_BUILD)
     parser.add_argument("--iterations", type=int, default=100)
     parser.add_argument("--clean", action="store_true")
+    parser.add_argument(
+        "--profile",
+        choices=("host", "windows-x64-avx2", "windows-x64-baseline"),
+        default="host",
+    )
     arguments = parser.parse_args()
     try:
-        execute(arguments.build_dir, arguments.iterations, arguments.clean)
+        execute(
+            arguments.build_dir,
+            arguments.iterations,
+            arguments.clean,
+            arguments.profile,
+        )
     except (
         HostCanaryError,
         bootstrap_tools.ToolBootstrapError,
