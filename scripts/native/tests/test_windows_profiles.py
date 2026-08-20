@@ -37,6 +37,7 @@ class WindowsProfileLockTests(unittest.TestCase):
             document["toolchain"]["visualStudioVersions"],
         )
         self.assertEqual("14.44.35207", document["toolchain"]["msvcToolset"])
+        self.assertEqual("19.44.35228", document["toolchain"]["compiler"])
         self.assertEqual(set(windows_profiles.PROFILE_IDS), set(profiles))
         self.assertEqual(["AVX2"], profiles["windows-x64-avx2"]["requiredCpuFeatures"])
         baseline = profiles["windows-x64-baseline"]

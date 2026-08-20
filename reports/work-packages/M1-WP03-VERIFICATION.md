@@ -69,6 +69,7 @@ Shallow clone: NO
 | hosted PR run `32393848450`, Windows job `96505999675` | 1 before compilation; a second runner region served official rolling image `20260810.198.2` with VS `18.8.12023.21` instead of image `20260818.207.1` with VS `18.9.12112.369` | both finite official rollout identities locked; exact compiler, MSVC toolset, SDK, CMake, and Ninja locks remain singular |
 | hosted PR run `32394104132`, Windows job `96506822256` | 1 before compilation; diagnostics proved VS 2026 rejects the named `-winsdk` form and listed exact installed legacy toolset directory `14.44.35207` | SDK changed to the supported positional argument; exact full legacy toolset requested and locked |
 | hosted PR run `32394364835`, Windows job `96507654648` | 1 before compilation; exact SDK and legacy toolset activation succeeded, then the compiler banner differed from the provisional compiler lock | compiler-banner parser and fail-closed expected/actual diagnostic added before changing the lock |
+| hosted PR run `32394570521`, Windows job `96508383645` | 1 before compilation; exact activation proved the legacy toolset compiler banner is `19.44.35228` | observed compiler identity locked exactly |
 
 ## Local test and policy results
 
