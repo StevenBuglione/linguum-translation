@@ -312,6 +312,44 @@ ro.kernel.qemu=0
         with self.assertRaises(android_profiles.AndroidProfileError):
             android_profiles.verify_device_properties(emulator, "arm64-v8a", 26, physical=True)
 
+    def test_device_canary_uses_a_unique_marker_and_retries_transient_logcat_errors(self):
+        token = "a" * 32
+        pass_log = (
+            "I LinguumAndroidCanary: LINGUUM_ANDROID_CANARY_PASS "
+            "runToken={} canary lifecycle PASS: 100 iterations, ABI 1.0\n".format(token)
+        )
+        with mock.patch.object(android_profiles, "resolve_device_serial", return_value="emulator-5554"), \
+             mock.patch.object(
+                 android_profiles,
+                 "device_properties",
+                 return_value=(
+                     "ro.product.cpu.abi=x86_64\n"
+                     "ro.build.version.sdk=26\n"
+                     "ro.kernel.qemu=1\n"
+                 ),
+             ), \
+             mock.patch.object(android_profiles.secrets, "token_hex", return_value=token), \
+             mock.patch.object(
+                 android_profiles,
+                 "adb_command",
+                 side_effect=lambda serial, *arguments: ["adb", "-s", serial, *arguments],
+             ), \
+             mock.patch.object(android_profiles, "run") as run_mock, \
+             mock.patch.object(
+                 android_profiles,
+                 "capture",
+                 side_effect=[android_profiles.AndroidProfileError("transient logcat error"), pass_log],
+             ), \
+             mock.patch.object(android_profiles.time, "sleep"):
+            evidence = android_profiles.run_device_canary(
+                Path("/tmp/app.apk"), "emulator", "", 100
+            )
+        commands = [call.args[0] for call in run_mock.call_args_list]
+        self.assertEqual(token, evidence["runToken"])
+        self.assertEqual("x86_64", evidence["properties"]["abi"])
+        self.assertTrue(any("runToken" in command and token in command for command in commands))
+        self.assertFalse(any(command[-2:] == ["logcat", "-c"] for command in commands))
+
     def test_native_and_java_bridge_use_registered_jni_and_one_library(self):
         cmake = (ROOT / "native" / "runtime-build" / "CMakeLists.txt").read_text(encoding="utf-8")
         exports = (ROOT / "native" / "runtime-build" / "exports" / "android.map").read_text(encoding="utf-8")
@@ -404,6 +442,9 @@ ro.kernel.qemu=0
             / "canary"
             / "CanaryActivity.java"
         ).read_text(encoding="utf-8")
+        android_tool = (ROOT / "scripts" / "native" / "android_profiles.py").read_text(
+            encoding="utf-8"
+        )
         self.assertNotIn(":platform:android", settings)
         self.assertNotIn(":testing:platform-smoke:android-canary", settings)
         self.assertIn('"testing/platform-smoke/android-canary/**"', plugin)
@@ -414,6 +455,11 @@ ro.kernel.qemu=0
         self.assertIn("LINGUUM_ANDROID_CANARY_START", activity)
         self.assertIn("Build.SUPPORTED_ABIS[0]", activity)
         self.assertIn("Process.is64Bit()", activity)
+        self.assertIn('value.matches("[a-f0-9]{32}")', activity)
+        self.assertIn("secrets.token_hex(16)", android_tool)
+        self.assertNotIn('adb_command(serial, "logcat", "-c")', android_tool)
+        self.assertIn('"--es",', android_tool)
+        self.assertIn('"runToken",', android_tool)
         self.assertFalse((ROOT / "platform" / "android").exists())
 
     def test_android_artifact_name_matches_the_locked_platform_contract(self):

@@ -8,6 +8,7 @@ import json
 import os
 import platform
 import re
+import secrets
 import shutil
 import subprocess
 import sys
@@ -732,7 +733,9 @@ def run_device_canary(
         EXPECTED_MIN_SDK,
         physical=mode == "physical",
     )
-    run(adb_command(serial, "logcat", "-c"))
+    run_token = secrets.token_hex(16)
+    expected_failure = "{} runToken={}".format(CANARY_FAILURE_MARKER, run_token)
+    expected_pass = "{} runToken={}".format(CANARY_MARKER, run_token)
     run(adb_command(serial, "install", "-r", "-t", apk))
     component = "io.linguum.translation.canary/.CanaryActivity"
     run(
@@ -747,34 +750,46 @@ def run_device_canary(
             "--ei",
             "iterations",
             str(iterations),
+            "--es",
+            "runToken",
+            run_token,
         )
     )
     deadline = time.monotonic() + 600.0
     last_output = ""
+    last_logcat_error = ""
     while time.monotonic() < deadline:
-        last_output = capture(
-            adb_command(
-                serial,
-                "logcat",
-                "-d",
-                "-s",
-                "LinguumAndroidCanary:I",
-                "*:S",
+        try:
+            last_output = capture(
+                adb_command(
+                    serial,
+                    "logcat",
+                    "-d",
+                    "-s",
+                    "LinguumAndroidCanary:I",
+                    "*:S",
+                )
             )
-        )
-        if CANARY_FAILURE_MARKER in last_output:
+        except AndroidProfileError as error:
+            last_logcat_error = str(error)
+            time.sleep(1.0)
+            continue
+        if expected_failure in last_output:
             raise AndroidProfileError("Android canary reported failure:\n{}".format(last_output))
-        if CANARY_MARKER in last_output:
+        if expected_pass in last_output:
             break
         time.sleep(1.0)
     else:
-        raise AndroidProfileError("Android canary timed out:\n{}".format(last_output))
+        raise AndroidProfileError(
+            "Android canary timed out:\n{}".format(last_output or last_logcat_error)
+        )
     run(adb_command(serial, "shell", "am", "force-stop", "io.linguum.translation.canary"))
     return {
         "iterations": iterations,
         "marker": CANARY_MARKER,
         "mode": mode,
         "properties": properties,
+        "runToken": run_token,
         "serial": serial,
     }
 

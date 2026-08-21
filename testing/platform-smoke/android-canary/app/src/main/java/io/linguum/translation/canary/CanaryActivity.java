@@ -16,6 +16,7 @@ import java.nio.charset.StandardCharsets;
 /** Headless M1 feasibility consumer that executes the exact native lifecycle. */
 public final class CanaryActivity extends Activity {
     private static final String TAG = "LinguumAndroidCanary";
+    private static final String START = "LINGUUM_ANDROID_CANARY_START";
     private static final String PASS = "LINGUUM_ANDROID_CANARY_PASS";
     private static final String FAIL = "LINGUUM_ANDROID_CANARY_FAIL";
     private static final String[] MODEL_ASSETS = {
@@ -28,15 +29,27 @@ public final class CanaryActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         final int iterations = getIntent().getIntExtra("iterations", 100);
-        Log.i(TAG, "LINGUUM_ANDROID_CANARY_START iterations=" + iterations
+        final String runToken = runToken();
+        Log.i(TAG, START + " runToken=" + runToken + " iterations=" + iterations
                 + " sdk=" + Build.VERSION.SDK_INT
                 + " primaryAbi=" + Build.SUPPORTED_ABIS[0]
                 + " osArch=" + System.getProperty("os.arch")
                 + " is64Bit=" + Process.is64Bit());
-        new Thread(() -> runCanary(iterations), "linguum-android-canary").start();
+        new Thread(() -> runCanary(iterations, runToken), "linguum-android-canary").start();
     }
 
-    private void runCanary(int iterations) {
+    private String runToken() {
+        String value = getIntent().getStringExtra("runToken");
+        if (value == null) {
+            return "test-lab";
+        }
+        if (!value.matches("[a-f0-9]{32}")) {
+            throw new IllegalArgumentException("invalid canary run token");
+        }
+        return value;
+    }
+
+    private void runCanary(int iterations, String runToken) {
         try {
             File modelDirectory = new File(getFilesDir(), "es-en-v2.0");
             if (!modelDirectory.isDirectory() && !modelDirectory.mkdirs()) {
@@ -52,9 +65,9 @@ public final class CanaryActivity extends Activity {
             if (!expected.equals(result)) {
                 throw new IllegalStateException("unexpected native canary result: " + result);
             }
-            Log.i(TAG, PASS + " " + result);
+            Log.i(TAG, PASS + " runToken=" + runToken + " " + result);
         } catch (Throwable failure) {
-            Log.e(TAG, FAIL, failure);
+            Log.e(TAG, FAIL + " runToken=" + runToken, failure);
         } finally {
             runOnUiThread(this::finish);
         }
