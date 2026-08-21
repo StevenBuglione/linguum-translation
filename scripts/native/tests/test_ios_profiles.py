@@ -412,6 +412,13 @@ class IosProfileContractTests(unittest.TestCase):
             archive.write_bytes(b"!<arch>\n" + member(b"123"))
             with self.assertRaises(ios_profiles.IosProfileError):
                 ios_profiles.verify_deterministic_archive_metadata(archive)
+            ios_profiles.normalize_static_archive_metadata(archive)
+            normalized = ios_profiles.verify_deterministic_archive_metadata(archive)
+            self.assertTrue(normalized["normalizedArchiveHeaders"])
+            header = archive.read_bytes()[8:68]
+            self.assertEqual(b"0", header[16:28].strip())
+            self.assertEqual(b"0", header[28:34].strip())
+            self.assertEqual(b"0", header[34:40].strip())
 
     def test_cmake_and_fixture_use_static_c_abi_through_cinterop(self):
         cmake = (ROOT / "native" / "runtime-build" / "CMakeLists.txt").read_text(

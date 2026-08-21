@@ -626,22 +626,29 @@ def merge_static_archives(build_directory: Path, destination: Path) -> List[str]
         path
         for path in build_directory.rglob("*.a")
         if path.resolve() != destination.resolve()
+        # PCRE2's ExternalProject installs the link inputs below lib/. Its
+        # private build directory contains the same objects in a second pair
+        # of archives, which must not be folded into the shipping closure.
+        and path.relative_to(build_directory).parts[0] != "pcre2"
     )
     if not candidates:
         raise IosProfileError("the iOS native build produced no static archives")
+    for name in ("libpcre2-8.a", "libpcre2-posix.a"):
+        if build_directory.joinpath("lib", name) not in candidates:
+            raise IosProfileError("the iOS archive closure lacks {}".format(name))
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.unlink(missing_ok=True)
     run(["xcrun", "libtool", "-static", "-D", "-o", destination, *candidates])
     run(["xcrun", "ranlib", "-D", destination])
+    normalize_static_archive_metadata(destination)
     return [str(path.relative_to(build_directory)) for path in candidates]
 
 
-def verify_deterministic_archive_metadata(archive: Path) -> Dict[str, object]:
-    payload = archive.read_bytes()
+def archive_member_header_offsets(payload: bytes) -> List[int]:
     if not payload.startswith(b"!<arch>\n"):
         raise IosProfileError("merged iOS output is not an ar archive")
     position = 8
-    members = 0
+    offsets = []
     while position < len(payload):
         header = payload[position : position + 60]
         if len(header) != 60 or header[58:60] != b"`\n":
@@ -650,6 +657,37 @@ def verify_deterministic_archive_metadata(archive: Path) -> Dict[str, object]:
             size = int(header[48:58].decode("ascii").strip())
         except (UnicodeDecodeError, ValueError) as error:
             raise IosProfileError("merged iOS archive has an invalid member size") from error
+        offsets.append(position)
+        position += 60 + size + (size % 2)
+        if position > len(payload):
+            raise IosProfileError("merged iOS archive member exceeds the file boundary")
+    if position != len(payload) or not offsets:
+        raise IosProfileError("merged iOS archive is empty or has trailing data")
+    return offsets
+
+
+def normalize_static_archive_metadata(archive: Path) -> None:
+    if not archive.is_file() or archive.is_symlink():
+        raise IosProfileError("merged iOS archive must be a regular file")
+    payload = bytearray(archive.read_bytes())
+    for offset in archive_member_header_offsets(payload):
+        payload[offset + 16 : offset + 28] = b"0".ljust(12)
+        payload[offset + 28 : offset + 34] = b"0".ljust(6)
+        payload[offset + 34 : offset + 40] = b"0".ljust(6)
+    partial = archive.with_name("{}.normalized".format(archive.name))
+    partial.unlink(missing_ok=True)
+    try:
+        partial.write_bytes(payload)
+        os.replace(str(partial), str(archive))
+    finally:
+        partial.unlink(missing_ok=True)
+
+
+def verify_deterministic_archive_metadata(archive: Path) -> Dict[str, object]:
+    payload = archive.read_bytes()
+    offsets = archive_member_header_offsets(payload)
+    for offset in offsets:
+        header = payload[offset : offset + 60]
         timestamp = header[16:28].strip()
         owner = header[28:34].strip()
         group = header[34:40].strip()
@@ -657,13 +695,7 @@ def verify_deterministic_archive_metadata(archive: Path) -> Dict[str, object]:
             raise IosProfileError(
                 "merged iOS archive retains non-deterministic time or owner metadata"
             )
-        position += 60 + size + (size % 2)
-        if position > len(payload):
-            raise IosProfileError("merged iOS archive member exceeds the file boundary")
-        members += 1
-    if position != len(payload) or members == 0:
-        raise IosProfileError("merged iOS archive is empty or has trailing data")
-    return {"archiveMembers": members, "normalizedArchiveHeaders": True}
+    return {"archiveMembers": len(offsets), "normalizedArchiveHeaders": True}
 
 
 def build_cinterop(
