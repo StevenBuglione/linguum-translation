@@ -389,12 +389,31 @@ ro.kernel.qemu=0
             / "main"
             / "AndroidManifest.xml"
         ).read_text(encoding="utf-8")
+        activity = (
+            ROOT
+            / "testing"
+            / "platform-smoke"
+            / "android-canary"
+            / "app"
+            / "src"
+            / "main"
+            / "java"
+            / "io"
+            / "linguum"
+            / "translation"
+            / "canary"
+            / "CanaryActivity.java"
+        ).read_text(encoding="utf-8")
         self.assertNotIn(":platform:android", settings)
         self.assertNotIn(":testing:platform-smoke:android-canary", settings)
         self.assertIn('"testing/platform-smoke/android-canary/**"', plugin)
         self.assertIn("assets.directories.add(canaryAssets.get())", consumer)
         self.assertNotIn("assets.srcDir", consumer)
         self.assertNotIn("extractNativeLibs", manifest)
+        self.assertIn("com.google.intent.action.TEST_LOOP", manifest)
+        self.assertIn("LINGUUM_ANDROID_CANARY_START", activity)
+        self.assertIn("Build.SUPPORTED_ABIS[0]", activity)
+        self.assertIn("Process.is64Bit()", activity)
         self.assertFalse((ROOT / "platform" / "android").exists())
 
     def test_android_artifact_name_matches_the_locked_platform_contract(self):

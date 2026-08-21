@@ -2,7 +2,9 @@
 package io.linguum.translation.canary;
 
 import android.app.Activity;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Process;
 import android.util.Log;
 import io.linguum.translation.internal.android.CanaryBridge;
 import java.io.File;
@@ -26,6 +28,11 @@ public final class CanaryActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         final int iterations = getIntent().getIntExtra("iterations", 100);
+        Log.i(TAG, "LINGUUM_ANDROID_CANARY_START iterations=" + iterations
+                + " sdk=" + Build.VERSION.SDK_INT
+                + " primaryAbi=" + Build.SUPPORTED_ABIS[0]
+                + " osArch=" + System.getProperty("os.arch")
+                + " is64Bit=" + Process.is64Bit());
         new Thread(() -> runCanary(iterations), "linguum-android-canary").start();
     }
 
