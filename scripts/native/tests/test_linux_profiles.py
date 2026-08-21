@@ -278,13 +278,18 @@ class LinuxProfileContractTests(unittest.TestCase):
             changed[key] = value
             with self.assertRaises(linux_profiles.LinuxProfileError):
                 linux_profiles.verify_compatibility_manifest(changed, profile)
-        with tempfile.TemporaryDirectory() as temporary:
-            canary = Path(temporary) / "canary"
-            canary.write_bytes(b"exact transported bytes")
-            canary.chmod(0o644)
-            self.assertEqual(0o644, os.stat(canary).st_mode & 0o777)
-            linux_profiles.restore_compatibility_canary_mode(canary, manifest)
-            self.assertEqual(0o755, os.stat(canary).st_mode & 0o777)
+        canary = mock.Mock()
+        canary.stat.return_value.st_mode = 0o755
+        linux_profiles.restore_compatibility_canary_mode(canary, manifest)
+        canary.chmod.assert_called_once_with(0o755)
+        if os.name == "posix":
+            with tempfile.TemporaryDirectory() as temporary:
+                real_canary = Path(temporary) / "canary"
+                real_canary.write_bytes(b"exact transported bytes")
+                real_canary.chmod(0o644)
+                self.assertEqual(0o644, real_canary.stat().st_mode & 0o777)
+                linux_profiles.restore_compatibility_canary_mode(real_canary, manifest)
+                self.assertEqual(0o755, real_canary.stat().st_mode & 0o777)
 
     def test_output_directory_is_confined_to_build(self):
         with self.assertRaises(linux_profiles.LinuxProfileError):
