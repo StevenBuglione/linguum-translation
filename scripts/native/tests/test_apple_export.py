@@ -76,10 +76,12 @@ class AppleExportContractTests(unittest.TestCase):
         )
 
     def test_gradle_framework_command_is_locked_clean_and_profile_correlated(self):
+        archive = Path("/tmp/liblinguum_translation.a")
+        build_directory = Path("/tmp/framework-build")
         command = apple_export.framework_gradle_command(
             {"id": "ios-simulator-arm64", "kotlinTarget": "iosSimulatorArm64"},
-            Path("/tmp/liblinguum_translation.a"),
-            Path("/tmp/framework-build"),
+            archive,
+            build_directory,
         )
         joined = " ".join(str(value) for value in command)
         self.assertIn("linkReleaseFrameworkIosSimulatorArm64", command)
@@ -87,7 +89,10 @@ class AppleExportContractTests(unittest.TestCase):
         self.assertIn("--rerun-tasks", command)
         self.assertIn("--no-configuration-cache", command)
         self.assertIn("-PlinguumAppleProfile=ios-simulator-arm64", joined)
-        self.assertIn("-PlinguumAppleArchive=/tmp/liblinguum_translation.a", joined)
+        self.assertIn("-PlinguumAppleArchive={}".format(archive), command)
+        self.assertIn(
+            "-PlinguumAppleBuildDirectory={}".format(build_directory), command
+        )
 
     def test_framework_identity_requires_exact_arch_platform_minimum_and_header(self):
         profile = {
