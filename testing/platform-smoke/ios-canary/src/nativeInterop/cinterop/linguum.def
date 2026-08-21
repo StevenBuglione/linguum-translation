@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+headers = linguum_translation.h
+headerFilter = linguum_translation.h
+package = io.linguum.translation.internal.cinterop
+staticLibraries = liblinguum_translation.a
+linkerOpts = -framework Accelerate -lc++

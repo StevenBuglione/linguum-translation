@@ -10,6 +10,8 @@ on:
       - 'toolchains/linux-native-profiles.lock.json'
       - 'toolchains/macos-native-profiles.lock.json'
       - 'toolchains/windows-native-profiles.lock.json'
+      - 'toolchains/ios-native-profiles.lock.json'
+      - 'testing/platform-smoke/ios-canary/**'
       - '.github/workflows/native-safety.yml'
   workflow_dispatch:
 
@@ -34,6 +36,22 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: python3 scripts/native/macos_profiles.py --profile macos-x64 --clean --iterations 100
+
+  ios-intel-simulator:
+    name: Native safety / iOS Intel simulator cinterop
+    runs-on: macos-15-intel
+    timeout-minutes: 180
+    env:
+      CMAKE_BUILD_PARALLEL_LEVEL: 2
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup-gradle
+      - run: >-
+          python3 scripts/native/ios_profiles.py
+          --profile ios-simulator-x64
+          --clean
+          --iterations 100
+          --execution-tier simulator-x64
 
   linux-x64-build:
     name: Native safety / Linux x64 glibc 2.35 build and sanitizers

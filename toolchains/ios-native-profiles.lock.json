@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "deploymentTarget": "15.0",
+  "kotlinVersion": "2.4.10",
+  "xcodeSelection": "runner-default",
+  "toolchain": {
+    "compilerVendor": "AppleClang",
+    "cmake": "4.0.2",
+    "ninja": "1.13.2"
+  },
+  "dependencies": {
+    "pcre2": {
+      "version": "10.39",
+      "archive": "pcre2-10.39.tar.gz",
+      "sha256": "0781bd2536ef5279b1943471fdcdbd9961a2845e1d2c9ad849b9bd98ba1a9bd4",
+      "url": "https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.39/pcre2-10.39.tar.gz"
+    }
+  },
+  "physicalArm64RunnerLabels": [
+    "self-hosted",
+    "macos",
+    "arm64",
+    "ios-device"
+  ],
+  "profiles": [
+    {
+      "id": "ios-arm64",
+      "kotlinTarget": "iosArm64",
+      "sdk": "iphoneos",
+      "platform": "IOS",
+      "architecture": "arm64",
+      "binaryNamespace": "arm64",
+      "buildArch": "armv8-a",
+      "runner": "macos-15",
+      "accelerationProfile": "apple-accelerate-ruy-arm64",
+      "matrixMultiplicationBackend": "Accelerate",
+      "quantizedBackend": "Ruy",
+      "requiredCpuFeatures": [
+        "ARMv8-A",
+        "NEON"
+      ],
+      "runInPullRequest": false,
+      "physicalDeviceExecutionRequired": true
+    },
+    {
+      "id": "ios-simulator-arm64",
+      "kotlinTarget": "iosSimulatorArm64",
+      "sdk": "iphonesimulator",
+      "platform": "IOSSIMULATOR",
+      "architecture": "arm64",
+      "binaryNamespace": "simulator-arm64",
+      "buildArch": "armv8-a",
+      "runner": "macos-15",
+      "accelerationProfile": "apple-accelerate-ruy-arm64",
+      "matrixMultiplicationBackend": "Accelerate",
+      "quantizedBackend": "Ruy",
+      "requiredCpuFeatures": [
+        "ARMv8-A",
+        "NEON"
+      ],
+      "runInPullRequest": true,
+      "physicalDeviceExecutionRequired": false
+    },
+    {
+      "id": "ios-simulator-x64",
+      "kotlinTarget": "iosX64",
+      "sdk": "iphonesimulator",
+      "platform": "IOSSIMULATOR",
+      "architecture": "x86_64",
+      "binaryNamespace": "simulator-x86_64",
+      "buildArch": "nehalem",
+      "runner": "macos-15-intel",
+      "accelerationProfile": "apple-accelerate-intgemm-runtime-x64",
+      "matrixMultiplicationBackend": "Accelerate",
+      "quantizedBackend": "intgemm-runtime-dispatch",
+      "requiredCpuFeatures": [
+        "SSE4.2"
+      ],
+      "runInPullRequest": false,
+      "physicalDeviceExecutionRequired": false
+    }
+  ]
+}

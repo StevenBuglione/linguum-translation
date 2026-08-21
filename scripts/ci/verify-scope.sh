@@ -101,7 +101,21 @@ case "$scope" in
       --device-mode "$android_device_mode"
     ./gradlew architectureCheck --warning-mode=fail
     ;;
-  ios|swift|consumers|performance|release)
+  ios)
+    # M1-WP07 always builds ios-arm64, ios-simulator-arm64, and
+    # ios-simulator-x64; the selected execution tier decides which linked
+    # Kotlin/Native cinterop executable must run in this job.
+    ios_execution_tier="${LINGUUM_IOS_EXECUTION_TIER:-simulator-arm64}"
+    python3 -m unittest scripts.native.tests.test_ios_profiles -v
+    python3 -m json.tool toolchains/ios-native-profiles.lock.json >/dev/null
+    python3 scripts/native/ios_profiles.py \
+      --profile all \
+      --clean \
+      --iterations 100 \
+      --execution-tier "$ios_execution_tier"
+    ./gradlew architectureCheck --warning-mode=fail
+    ;;
+  swift|consumers|performance|release)
     ./gradlew architectureCheck --warning-mode=fail
     ;;
   models)

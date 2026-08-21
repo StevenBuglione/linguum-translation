@@ -13,6 +13,11 @@ runners:
     - linux
     - arm64
     - android-device
+  ios_physical_arm64:
+    - self-hosted
+    - macos
+    - arm64
+    - ios-device
 policy:
   floating_labels: forbidden
   changes_require: pull_request_and_green_protected_checks

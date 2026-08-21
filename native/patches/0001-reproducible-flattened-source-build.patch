@@ -8,10 +8,24 @@ diff --git a/inference/3rd_party/ssplit-cpp/CMakeLists.txt b/inference/3rd_party
 diff --git a/inference/3rd_party/ssplit-cpp/cmake/FindPCRE2.cmake b/inference/3rd_party/ssplit-cpp/cmake/FindPCRE2.cmake
 --- a/inference/3rd_party/ssplit-cpp/cmake/FindPCRE2.cmake
 +++ b/inference/3rd_party/ssplit-cpp/cmake/FindPCRE2.cmake
-@@ -50,0 +51,6 @@ if(SSPLIT_USE_INTERNAL_PCRE2)
+@@ -21,4 +21,6 @@ if(SSPLIT_USE_INTERNAL_PCRE2)
+-  if (EXISTS ${PCRE2_SRC_DIR}/configure)
++  if((IOS OR CMAKE_SYSTEM_NAME STREQUAL "iOS") AND NOT EXISTS ${PCRE2_SRC_DIR}/configure)
++    message(FATAL_ERROR "iOS builds require the checksum-verified preseeded PCRE2 source")
++  elseif(EXISTS ${PCRE2_SRC_DIR}/configure)
+     set(PCRE2_URL "")
+   else()
+       set(PCRE2_URL "https://github.com/PhilipHazel/pcre2/releases/download/${PCRE2_FILENAME}/${PCRE2_TARBALL}")
+@@ -37,0 +41,3 @@ if(SSPLIT_USE_INTERNAL_PCRE2)
++  if(IOS OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
++    set(PCRE2_JIT_OPTION "-DPCRE2_SUPPORT_JIT=OFF")
++  endif()
+@@ -50,0 +51,8 @@ if(SSPLIT_USE_INTERNAL_PCRE2)
 +    -DCMAKE_POLICY_VERSION_MINIMUM=3.5
++    -DCMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME}
 +    -DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES}
 +    -DCMAKE_OSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET}
++    -DCMAKE_OSX_SYSROOT=${CMAKE_OSX_SYSROOT}
 +    -DPCRE2_BUILD_PCRE2GREP=OFF
 +    -DPCRE2_BUILD_TESTS=OFF
 +    -DPCRE2_STATIC_PIC=ON
@@ -24,9 +38,19 @@ diff --git a/inference/3rd_party/ssplit-cpp/cmake/FindPCRE2.cmake b/inference/3r
 +    set(PCRE2_STATIC_LIBRARY_NAME pcre2-8)
 +  endif()
 +  set(PCRE2_LIBRARIES ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${PCRE2_STATIC_LIBRARY_NAME}${CMAKE_STATIC_LIBRARY_SUFFIX})
-@@ -75,0 +87,2 @@ if(SSPLIT_USE_INTERNAL_PCRE2)
+@@ -73,4 +89,6 @@ if(SSPLIT_USE_INTERNAL_PCRE2)
+   ExternalProject_Add(pcre2
+     PREFIX ${CMAKE_BINARY_DIR}/pcre2
+     URL ${PCRE2_URL}
 +    URL_HASH SHA256=0781bd2536ef5279b1943471fdcdbd9961a2845e1d2c9ad849b9bd98ba1a9bd4
 +    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+     DOWNLOAD_DIR ${PCRE2_SRC_DIR}
+diff --git a/inference/marian-fork/src/3rd_party/ruy/third_party/cpuinfo/CMakeLists.txt b/inference/marian-fork/src/3rd_party/ruy/third_party/cpuinfo/CMakeLists.txt
+--- a/inference/marian-fork/src/3rd_party/ruy/third_party/cpuinfo/CMakeLists.txt
++++ b/inference/marian-fork/src/3rd_party/ruy/third_party/cpuinfo/CMakeLists.txt
+@@ -51 +51 @@ SET(CPUINFO_TARGET_PROCESSOR "${CMAKE_SYSTEM_PROCESSOR}")
+-IF(CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND CMAKE_OSX_ARCHITECTURES MATCHES "^(x86_64|arm64)$")
++IF(CMAKE_SYSTEM_NAME MATCHES "^(Darwin|iOS)$" AND CMAKE_OSX_ARCHITECTURES MATCHES "^(x86_64|arm64)$")
 diff --git a/inference/cmake/GetVersionFromFile.cmake b/inference/cmake/GetVersionFromFile.cmake
 --- a/inference/cmake/GetVersionFromFile.cmake
 +++ b/inference/cmake/GetVersionFromFile.cmake
@@ -252,6 +276,14 @@ diff --git a/inference/marian-fork/CMakeLists.txt b/inference/marian-fork/CMakeL
 +endif()
 +option(USE_ONNX_SGEMM "Compile with wasm compatible blas"
 +       ${_USE_ONNX_SGEMM_DEFAULT})
+@@ -651,2 +655,6 @@ if(COMPILE_CPU)
+     # you may need to install Xcode command line tools if you don't have them already (https://developer.apple.com/xcode/features/)
+-    include_directories("/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/Accelerate.framework/Frameworks/vecLib.framework/Headers")
++    if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
++      include_directories("${CMAKE_OSX_SYSROOT}/System/Library/Frameworks/Accelerate.framework/Frameworks/vecLib.framework/Headers")
++    else()
++      include_directories("/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/Accelerate.framework/Frameworks/vecLib.framework/Headers")
++    endif()
 diff --git a/inference/marian-fork/src/tensors/cpu/prod.cpp b/inference/marian-fork/src/tensors/cpu/prod.cpp
 --- a/inference/marian-fork/src/tensors/cpu/prod.cpp
 +++ b/inference/marian-fork/src/tensors/cpu/prod.cpp
@@ -440,3 +472,10 @@ diff --git a/inference/marian-fork/src/3rd_party/fbgemm/src/Utils.cc b/inference
    return (cpuinfo_has_x86_avx512vnni());
 +#endif
  }
+diff --git a/inference/marian-fork/src/3rd_party/sentencepiece/src/CMakeLists.txt b/inference/marian-fork/src/3rd_party/sentencepiece/src/CMakeLists.txt
+--- a/inference/marian-fork/src/3rd_party/sentencepiece/src/CMakeLists.txt
++++ b/inference/marian-fork/src/3rd_party/sentencepiece/src/CMakeLists.txt
+@@ -287 +287,2 @@ install(TARGETS ${SPM_INSTALLTARGETS}
+-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
++  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
++  BUNDLE DESTINATION ${CMAKE_INSTALL_BINDIR})
