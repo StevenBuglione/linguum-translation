@@ -58,7 +58,9 @@ class AndroidProfileContractTests(unittest.TestCase):
         self.assertIn("AVX", x64["prohibitedInstructionFamilies"])
 
     def test_output_directory_is_confined_to_build(self):
-        with tempfile.TemporaryDirectory(dir=ROOT / "build") as temporary:
+        build = ROOT / "build"
+        build.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=build) as temporary:
             self.assertEqual(Path(temporary).resolve(), android_profiles.safe_output_directory(Path(temporary)))
         with self.assertRaises(android_profiles.AndroidProfileError):
             android_profiles.safe_output_directory(ROOT)
