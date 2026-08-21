@@ -22,15 +22,36 @@ set(LINGUUM_CANARY_MODEL_DIR "" CACHE PATH "Directory containing the pinned es-e
 set(LINGUUM_CANARY_ITERATIONS "100" CACHE STRING "Full canary lifecycle repetitions")
 set(LINGUUM_INTGEMM_BASELINE_ONLY OFF CACHE BOOL "Exclude AVX-family intgemm kernels")
 set(LINGUUM_INTGEMM_AVX2_ONLY OFF CACHE BOOL "Exclude intgemm kernels above AVX2")
+set(LINGUUM_SANITIZERS "" CACHE STRING "Linux sanitizer set: address,undefined or thread")
 
-if(LINGUUM_INTGEMM_BASELINE_ONLY AND NOT MSVC)
-  message(FATAL_ERROR "LINGUUM_INTGEMM_BASELINE_ONLY is currently proven only with MSVC")
+if(UNIX AND NOT APPLE AND
+   CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64)$")
+  set(LINGUUM_LINUX_X64 ON)
+else()
+  set(LINGUUM_LINUX_X64 OFF)
 endif()
-if(LINGUUM_INTGEMM_AVX2_ONLY AND NOT MSVC)
-  message(FATAL_ERROR "LINGUUM_INTGEMM_AVX2_ONLY is currently proven only with MSVC")
+if(LINGUUM_INTGEMM_BASELINE_ONLY AND NOT (MSVC OR LINGUUM_LINUX_X64))
+  message(FATAL_ERROR "LINGUUM_INTGEMM_BASELINE_ONLY requires MSVC x64 or Linux x86_64")
+endif()
+if(LINGUUM_INTGEMM_AVX2_ONLY AND NOT (MSVC OR LINGUUM_LINUX_X64))
+  message(FATAL_ERROR "LINGUUM_INTGEMM_AVX2_ONLY requires MSVC x64 or Linux x86_64")
 endif()
 if(LINGUUM_INTGEMM_BASELINE_ONLY AND LINGUUM_INTGEMM_AVX2_ONLY)
   message(FATAL_ERROR "intgemm baseline-only and AVX2-only modes are mutually exclusive")
+endif()
+if(LINGUUM_SANITIZERS)
+  if(NOT UNIX OR APPLE)
+    message(FATAL_ERROR "LINGUUM_SANITIZERS is proven only for Linux")
+  endif()
+  if(LINGUUM_SANITIZERS STREQUAL "address,undefined")
+    set(LINGUUM_SANITIZER_FLAGS -fsanitize=address,undefined)
+  elseif(LINGUUM_SANITIZERS STREQUAL "thread")
+    set(LINGUUM_SANITIZER_FLAGS -fsanitize=thread)
+  else()
+    message(FATAL_ERROR "LINGUUM_SANITIZERS must be empty, address,undefined, or thread")
+  endif()
+  add_compile_options(${LINGUUM_SANITIZER_FLAGS} -fno-omit-frame-pointer -fno-sanitize-recover=all)
+  add_link_options(${LINGUUM_SANITIZER_FLAGS} -fno-sanitize-recover=all)
 endif()
 if(MSVC AND LINGUUM_INTGEMM_BASELINE_ONLY)
   # The static MSVC STL contains runtime-dispatched AVX2 vector algorithms.
@@ -106,6 +127,14 @@ if(LINGUUM_ARM_NATIVE)
   # also includes Marian's ARM SIMD headers, but unrelated dependencies such
   # as Eigen must not inherit the SSE preprocessor macro.
   target_compile_definitions(bergamot-translator-source PRIVATE ARM FMA SSE)
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    # GCC keeps its generic vector typedefs distinct from the SSE-to-NEON
+    # intrinsic typedefs. The pinned SIMD layer intentionally interchanges
+    # those ABI-equivalent 128-bit vectors on ARM, so scope GCC's documented
+    # compatibility mode to the three targets that include that layer.
+    target_compile_options(marian PRIVATE -flax-vector-conversions)
+    target_compile_options(bergamot-translator-source PRIVATE -flax-vector-conversions)
+  endif()
 endif()
 
 add_library(linguum_translation SHARED
@@ -128,6 +157,9 @@ if(MSVC AND LINGUUM_INTGEMM_BASELINE_ONLY)
 endif()
 if(LINGUUM_ARM_NATIVE)
   target_compile_definitions(linguum_translation PRIVATE ARM FMA SSE)
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    target_compile_options(linguum_translation PRIVATE -flax-vector-conversions)
+  endif()
 endif()
 target_compile_definitions(linguum_translation PRIVATE
   LINGUUM_TRANSLATION_BUILD

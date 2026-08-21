@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "buildBaseline": "ubuntu-22.04",
+  "glibcFloor": "2.35",
+  "compatibilityRunners": [
+    "ubuntu-22.04",
+    "ubuntu-24.04"
+  ],
+  "sanitizers": [
+    "address",
+    "undefined"
+  ],
+  "toolchain": {
+    "compilerVendor": "GNU",
+    "compilerSelection": "runner-default",
+    "binutilsSelection": "runner-default",
+    "cmake": "4.0.2",
+    "ninja": "1.13.2"
+  },
+  "profiles": [
+    {
+      "id": "linux-x64-avx2",
+      "runner": "ubuntu-22.04",
+      "architecture": "x86_64",
+      "binaryNamespace": "x86_64/avx2",
+      "buildArch": "haswell",
+      "accelerationProfile": "fbgemm-intgemm-avx2",
+      "matrixMultiplicationBackend": "FBGEMM",
+      "quantizedBackend": "intgemm-avx2",
+      "fbgemm": true,
+      "onnxSgemm": true,
+      "ruy": false,
+      "intgemmBaselineOnly": false,
+      "intgemmMaximumCpu": "AVX2",
+      "requiredCpuFeatures": [
+        "AVX2"
+      ],
+      "prohibitedInstructionFamilies": [
+        "AVX-512"
+      ],
+      "realArm64Execution": false
+    },
+    {
+      "id": "linux-x64-baseline",
+      "runner": "ubuntu-22.04",
+      "architecture": "x86_64",
+      "binaryNamespace": "x86_64/baseline",
+      "buildArch": "nehalem",
+      "accelerationProfile": "intgemm-ssse3-onnx-sgemm-baseline",
+      "matrixMultiplicationBackend": "ONNX SGEMM",
+      "quantizedBackend": "intgemm-SSSE3",
+      "fbgemm": false,
+      "onnxSgemm": true,
+      "ruy": false,
+      "intgemmBaselineOnly": true,
+      "intgemmMaximumCpu": "SSSE3",
+      "requiredCpuFeatures": [
+        "SSE4.2"
+      ],
+      "prohibitedInstructionFamilies": [
+        "AVX",
+        "AVX2",
+        "AVX-512"
+      ],
+      "realArm64Execution": false
+    },
+    {
+      "id": "linux-arm64",
+      "runner": "ubuntu-22.04-arm",
+      "architecture": "aarch64",
+      "binaryNamespace": "aarch64/ruy",
+      "buildArch": "armv8-a",
+      "accelerationProfile": "ruy-neon-arm64",
+      "matrixMultiplicationBackend": "Ruy",
+      "quantizedBackend": "Ruy",
+      "fbgemm": false,
+      "onnxSgemm": false,
+      "ruy": true,
+      "intgemmBaselineOnly": false,
+      "intgemmMaximumCpu": "not-applicable",
+      "requiredCpuFeatures": [
+        "ARMv8-A",
+        "NEON"
+      ],
+      "prohibitedInstructionFamilies": [],
+      "realArm64Execution": true
+    }
+  ]
+}

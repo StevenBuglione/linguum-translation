@@ -5,6 +5,7 @@
 import argparse
 import hashlib
 import json
+import os
 import platform
 import re
 import shutil
@@ -77,6 +78,8 @@ def host_profile(profile_name: str = "host") -> Tuple[str, str, List[str]]:
         raise HostCanaryError("{} requires Windows".format(profile_name))
     if profile_name.startswith("macos-") and system != "darwin":
         raise HostCanaryError("{} requires macOS".format(profile_name))
+    if profile_name.startswith("linux-") and system != "linux":
+        raise HostCanaryError("{} requires Linux".format(profile_name))
     if profile_name == "macos-arm64":
         return "armv8-a", "apple-accelerate-arm64", [
             "-DCMAKE_OSX_ARCHITECTURES=arm64",
@@ -96,6 +99,37 @@ def host_profile(profile_name: str = "host") -> Tuple[str, str, List[str]]:
             "-DUSE_ONNX_SGEMM=OFF",
             "-DUSE_RUY=OFF",
             "-DUSE_RUY_SGEMM=OFF",
+        ]
+    if profile_name in {"linux-x64-avx2", "linux-x64-baseline"}:
+        if machine not in {"x86_64", "amd64"}:
+            raise HostCanaryError("{} requires Linux x86_64".format(profile_name))
+        if profile_name == "linux-x64-avx2":
+            return "haswell", "fbgemm-intgemm-avx2", [
+                "-DUSE_FBGEMM=ON",
+                "-DUSE_ONNX_SGEMM=ON",
+                "-DUSE_RUY=OFF",
+                "-DUSE_RUY_SGEMM=OFF",
+                "-DLINGUUM_INTGEMM_BASELINE_ONLY=OFF",
+                "-DLINGUUM_INTGEMM_AVX2_ONLY=ON",
+            ]
+        return "nehalem", "intgemm-ssse3-onnx-sgemm-baseline", [
+            "-DUSE_FBGEMM=OFF",
+            "-DUSE_ONNX_SGEMM=ON",
+            "-DUSE_RUY=OFF",
+            "-DUSE_RUY_SGEMM=OFF",
+            "-DLINGUUM_INTGEMM_BASELINE_ONLY=ON",
+            "-DLINGUUM_INTGEMM_AVX2_ONLY=OFF",
+        ]
+    if profile_name == "linux-arm64":
+        if machine not in {"arm64", "aarch64"}:
+            raise HostCanaryError("linux-arm64 requires Linux AArch64")
+        return "armv8-a", "ruy-neon-arm64", [
+            "-DUSE_FBGEMM=OFF",
+            "-DUSE_ONNX_SGEMM=OFF",
+            "-DUSE_RUY=ON",
+            "-DUSE_RUY_SGEMM=ON",
+            "-DLINGUUM_INTGEMM_BASELINE_ONLY=OFF",
+            "-DLINGUUM_INTGEMM_AVX2_ONLY=OFF",
         ]
     if system == "darwin" and machine in {"arm64", "aarch64"}:
         return "armv8-a", "apple-accelerate-arm64", [
@@ -207,6 +241,7 @@ def configure_arguments(
     build_directory: Path,
     iterations: int,
     profile_name: str = "host",
+    additional_cmake_arguments: Sequence[str] = (),
 ) -> Tuple[List[str], str]:
     build_arch, acceleration, platform_arguments = host_profile(profile_name)
     arguments = [
@@ -228,6 +263,7 @@ def configure_arguments(
         "-DLINGUUM_CANARY_ITERATIONS={}".format(iterations),
     ]
     arguments.extend(platform_arguments)
+    arguments.extend(additional_cmake_arguments)
     return arguments, acceleration
 
 
@@ -236,6 +272,7 @@ def execute(
     iterations: int,
     clean: bool,
     profile_name: str = "host",
+    additional_cmake_arguments: Sequence[str] = (),
 ) -> Dict[str, object]:
     if iterations < 1 or iterations > 1000:
         raise HostCanaryError("iterations must be between 1 and 1000")
@@ -249,12 +286,17 @@ def execute(
     model = fetch_canary_model.fetch()
     cmake, ninja = bootstrap_tools.bootstrap()
     configure, acceleration = configure_arguments(
-        cmake, ninja, source, model, build_directory, iterations, profile_name
+        cmake,
+        ninja,
+        source,
+        model,
+        build_directory,
+        iterations,
+        profile_name,
+        additional_cmake_arguments,
     )
     run(configure)
-    run([
-        str(cmake), "--build", str(build_directory), "--parallel", "--target",
-    ] + build_targets(profile_name))
+    run(build_command(cmake, build_directory, profile_name))
     ctest_name = "ctest.exe" if platform.system().lower() == "windows" else "ctest"
     ctest = cmake.parent / ctest_name
     run([str(ctest), "--test-dir", str(build_directory), "--output-on-failure", "-C", "Release"])
@@ -294,6 +336,16 @@ def build_targets(profile_name: str) -> List[str]:
     return targets
 
 
+def build_command(cmake: Path, build_directory: Path, profile_name: str) -> List[str]:
+    command = [str(cmake), "--build", str(build_directory), "--parallel"]
+    parallel_level = os.environ.get("CMAKE_BUILD_PARALLEL_LEVEL")
+    if parallel_level:
+        if re.fullmatch(r"[1-9][0-9]*", parallel_level) is None:
+            raise HostCanaryError("CMAKE_BUILD_PARALLEL_LEVEL must be a positive integer")
+        command.append(parallel_level)
+    return command + ["--target"] + build_targets(profile_name)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--build-dir", type=Path, default=DEFAULT_BUILD)
@@ -307,6 +359,9 @@ def main() -> int:
             "windows-x64-baseline",
             "macos-arm64",
             "macos-x64",
+            "linux-x64-avx2",
+            "linux-x64-baseline",
+            "linux-arm64",
         ),
         default="host",
     )
