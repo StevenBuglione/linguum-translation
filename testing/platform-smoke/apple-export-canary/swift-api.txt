@@ -1,0 +1,13 @@
+LanguagePair
+LanguagePair.init(source:target:)
+LinguumTranslationConfiguration
+LinguumTranslationConfiguration.init(modelDirectory:configurationPath:)
+LinguumTranslationError
+LinguumTranslationService
+LinguumTranslationService.close()
+LinguumTranslationService.create(configuration:)
+LinguumTranslationService.translator(pair:)
+TranslationResult
+TranslationResult.init(text:)
+Translator
+Translator.translate(text:)

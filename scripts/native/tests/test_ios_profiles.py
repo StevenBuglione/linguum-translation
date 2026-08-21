@@ -520,7 +520,12 @@ class IosProfileContractTests(unittest.TestCase):
         self.assertFalse(
             (ROOT / "testing" / "platform-smoke" / "ios-canary" / "Package.swift").exists()
         )
-        self.assertFalse(any(ROOT.glob("**/*.xcframework")))
+        source_xcframeworks = [
+            path
+            for path in ROOT.glob("**/*.xcframework")
+            if path.relative_to(ROOT).parts[0] != "build"
+        ]
+        self.assertEqual([], source_xcframeworks)
 
 
 if __name__ == "__main__":

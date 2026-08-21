@@ -33,6 +33,7 @@ internal class ArchitecturePlugin : Plugin<Project> {
                     // builds, not repository modules. Their own settings file and
                     // pinned plugin declarations are verified by their platform gates.
                     "testing/platform-smoke/android-canary/**",
+                    "testing/platform-smoke/apple-export-canary/**",
                     "testing/platform-smoke/ios-canary/**",
                 )
                 task.buildScripts.from(scripts)
