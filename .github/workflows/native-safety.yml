@@ -11,6 +11,8 @@ on:
       - 'toolchains/macos-native-profiles.lock.json'
       - 'toolchains/windows-native-profiles.lock.json'
       - 'toolchains/ios-native-profiles.lock.json'
+      - 'toolchains/apple-export.lock.json'
+      - 'testing/platform-smoke/apple-export-canary/**'
       - 'testing/platform-smoke/ios-canary/**'
       - '.github/workflows/native-safety.yml'
   workflow_dispatch:
@@ -38,7 +40,7 @@ jobs:
       - run: python3 scripts/native/macos_profiles.py --profile macos-x64 --clean --iterations 100
 
   ios-intel-simulator:
-    name: Native safety / iOS Intel simulator cinterop
+    name: Native safety / Apple Intel simulator export
     runs-on: macos-15-intel
     timeout-minutes: 180
     env:
@@ -47,7 +49,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-gradle
       - run: >-
-          python3 scripts/native/ios_profiles.py
+          python3 scripts/native/apple_export.py
           --profile ios-simulator-x64
           --clean
           --iterations 100

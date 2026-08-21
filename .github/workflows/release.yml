@@ -41,7 +41,7 @@ jobs:
           --device-mode physical
 
   ios-physical-arm64:
-    name: Release / iOS physical arm64 cinterop canary
+    name: Release / Apple physical arm64 export canary
     runs-on: [self-hosted, macos, arm64, ios-device]
     timeout-minutes: 180
     env:
@@ -52,7 +52,7 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/actions/setup-gradle
       - run: >-
-          python3 scripts/native/ios_profiles.py
+          python3 scripts/native/apple_export.py
           --profile ios-arm64
           --clean
           --iterations 100

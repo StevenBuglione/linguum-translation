@@ -33,7 +33,14 @@ case "$scope" in
     ./gradlew qualityCheck --warning-mode=fail
     ;;
   api)
-    require_absent translation translation-api translation-runtime translation-model-contracts facades
+    require_absent \
+      translation \
+      translation-api \
+      translation-runtime \
+      translation-model-contracts \
+      facades \
+      platform/apple \
+      swift-overlay
     ./gradlew apiValidationCheck --warning-mode=fail
     ;;
   kotlin)
@@ -51,6 +58,7 @@ case "$scope" in
     python3 -m json.tool toolchains/macos-native-profiles.lock.json >/dev/null
     python3 -m json.tool toolchains/windows-native-profiles.lock.json >/dev/null
     python3 -m json.tool toolchains/android-native-profiles.lock.json >/dev/null
+    python3 -m json.tool toolchains/apple-export.lock.json >/dev/null
     python3 scripts/upstream/snapshot.py verify
     ./gradlew architectureCheck --warning-mode=fail
     ;;
@@ -115,7 +123,17 @@ case "$scope" in
       --execution-tier "$ios_execution_tier"
     ./gradlew architectureCheck --warning-mode=fail
     ;;
-  swift|consumers|performance|release)
+  swift)
+    python3 -m unittest scripts.native.tests.test_apple_export -v
+    python3 -m json.tool toolchains/apple-export.lock.json >/dev/null
+    python3 scripts/native/apple_export.py \
+      --profile all \
+      --clean \
+      --iterations 100 \
+      --execution-tier simulator-arm64
+    ./gradlew architectureCheck --warning-mode=fail
+    ;;
+  consumers|performance|release)
     ./gradlew architectureCheck --warning-mode=fail
     ;;
   models)
