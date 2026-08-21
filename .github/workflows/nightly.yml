@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   verification:
-    name: Nightly / M0 verification
+    name: Nightly / repository verification
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -19,3 +19,22 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/actions/setup-gradle
       - run: ./gradlew clean verificationGate --warning-mode=fail
+
+  android-physical-arm64:
+    name: Nightly / Android physical arm64 canary
+    runs-on: [self-hosted, linux, arm64, android-device]
+    timeout-minutes: 120
+    env:
+      CMAKE_BUILD_PARALLEL_LEVEL: 2
+      LINGUUM_ANDROID_EXPECTED_ABI: arm64-v8a
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup-gradle
+      - run: >-
+          python3 scripts/native/android_profiles.py
+          --profile all
+          --clean
+          --iterations 100
+          --device-mode physical

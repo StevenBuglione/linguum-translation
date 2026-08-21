@@ -86,11 +86,28 @@ jobs:
   android:
     name: PR / Android build and emulator integration
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 90
+    env:
+      LINGUUM_ANDROID_EMULATOR_API: 26
+      CMAKE_BUILD_PARALLEL_LEVEL: 2
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-gradle
-      - run: bash scripts/ci/verify-scope.sh android
+      - name: Install pinned Android SDK build components
+        run: >-
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          "platform-tools"
+          "platforms;android-36"
+          "build-tools;36.0.0"
+      - name: Build both ABIs and run the minimum-API emulator canary
+        uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: ${{ env.LINGUUM_ANDROID_EMULATOR_API }}
+          target: default
+          arch: x86_64
+          ndk: 28.2.13676358
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
+          script: LINGUUM_ANDROID_DEVICE_MODE=emulator bash scripts/ci/verify-scope.sh android
 
   ios:
     name: PR / iOS build and simulator integration
