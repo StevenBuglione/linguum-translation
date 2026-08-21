@@ -5,6 +5,7 @@
 import importlib.util
 import json
 import os
+import shutil
 import tempfile
 import unittest
 import zipfile
@@ -88,6 +89,22 @@ class AndroidProfileContractTests(unittest.TestCase):
             self.assertEqual(ndk, evidence["root"])
             self.assertEqual("linux-x86_64", evidence["hostTag"])
             self.assertEqual(toolchain, evidence["toolchain"])
+
+            legacy_ndk = sdk / "legacy-ndk"
+            shutil.copytree(ndk, legacy_ndk)
+            (legacy_ndk / "source.properties").write_text(
+                "Pkg.Desc = Android NDK\nPkg.Revision = 27.0.12077973\n",
+                encoding="utf-8",
+            )
+            with mock.patch.object(android_profiles.platform, "system", return_value="Linux"), \
+                 mock.patch.object(android_profiles.platform, "machine", return_value="x86_64"):
+                evidence = android_profiles.resolve_ndk(
+                    {
+                        "ANDROID_NDK_HOME": str(legacy_ndk),
+                        "ANDROID_SDK_ROOT": str(sdk),
+                    }
+                )
+            self.assertEqual(ndk, evidence["root"])
 
             (ndk / "source.properties").write_text(
                 "Pkg.Desc = Android NDK\nPkg.Revision = 28.1.0\n",

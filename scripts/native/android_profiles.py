@@ -190,16 +190,27 @@ def resolve_ndk(environment: Mapping[str, str] = os.environ) -> Dict[str, object
     """Resolve only the exact side-by-side NDK or an exact direct NDK root."""
     host_tag = _host_tag()
     candidates = []
-    direct = environment.get("ANDROID_NDK_HOME")
-    if direct:
-        candidates.append(Path(direct))
     for variable in ("ANDROID_SDK_ROOT", "ANDROID_HOME"):
         sdk = environment.get(variable)
         if sdk:
             candidates.append(Path(sdk) / "ndk" / EXPECTED_NDK_VERSION)
+    direct = environment.get("ANDROID_NDK_HOME")
+    if direct:
+        candidates.append(Path(direct))
+    rejected = []
     for candidate in candidates:
         if candidate.is_dir():
-            return validate_ndk(candidate, host_tag)
+            try:
+                return validate_ndk(candidate, host_tag)
+            except AndroidProfileError as error:
+                rejected.append("{}: {}".format(candidate, error))
+    if rejected:
+        raise AndroidProfileError(
+            "Android NDK {} was not found as a valid candidate; rejected {}".format(
+                EXPECTED_NDK_VERSION,
+                "; ".join(rejected),
+            )
+        )
     raise AndroidProfileError(
         "Android NDK {} was not found via ANDROID_NDK_HOME, ANDROID_SDK_ROOT, or ANDROID_HOME".format(
             EXPECTED_NDK_VERSION
