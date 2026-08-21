@@ -23,6 +23,11 @@ set(LINGUUM_CANARY_ITERATIONS "100" CACHE STRING "Full canary lifecycle repetiti
 set(LINGUUM_INTGEMM_BASELINE_ONLY OFF CACHE BOOL "Exclude AVX-family intgemm kernels")
 set(LINGUUM_INTGEMM_AVX2_ONLY OFF CACHE BOOL "Exclude intgemm kernels above AVX2")
 set(LINGUUM_SANITIZERS "" CACHE STRING "Linux sanitizer set: address,undefined or thread")
+set(LINGUUM_APPLE_STATIC OFF CACHE BOOL "Build the isolated iOS feasibility C ABI as a static archive")
+
+if(LINGUUM_APPLE_STATIC AND NOT (APPLE AND CMAKE_SYSTEM_NAME STREQUAL "iOS"))
+  message(FATAL_ERROR "LINGUUM_APPLE_STATIC is reserved for the iOS feasibility profiles")
+endif()
 
 if(UNIX AND NOT APPLE AND
    CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64)$")
@@ -145,10 +150,12 @@ if(LINGUUM_ARM_NATIVE)
   endif()
 endif()
 
-if(ANDROID)
+if(ANDROID OR LINGUUM_APPLE_STATIC)
   # The Android AAR exposes one JNI shared object. Keep the C ABI and every
   # private upstream dependency inside that bridge rather than shipping a
-  # second .so with a public native surface.
+  # second .so with a public native surface. iOS starts from a static adapter;
+  # the profile tool merges its complete private archive closure before the
+  # isolated Kotlin/Native cinterop fixture links it.
   add_library(linguum_translation STATIC
     ../mozilla-adapter/src/linguum_translation.cpp
   )
@@ -236,7 +243,7 @@ if(ANDROID)
     VISIBILITY_INLINES_HIDDEN YES
     OUTPUT_NAME linguum_translation_jni
   )
-elseif(APPLE)
+elseif(APPLE AND NOT LINGUUM_APPLE_STATIC)
   target_link_options(linguum_translation PRIVATE
     "LINKER:-exported_symbols_list,${CMAKE_CURRENT_SOURCE_DIR}/exports/macos.exports"
   )

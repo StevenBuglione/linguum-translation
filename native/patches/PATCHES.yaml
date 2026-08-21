@@ -38,7 +38,9 @@
     "inference/marian-fork/src/3rd_party/onnxjs/CMakeLists.txt",
     "inference/marian-fork/src/3rd_party/pathie-cpp/src/path.cpp",
     "inference/marian-fork/src/3rd_party/pathie-cpp/src/pathie.cpp",
+    "inference/marian-fork/src/3rd_party/ruy/third_party/cpuinfo/CMakeLists.txt",
     "inference/marian-fork/src/3rd_party/sentencepiece/src/unicode_script.h",
+    "inference/marian-fork/src/3rd_party/sentencepiece/src/CMakeLists.txt",
     "inference/marian-fork/src/3rd_party/simd_utils/simd_utils.h",
     "inference/marian-fork/src/3rd_party/zlib/zutil.h",
     "inference/marian-fork/src/tensors/cpu/integer_common.h",
@@ -52,5 +54,5 @@
   "license": "MPL-2.0",
   "approvedBy": "Steven Buglione",
   "approvalReference": "Repository-owner standing delivery and patch authorization in Codex task 01a01dba-bb5f-7272-b179-7a6e6db206f3 on 2026-08-20",
-  "patchSha256": "d54b9999c65e918dc01035c079acd351eab1a86f0ab4452c0af77270490774dc"
+  "patchSha256": "5b6303587714a66a823fc45d454dfb8fd06bd8f8c1b5850c49cdc3004a1b87e7"
 }

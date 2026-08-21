@@ -31,8 +31,9 @@ internal class ArchitecturePlugin : Plugin<Project> {
                     "testing/architecture/src/test/resources/**",
                     // M1 feasibility consumers are deliberately isolated Gradle
                     // builds, not repository modules. Their own settings file and
-                    // pinned plugin declaration are verified by the Android gate.
+                    // pinned plugin declarations are verified by their platform gates.
                     "testing/platform-smoke/android-canary/**",
+                    "testing/platform-smoke/ios-canary/**",
                 )
                 task.buildScripts.from(scripts)
             },
