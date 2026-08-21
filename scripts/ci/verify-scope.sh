@@ -47,6 +47,7 @@ case "$scope" in
     python3 -m json.tool native/patches/PATCHES.yaml >/dev/null
     python3 -m json.tool testing/native/fixtures/es-en-v2.0.json >/dev/null
     python3 -m json.tool toolchains/native-tools.lock.json >/dev/null
+    python3 -m json.tool toolchains/linux-native-profiles.lock.json >/dev/null
     python3 -m json.tool toolchains/macos-native-profiles.lock.json >/dev/null
     python3 -m json.tool toolchains/windows-native-profiles.lock.json >/dev/null
     python3 scripts/upstream/snapshot.py verify
@@ -67,7 +68,27 @@ case "$scope" in
       --iterations 100
     ./gradlew architectureCheck --warning-mode=fail
     ;;
-  linux|android|ios|swift|consumers|performance|release)
+  linux)
+    [[ "${LINGUUM_LINUX_PROFILE:-}" == "linux-x64" ]] || {
+      printf 'LINGUUM_LINUX_PROFILE must select linux-x64.\n' >&2
+      exit 1
+    }
+    python3 scripts/native/linux_profiles.py \
+      --profile linux-x64-avx2 \
+      --clean \
+      --iterations 100
+    python3 scripts/native/linux_profiles.py \
+      --profile linux-x64-baseline \
+      --clean \
+      --iterations 100
+    python3 scripts/native/linux_profiles.py \
+      --profile linux-x64-baseline \
+      --clean \
+      --iterations 10 \
+      --sanitizers address,undefined
+    ./gradlew architectureCheck --warning-mode=fail
+    ;;
+  android|ios|swift|consumers|performance|release)
     ./gradlew architectureCheck --warning-mode=fail
     ;;
   models)

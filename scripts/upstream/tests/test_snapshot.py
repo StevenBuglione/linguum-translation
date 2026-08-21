@@ -2,12 +2,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import importlib.util
+import json
 import os
 import stat
 import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / "snapshot.py"
@@ -132,6 +134,54 @@ class SnapshotTest(unittest.TestCase):
             )
             self.assertEqual(snapshot.source_tree_sha256(source), snapshot.source_tree_sha256_from_index(root, source))
             self.assertEqual(snapshot.file_sha256(payload), snapshot.file_sha256_from_index(root, payload))
+
+    def test_prepare_does_not_rewrite_an_already_clean_snapshot(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            subprocess.run(["git", "-C", str(root), "init", "-q"], check=True)
+            source = root / "native" / "upstream" / "mozilla-translations"
+            source.mkdir(parents=True)
+            payload = source / "payload.txt"
+            payload.write_bytes(b"locked\r\nbytes\r\n")
+            subprocess.run(["git", "-C", str(root), "add", "."], check=True)
+            (root / "native" / "UPSTREAM_LOCK.json").write_text(
+                json.dumps({"sourceTreeSha256": snapshot.source_tree_sha256(source)}),
+                encoding="utf-8",
+            )
+
+            snapshot.prepare_snapshot_worktree(root / "native")
+            payload.write_bytes(b"changed\n")
+            snapshot.prepare_snapshot_worktree(root / "native")
+            self.assertEqual(b"locked\r\nbytes\r\n", payload.read_bytes())
+
+            real_run = subprocess.run
+            commands = []
+
+            def report_container_false_dirty(command, *args, **kwargs):
+                commands.append(command)
+                if "diff" in command and "--quiet" in command:
+                    return subprocess.CompletedProcess(command, 1, stdout=b"", stderr=b"")
+                return real_run(command, *args, **kwargs)
+
+            with mock.patch.object(
+                snapshot.subprocess, "run", side_effect=report_container_false_dirty
+            ):
+                snapshot.prepare_snapshot_worktree(root / "native")
+            self.assertFalse(any("checkout-index" in command for command in commands))
+
+            # Conflict copies can inherit an ignored suffix (for example the
+            # cpuinfo fixture logs surfaced by Docker Desktop). The immutable
+            # boundary must reject ignored and ordinary untracked files alike.
+            (root / ".git" / "info" / "exclude").write_text(
+                "* 2.txt\n", encoding="utf-8"
+            )
+            (source / "payload 2.txt").write_bytes(payload.read_bytes())
+            real_run = subprocess.run
+            with mock.patch.object(snapshot.subprocess, "run", wraps=real_run) as run:
+                with self.assertRaises(snapshot.SnapshotError):
+                    snapshot.prepare_snapshot_worktree(root / "native")
+            commands = [call.args[0] for call in run.call_args_list if call.args]
+            self.assertFalse(any("checkout-index" in command for command in commands))
 
 
 if __name__ == "__main__":

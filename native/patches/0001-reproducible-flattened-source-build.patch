@@ -140,7 +140,7 @@ diff --git a/inference/marian-fork/src/CMakeLists.txt b/inference/marian-fork/sr
 diff --git a/inference/marian-fork/src/3rd_party/intgemm/CMakeLists.txt b/inference/marian-fork/src/3rd_party/intgemm/CMakeLists.txt
 --- a/inference/marian-fork/src/3rd_party/intgemm/CMakeLists.txt
 +++ b/inference/marian-fork/src/3rd_party/intgemm/CMakeLists.txt
-@@ -32,14 +32,29 @@ endif()
+@@ -32,14 +32,25 @@ endif()
 -# Check if compiler supports AVX2 (this should only catch emscripten)
 -try_compile(INTGEMM_COMPILER_SUPPORTS_AVX2
 -  ${CMAKE_CURRENT_BINARY_DIR}/compile_tests
@@ -162,17 +162,13 @@ diff --git a/inference/marian-fork/src/3rd_party/intgemm/CMakeLists.txt b/infere
 +  set(INTGEMM_COMPILER_SUPPORTS_AVX512BW FALSE)
 +  set(INTGEMM_COMPILER_SUPPORTS_AVX512VNNI FALSE)
 +elseif(LINGUUM_INTGEMM_AVX2_ONLY)
-+  # Keep the complete implementation set required by the pinned headers, but
-+  # cap runtime dispatch below after configure-file generation.
++  # Prove AVX2 support, but do not compile higher instruction families into
++  # an artifact whose declared maximum CPU contract is AVX2.
 +  try_compile(INTGEMM_COMPILER_SUPPORTS_AVX2
 +    ${CMAKE_CURRENT_BINARY_DIR}/compile_tests
 +    ${CMAKE_CURRENT_SOURCE_DIR}/compile_test/avx2.cc)
-+  try_compile(INTGEMM_COMPILER_SUPPORTS_AVX512BW
-+    ${CMAKE_CURRENT_BINARY_DIR}/compile_tests
-+    ${CMAKE_CURRENT_SOURCE_DIR}/compile_test/avx512bw.cc)
-+  try_compile(INTGEMM_COMPILER_SUPPORTS_AVX512VNNI
-+    ${CMAKE_CURRENT_BINARY_DIR}/compile_tests
-+    ${CMAKE_CURRENT_SOURCE_DIR}/compile_test/avx512vnni.cc)
++  set(INTGEMM_COMPILER_SUPPORTS_AVX512BW FALSE)
++  set(INTGEMM_COMPILER_SUPPORTS_AVX512VNNI FALSE)
 +else()
 +  try_compile(INTGEMM_COMPILER_SUPPORTS_AVX2
 +    ${CMAKE_CURRENT_BINARY_DIR}/compile_tests
@@ -289,3 +285,111 @@ diff --git a/inference/marian-fork/src/data/factored_vocab.cpp b/inference/maria
 @@ -613 +624 @@ static void unescapeHexEscapes(std::string& utf8Lemma) {
 -    pos = lemma.find('\\', pos+1);
 +    pos = findUtf16CodeUnit(lemma, u'\\', pos+1);
+diff --git a/inference/marian-fork/src/common/binary.cpp b/inference/marian-fork/src/common/binary.cpp
+--- a/inference/marian-fork/src/common/binary.cpp
++++ b/inference/marian-fork/src/common/binary.cpp
+@@ -8,0 +9 @@
++#include <cstring>
+@@ -26 +27 @@ const T* get(const void*& current, uint64_t num = 1) {
+-  current = (const T*)current + num;
++  current = (const char*)current + sizeof(T) * num;
+@@ -28,0 +30,8 @@ const T* get(const void*& current, uint64_t num = 1) {
++
++template <typename T>
++T read(const void*& current) {
++  T value;
++  std::memcpy(&value, current, sizeof(T));
++  current = (const char*)current + sizeof(T);
++  return value;
++}
+@@ -33 +42 @@ void loadItems(const void* current, std::vector<io::Item>& items, bool mapped) {
+-  uint64_t binaryFileVersion = *get<uint64_t>(current);
++  uint64_t binaryFileVersion = read<uint64_t>(current);
+@@ -41 +50 @@ void loadItems(const void* current, std::vector<io::Item>& items, bool mapped) {
+-  uint64_t numHeaders = *get<uint64_t>(current);  // number of item headers that follow
++  uint64_t numHeaders = read<uint64_t>(current);  // number of item headers that follow
+@@ -44 +53,5 @@ void loadItems(const void* current, std::vector<io::Item>& items, bool mapped) {
+-  const Header* headers = get<Header>(current, numHeaders);  // read that many headers
++  std::vector<Header> headers(numHeaders);  // read headers without alignment assumptions
++  if(numHeaders > 0) {
++    std::memcpy(headers.data(), current, sizeof(Header) * numHeaders);
++  }
++  get<char>(current, sizeof(Header) * numHeaders);
+@@ -65,3 +78,4 @@ void loadItems(const void* current, std::vector<io::Item>& items, bool mapped) {
+-    const int* arr = get<int>(current, len);            // read shape
+-    totalBytesLoaded += len * sizeof(int);              // Account for shape bytes
+-    std::copy(arr, arr + len, items[i].shape.begin());  // copy to Item::shape
++    if(len > 0)
++      std::memcpy(items[i].shape.data(), current, len * sizeof(int));
++    get<char>(current, len * sizeof(int));
++    totalBytesLoaded += len * sizeof(int);  // Account for shape bytes
+@@ -71 +85 @@ void loadItems(const void* current, std::vector<io::Item>& items, bool mapped) {
+-  uint64_t offset = *get<uint64_t>(current);
++  uint64_t offset = read<uint64_t>(current);
+diff --git a/inference/marian-fork/src/tensors/cpu/integer_common.h b/inference/marian-fork/src/tensors/cpu/integer_common.h
+--- a/inference/marian-fork/src/tensors/cpu/integer_common.h
++++ b/inference/marian-fork/src/tensors/cpu/integer_common.h
+@@ -24,0 +25 @@
++#include <cstring>
+@@ -160,2 +161,4 @@ void prepareAndTransposeB(io::Item& item, const char * input) {
+-    float quantMult = *(reinterpret_cast<const float *>(reinterpret_cast<const Integer *>(input) + item.shape.elements()));
+-    *(reinterpret_cast<float *>(&(*(output_tensor + item.shape.elements())))) = quantMult;
++    float quantMult;
++    std::memcpy(&quantMult, input + sizeof(Integer) * item.shape.elements(), sizeof(quantMult));
++    std::memcpy(reinterpret_cast<char *>(output_tensor) + sizeof(Integer) * item.shape.elements(),
++                &quantMult, sizeof(quantMult));
+@@ -170 +173,3 @@ void unquantizeWemb(io::Item& item, const char * input) {
+-    float quantMult = *(reinterpret_cast<const float *>(reinterpret_cast<const Integer *>(input) + item.shape.elements()));
++    float quantMult;
++    std::memcpy(&quantMult, input + sizeof(Integer) * item.shape.elements(),
++                sizeof(quantMult));
+diff --git a/inference/marian-fork/src/3rd_party/fbgemm/CMakeLists.txt b/inference/marian-fork/src/3rd_party/fbgemm/CMakeLists.txt
+--- a/inference/marian-fork/src/3rd_party/fbgemm/CMakeLists.txt
++++ b/inference/marian-fork/src/3rd_party/fbgemm/CMakeLists.txt
+@@ -118,0 +119,6 @@ add_library(fbgemm_avx512 OBJECT ${FBGEMM_AVX512_SRCS})
++if(LINGUUM_INTGEMM_AVX2_ONLY)
++  set(FBGEMM_AVX512_OBJECTS)
++  target_compile_definitions(fbgemm_generic PRIVATE LINGUUM_FBGEMM_MAX_AVX2)
++else()
++  set(FBGEMM_AVX512_OBJECTS $<TARGET_OBJECTS:fbgemm_avx512>)
++endif()
+@@ -241 +247 @@ if(FBGEMM_LIBRARY_TYPE STREQUAL "default")
+-    $<TARGET_OBJECTS:fbgemm_avx512>)
++    ${FBGEMM_AVX512_OBJECTS})
+@@ -246 +252 @@ elseif(FBGEMM_LIBRARY_TYPE STREQUAL "shared")
+-    $<TARGET_OBJECTS:fbgemm_avx512>)
++    ${FBGEMM_AVX512_OBJECTS})
+@@ -256 +262 @@ elseif(FBGEMM_LIBRARY_TYPE STREQUAL "static")
+-    $<TARGET_OBJECTS:fbgemm_avx512>)
++    ${FBGEMM_AVX512_OBJECTS})
+diff --git a/inference/marian-fork/src/3rd_party/fbgemm/src/Utils.cc b/inference/marian-fork/src/3rd_party/fbgemm/src/Utils.cc
+--- a/inference/marian-fork/src/3rd_party/fbgemm/src/Utils.cc
++++ b/inference/marian-fork/src/3rd_party/fbgemm/src/Utils.cc
+@@ -206,3 +206,6 @@ void transpose_simd(
+-    if (fbgemmHasAvx512Support()) {
+-      internal::transpose_16x16(M, N, src, ld_src, dst, ld_dst);
+-    } else if (fbgemmHasAvx2Support()) {
++#ifndef LINGUUM_FBGEMM_MAX_AVX2
++    if (fbgemmHasAvx512Support()) {
++      internal::transpose_16x16(M, N, src, ld_src, dst, ld_dst);
++    } else
++#endif
++    if (fbgemmHasAvx2Support()) {
+@@ -219,5 +222,9 @@ void transpose_simd(
+ bool fbgemmHasAvx512Support() {
++#ifdef LINGUUM_FBGEMM_MAX_AVX2
++  return false;
++#else
+   return (cpuinfo_initialize() &&
+       cpuinfo_has_x86_avx512f() && cpuinfo_has_x86_avx512bw() &&
+       cpuinfo_has_x86_avx512dq() && cpuinfo_has_x86_avx512vl());
++#endif
+ }
+@@ -229,3 +236,7 @@ bool fbgemmHasAvx2Support() {
+ bool fbgemmHasAvx512VnniSupport() {
++#ifdef LINGUUM_FBGEMM_MAX_AVX2
++  return false;
++#else
+   return (cpuinfo_has_x86_avx512vnni());
++#endif
+ }

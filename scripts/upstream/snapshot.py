@@ -458,6 +458,35 @@ def prepare_snapshot_worktree(metadata_root: Path) -> None:
     tracked = index_entries(repository_root, snapshot)
     if not tracked:
         raise SnapshotError("immutable snapshot must be staged before worktree preparation")
+    difference = subprocess.run(
+        ["git", "-C", str(repository_root), "diff", "--quiet", "--", relative_snapshot],
+        check=False,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    if difference.returncode not in (0, 1):
+        raise SnapshotError("git diff failed while preparing the immutable snapshot")
+    untracked = run_git(
+        repository_root,
+        ["ls-files", "--others", "--", relative_snapshot],
+    )
+    if untracked.strip():
+        raise SnapshotError("immutable snapshot contains untracked files")
+    if difference.returncode == 0:
+        return
+    lock_path = metadata_root / "UPSTREAM_LOCK.json"
+    try:
+        locked_digest = json.loads(lock_path.read_text(encoding="utf-8")).get(
+            "sourceTreeSha256"
+        )
+    except (OSError, json.JSONDecodeError, AttributeError):
+        locked_digest = None
+    if (
+        isinstance(locked_digest, str)
+        and SHA256_RE.fullmatch(locked_digest)
+        and source_tree_sha256(snapshot) == locked_digest
+    ):
+        return
     checkout_input = b"".join(
         (relative_snapshot + "/" + relative).encode("utf-8") + b"\x00"
         for relative, _mode, _repository_path in tracked

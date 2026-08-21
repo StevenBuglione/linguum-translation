@@ -7,6 +7,7 @@ on:
       - 'scripts/native/**'
       - 'testing/native/**'
       - 'toolchains/native-tools.lock.json'
+      - 'toolchains/linux-native-profiles.lock.json'
       - 'toolchains/macos-native-profiles.lock.json'
       - 'toolchains/windows-native-profiles.lock.json'
       - '.github/workflows/native-safety.yml'
@@ -33,3 +34,61 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: python3 scripts/native/macos_profiles.py --profile macos-x64 --clean --iterations 100
+
+  linux-x64-build:
+    name: Native safety / Linux x64 glibc 2.35 build and sanitizers
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: python3 scripts/native/linux_profiles.py --profile linux-x64-avx2 --clean --iterations 100
+      - run: python3 scripts/native/linux_profiles.py --profile linux-x64-baseline --clean --iterations 100
+      - run: python3 scripts/native/linux_profiles.py --profile linux-x64-baseline --clean --iterations 10 --sanitizers address,undefined
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: linux-x64-glibc-2.35-compatibility
+          path: build/native-packages/linux/compatibility
+          if-no-files-found: error
+          retention-days: 3
+
+  linux-x64-current:
+    name: Native safety / Linux x64 Ubuntu 24.04 compatibility
+    needs: linux-x64-build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        with:
+          name: linux-x64-glibc-2.35-compatibility
+          path: build/native-packages/linux/compatibility
+      - run: python3 scripts/native/linux_profiles.py --profile linux-x64-avx2 --verify-only --artifact build/native-packages/linux/compatibility/linux-x64-avx2 --iterations 100
+      - run: python3 scripts/native/linux_profiles.py --profile linux-x64-baseline --verify-only --artifact build/native-packages/linux/compatibility/linux-x64-baseline --iterations 100
+
+  linux-arm64-build:
+    name: Native safety / Linux arm64 glibc 2.35 build and sanitizers
+    runs-on: ubuntu-22.04-arm
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: python3 scripts/native/linux_profiles.py --profile linux-arm64 --clean --iterations 100
+      - run: python3 scripts/native/linux_profiles.py --profile linux-arm64 --clean --iterations 10 --sanitizers address,undefined
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: linux-arm64-glibc-2.35-compatibility
+          path: build/native-packages/linux/compatibility/linux-arm64
+          if-no-files-found: error
+          retention-days: 3
+
+  linux-arm64-current:
+    name: Native safety / Linux arm64 Ubuntu 24.04 compatibility
+    needs: linux-arm64-build
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        with:
+          name: linux-arm64-glibc-2.35-compatibility
+          path: build/native-packages/linux/compatibility/linux-arm64
+      - run: python3 scripts/native/linux_profiles.py --profile linux-arm64 --verify-only --artifact build/native-packages/linux/compatibility/linux-arm64 --iterations 100
