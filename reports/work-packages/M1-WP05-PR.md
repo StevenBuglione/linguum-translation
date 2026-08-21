@@ -41,8 +41,12 @@ source. They are fixed only through the approved external patch queue with
   translation lifecycles with fail-fast and leak checks active;
 - the exact three Ubuntu 22.04 release bundles pass 100 translation lifecycles
   again on Ubuntu 24.04 for their matching architectures;
-- hosted PR, Native Safety, Dependency Review, and merge evidence will be added
-  to `M1-WP05-VERIFICATION.md` from the pushed checkpoint.
+- exact checkpoint `c4ae16d45c1307f25585cfd3dbedaf0ecde9ae4d` passed all
+  22 hosted PR, Native Safety, and Dependency Review checks, including real
+  x64/arm64 builds, ASan+UBSan, and Ubuntu 24.04 compatibility consumers;
+- hosted run/job identities and hosted artifact hashes are recorded in
+  `M1-WP05-VERIFICATION.md`; the final report-only successor must repeat the
+  complete exact-head matrix before readiness and merge.
 
 ## Boundaries
 

@@ -3,10 +3,10 @@
 ## Result
 
 ```text
-Status: LOCAL PASS — hosted exact-head gates pending
+Status: PASS
 Milestone/work package: M1-WP05
 Branch: codex/M1-WP05-linux-native-profiles
-Date/time UTC: 2026-08-21
+Date/time UTC: 2026-08-21T04:35:04Z
 Verifier: Codex
 ```
 
@@ -15,10 +15,10 @@ Verifier: Codex
 ```text
 Repository: https://github.com/StevenBuglione/linguum-translation
 Base main commit: 4cbee007688bc447cbc9e6a4fb547ee3cb8d16ef
-Implementation checkpoint: containing M1-WP05 commit; exact SHA recorded after push
-Remote branch SHA: pending first push
-Pull request: pending first push
-Working tree clean after verified checkpoint commit: pending commit
+Implementation checkpoint: c4ae16d45c1307f25585cfd3dbedaf0ecde9ae4d
+Remote branch SHA at hosted checkpoint: c4ae16d45c1307f25585cfd3dbedaf0ecde9ae4d
+Pull request: https://github.com/StevenBuglione/linguum-translation/pull/12
+Working tree clean after verified checkpoint commit: YES
 Shallow clone: NO
 ```
 
@@ -26,16 +26,16 @@ Shallow clone: NO
 
 | ID | Requirement | Implementation | Executable evidence | Result |
 |---|---|---|---|---|
-| WP05-LINUX-01 | Build exact Firefox-pinned source plus Linguum adapter on Linux x64 and arm64 | three explicit locked profiles and external staging patch queue | clean Ubuntu 22.04 x64/arm64 builds; immutable digest `94e42bbd…182f` | LOCAL PASS |
-| WP05-LINUX-02 | Preserve ABI 1.0 and the exact C surface | existing stable header and linker allowlist | C/C++ ABI tests and exact 20-export ELF audits on every profile | LOCAL PASS |
-| WP05-LINUX-03 | Prove optimized x64 without an undeclared CPU requirement | Haswell general floor, FBGEMM, intgemm capped at AVX2 | 2,253,133-instruction ELF audit: AVX2 present, AVX-512/EVEX count zero | LOCAL PASS |
-| WP05-LINUX-04 | Prove a broadly compatible x64 fallback | Nehalem/SSE4.2 general floor, FBGEMM off, baseline intgemm plus ONNX SGEMM | 1,771,151-instruction ELF audit: all AVX-family counts zero | LOCAL PASS |
-| WP05-LINUX-05 | Prove real arm64 Ruy/NEON | `armv8-a`, Ruy enabled, FBGEMM/ONNX SGEMM disabled | native AArch64 runner, compile database, linked NEON evidence, 100-cycle canary | LOCAL PASS |
-| WP05-LINUX-06 | Build against the glibc 2.35 baseline and run on current Ubuntu | Ubuntu 22.04 builders plus Ubuntu 24.04 consumers | all release ELFs require at most GLIBC 2.34; exact bundles run 100 cycles on both OS versions | LOCAL PASS |
-| WP05-LINUX-07 | Reject build-host dependencies and paths | closed DT_NEEDED/system-root allowlists and RPATH/RUNPATH rejection | `readelf` plus `ldd` audits on release, sanitizer, and compatibility executions | LOCAL PASS |
-| WP05-LINUX-08 | Detect native memory and undefined-behavior defects | ASan+UBSan build mode, fail-fast environment, two-job memory ceiling | instrumented native tests plus 10 lifecycle translations on x64 and real arm64 | LOCAL PASS |
-| WP05-LINUX-09 | Package reproducible profile artifacts and corresponding-source metadata | deterministic JAR and authenticated compatibility bundle builders | repeated byte-for-byte JAR creation; artifact hashes below | LOCAL PASS |
-| WP05-LINUX-10 | Preserve protected CI and add independent architecture proof | protected x64 PR job plus four Native Safety build/compatibility jobs | workflow tests, YAML parse, actionlint; hosted runs pending | PENDING HOSTED |
+| WP05-LINUX-01 | Build exact Firefox-pinned source plus Linguum adapter on Linux x64 and arm64 | three explicit locked profiles and external staging patch queue | clean Ubuntu 22.04 x64/arm64 builds; immutable digest `94e42bbd…182f` | PASS |
+| WP05-LINUX-02 | Preserve ABI 1.0 and the exact C surface | existing stable header and linker allowlist | C/C++ ABI tests and exact 20-export ELF audits on every profile | PASS |
+| WP05-LINUX-03 | Prove optimized x64 without an undeclared CPU requirement | Haswell general floor, FBGEMM, intgemm capped at AVX2 | 2,253,133-instruction ELF audit: AVX2 present, AVX-512/EVEX count zero | PASS |
+| WP05-LINUX-04 | Prove a broadly compatible x64 fallback | Nehalem/SSE4.2 general floor, FBGEMM off, baseline intgemm plus ONNX SGEMM | 1,771,151-instruction ELF audit: all AVX-family counts zero | PASS |
+| WP05-LINUX-05 | Prove real arm64 Ruy/NEON | `armv8-a`, Ruy enabled, FBGEMM/ONNX SGEMM disabled | native AArch64 runner, compile database, linked NEON evidence, 100-cycle canary | PASS |
+| WP05-LINUX-06 | Build against the glibc 2.35 baseline and run on current Ubuntu | Ubuntu 22.04 builders plus Ubuntu 24.04 consumers | all release ELFs require at most GLIBC 2.34; exact bundles run 100 cycles on both OS versions | PASS |
+| WP05-LINUX-07 | Reject build-host dependencies and paths | closed DT_NEEDED/system-root allowlists and RPATH/RUNPATH rejection | `readelf` plus `ldd` audits on release, sanitizer, and compatibility executions | PASS |
+| WP05-LINUX-08 | Detect native memory and undefined-behavior defects | ASan+UBSan build mode, fail-fast environment, two-job memory ceiling | instrumented native tests plus 10 lifecycle translations on x64 and real arm64 | PASS |
+| WP05-LINUX-09 | Package reproducible profile artifacts and corresponding-source metadata | deterministic JAR and authenticated compatibility bundle builders | repeated byte-for-byte JAR creation; artifact hashes below | PASS |
+| WP05-LINUX-10 | Preserve protected CI and add independent architecture proof | protected x64 PR job plus four Native Safety build/compatibility jobs | workflow tests, YAML parse, actionlint, and 22 hosted checks at exact checkpoint `c4ae16d4…ae4d` | PASS |
 
 ## Changed modules and paths
 
@@ -68,6 +68,9 @@ Shallow clone: NO
 | Ruby Psych parse of all workflows | 0 | local macOS arm64 |
 | checksum-verified actionlint 1.7.7, ignoring only its stale `macos-15-intel` runner catalog entry | 0 | all repository workflows |
 | `python3 scripts/native/stage_source.py --clean` | 0; complete external queue reapplied | final patch bytes |
+| hosted PR run `32445016292` | 0; all 15 protected PR jobs pass, including Windows in 14m07s and Linux x64 in 40m25s | GitHub-hosted exact checkpoint `c4ae16d4…ae4d` |
+| hosted Native Safety run `32445016218` | 0; macOS arm64/x64 plus Linux x64/arm64 build, sanitizer, artifact, and Ubuntu 24.04 compatibility jobs pass | GitHub-hosted exact checkpoint `c4ae16d4…ae4d` |
+| hosted Dependency Review run `32445016212` | 0; policy check passes | GitHub-hosted exact checkpoint `c4ae16d4…ae4d` |
 
 ## Platform and artifact results
 
@@ -84,6 +87,33 @@ bytes. Each package contains sorted epoch-timestamped entries for the profile
 manifest, ABI header, upstream identities, patch metadata, licenses/notices,
 and the profile-specific ELF. Recreating each JAR from the same inputs produced
 identical bytes.
+
+## Hosted exact-head results
+
+The implementation checkpoint `c4ae16d45c1307f25585cfd3dbedaf0ecde9ae4d`
+passed all 22 hosted checks. Native Safety run `32445016218` built each Linux
+profile on its real architecture, repeated both sanitizer proofs, uploaded the
+authenticated bundles, and consumed those exact bundles on Ubuntu 24.04.
+PR run `32445016292` independently repeated the protected Linux x64 sequence
+and every cross-platform repository scope. Dependency Review run `32445016212`
+also passed. The final report-only successor is accepted only after GitHub
+repeats the complete exact-head matrix; PR #12 check history is authoritative
+for that non-self-referential final SHA.
+
+| Hosted target/profile | Result and evidence | Hosted artifact SHA-256 |
+|---|---|---|
+| Linux x64 AVX2 release | PASS; 100 lifecycles, exact ABI/ELF audit, 2,253,133 instructions, AVX2 present, zero AVX-512, GLIBC max 2.34 | `.so` `6bba0169d2a2f31eed2c695de528d54575fbcb56a57741bc89289a95d39aea34`; JAR `9fcc867ffe58d60a2156302d97e4ea17df6e4add147abc6fa692d78a038e2ae4` |
+| Linux x64 baseline release | PASS; 100 lifecycles, exact ABI/ELF audit, 1,771,151 instructions, zero AVX-family instructions, GLIBC max 2.34 | `.so` `df2ed27273787883ca17254fa9d0ac1896de2f7bc53275178acc7dabe395571e`; JAR `9be881bb4a3448b3a552fc5928c5dbfc2783444815991b50a09f0e2c9def5464` |
+| Linux arm64 release | PASS; real AArch64/Ruy/NEON build, 100 lifecycles, 1,693,603 instructions, GLIBC max 2.34 | `.so` `43a8d30a6f1724507f37761ea94221e22faac49f7da2457c8aca85cf13c1987c`; JAR `5a984a14153910c2f6eaa002e953368a78be9557b808bc95a12b4fbcde1707c0` |
+| Linux x64 baseline ASan+UBSan | PASS; native tests plus 10 lifecycles, 7,811,025 instructions, zero AVX-family instructions | `.so` `97933bc98789443a952c499b1db06657cf48aa54f7c79a35b2be9be99c3641b6` |
+| Linux arm64 ASan+UBSan | PASS; real AArch64 native tests plus 10 lifecycles, 7,794,751 instructions | `.so` `7c5056c918d0155f899b6fd029cc8335387a457334a2ca65a2a34bffdb95823e` |
+| Ubuntu 24.04 x64 compatibility | PASS; exact AVX2 and baseline bundles, 100 lifecycles each, byte identities and authenticated mode restored | artifact `9477efff1af830fb0eefc96f741d3d1928b21b6ae34066dfc6c5ae6310933585` |
+| Ubuntu 24.04 arm64 compatibility | PASS; exact arm64 bundle, 100 lifecycles, byte identities and authenticated mode restored | artifact `85ec86c6f34a04ade344e4bebcddb5ee5d7c71a9fffba5f9f5fba8b8776e0eee` |
+
+Hosted job identities: Native x64 build/sanitizers `96662888419`, Native x64
+compatibility `96669081123`, Native arm64 build/sanitizers `96662888349`,
+Native arm64 compatibility `96668559831`, protected PR Linux x64
+`96662937357`, and corrected protected PR Windows `96662937228`.
 
 ## Security, privacy, licensing, and compatibility
 
@@ -110,9 +140,8 @@ false dirty state.
 
 ## Known limitations
 
-- Local x64 execution used Docker Desktop's x86_64 environment. GitHub's
-  `ubuntu-22.04` and `ubuntu-24.04` runners must repeat this proof on hosted x64
-  before the work package gate becomes final.
+- Local x64 execution used Docker Desktop's x86_64 environment; independent
+  GitHub `ubuntu-22.04` and `ubuntu-24.04` runners repeated and passed the proof.
 - WP05 packages native-profile candidates. Plain one-dependency Maven/Gradle
   consumer resolution is deliberately not claimed until WP09.
 - Android, iOS, and Apple export proofs remain WP06-WP08.
@@ -136,7 +165,7 @@ false dirty state.
 ## Final decision
 
 ```text
-WORK PACKAGE GATE: PENDING HOSTED EXACT-HEAD CI
-SAFE TO START NEXT WORK PACKAGE: NO
+WORK PACKAGE GATE: PASS
+SAFE TO START NEXT WORK PACKAGE: YES, AFTER PR #12 MERGES
 SAFE TO ADVANCE MILESTONE: NOT A MILESTONE BOUNDARY
 ```
