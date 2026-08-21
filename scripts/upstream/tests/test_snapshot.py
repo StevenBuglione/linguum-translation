@@ -139,11 +139,27 @@ class SnapshotTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             subprocess.run(["git", "-C", str(root), "init", "-q"], check=True)
+            (root / ".gitattributes").write_text(
+                "native/upstream/mozilla-translations/** -text\n",
+                encoding="utf-8",
+            )
             source = root / "native" / "upstream" / "mozilla-translations"
             source.mkdir(parents=True)
             payload = source / "payload.txt"
             payload.write_bytes(b"locked\r\nbytes\r\n")
             subprocess.run(["git", "-C", str(root), "add", "."], check=True)
+            indexed_payload = subprocess.run(
+                [
+                    "git",
+                    "-C",
+                    str(root),
+                    "show",
+                    ":native/upstream/mozilla-translations/payload.txt",
+                ],
+                check=True,
+                stdout=subprocess.PIPE,
+            ).stdout
+            self.assertEqual(b"locked\r\nbytes\r\n", indexed_payload)
             (root / "native" / "UPSTREAM_LOCK.json").write_text(
                 json.dumps({"sourceTreeSha256": snapshot.source_tree_sha256(source)}),
                 encoding="utf-8",
@@ -152,7 +168,7 @@ class SnapshotTest(unittest.TestCase):
             snapshot.prepare_snapshot_worktree(root / "native")
             payload.write_bytes(b"changed\n")
             snapshot.prepare_snapshot_worktree(root / "native")
-            self.assertEqual(b"locked\r\nbytes\r\n", payload.read_bytes())
+            self.assertEqual(indexed_payload, payload.read_bytes())
 
             real_run = subprocess.run
             commands = []
