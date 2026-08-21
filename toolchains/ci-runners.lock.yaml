@@ -8,6 +8,11 @@ runners:
   macos_default: macos-15
   macos_intel: macos-15-intel
   windows_default: windows-2025
+  android_physical_arm64:
+    - self-hosted
+    - linux
+    - arm64
+    - android-device
 policy:
   floating_labels: forbidden
   changes_require: pull_request_and_green_protected_checks

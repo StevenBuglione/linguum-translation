@@ -75,6 +75,14 @@ diff --git a/inference/marian-fork/src/3rd_party/ExceptionWithCallStack.cpp b/in
 @@ -235 +235 @@ static void CollectCallStack(size_t skipLevels, bool makeFunctionNamesStandOut,
 -            unsigned int MAX_FUNCNAME_SIZE = 4096;
 +            constexpr unsigned int MAX_FUNCNAME_SIZE = 4096;
+diff --git a/inference/marian-fork/src/3rd_party/faiss/VectorTransform.cpp b/inference/marian-fork/src/3rd_party/faiss/VectorTransform.cpp
+--- a/inference/marian-fork/src/3rd_party/faiss/VectorTransform.cpp
++++ b/inference/marian-fork/src/3rd_party/faiss/VectorTransform.cpp
+@@ -10,0 +11,4 @@
++#if defined(__SSE__)
++#include <immintrin.h>
++#endif
++
 diff --git a/inference/marian-fork/src/3rd_party/sentencepiece/src/unicode_script.h b/inference/marian-fork/src/3rd_party/sentencepiece/src/unicode_script.h
 --- a/inference/marian-fork/src/3rd_party/sentencepiece/src/unicode_script.h
 +++ b/inference/marian-fork/src/3rd_party/sentencepiece/src/unicode_script.h
@@ -343,6 +351,45 @@ diff --git a/inference/marian-fork/src/tensors/cpu/integer_common.h b/inference/
 +    float quantMult;
 +    std::memcpy(&quantMult, input + sizeof(Integer) * item.shape.elements(),
 +                sizeof(quantMult));
+diff --git a/inference/marian-fork/src/3rd_party/pathie-cpp/src/path.cpp b/inference/marian-fork/src/3rd_party/pathie-cpp/src/path.cpp
+--- a/inference/marian-fork/src/3rd_party/pathie-cpp/src/path.cpp
++++ b/inference/marian-fork/src/3rd_party/pathie-cpp/src/path.cpp
+@@ -3175 +3175,8 @@ std::vector<Path> Path::glob(const std::string& pattern, int flags /* = 0 */)
+-#if defined(_PATHIE_UNIX)
++#if defined(__ANDROID__)
++  (void)flags;
++  std::string nstr = utf8_to_filename(pattern);
++  if (pattern.find_first_of("*?[") != std::string::npos)
++    return std::vector<Path>();
++  return access(nstr.c_str(), F_OK) == 0
++    ? std::vector<Path>{Path(pattern)} : std::vector<Path>();
++#elif defined(_PATHIE_UNIX)
+diff --git a/inference/marian-fork/src/3rd_party/pathie-cpp/src/pathie.cpp b/inference/marian-fork/src/3rd_party/pathie-cpp/src/pathie.cpp
+--- a/inference/marian-fork/src/3rd_party/pathie-cpp/src/pathie.cpp
++++ b/inference/marian-fork/src/3rd_party/pathie-cpp/src/pathie.cpp
+@@ -85,2 +85,4 @@
++#if !defined(__ANDROID__)
+ #include <iconv.h>
+ #include <langinfo.h>
++#endif
+@@ -114,0 +117,7 @@ std::string Pathie::convert_encodings(const char* from_encoding, const char* to_encoding, const std::string& string)
++#if defined(__ANDROID__)
++  if (strcmp(from_encoding, to_encoding) == 0)
++    return string;
++  (void)string;
++  throw Pathie::ErrnoError(ENOTSUP);
++#else
++
+@@ -175,2 +186,3 @@ std::string Pathie::convert_encodings(const char* from_encoding, const char* to_encoding, const std::string& string)
+   return result;
++#endif
+ }
+@@ -185 +197 @@ std::string Pathie::utf8_to_filename(const std::string& utf8)
+-#if defined(__APPLE__) || defined(PATHIE_ASSUME_UTF8_ON_UNIX)
++#if defined(__APPLE__) || defined(__ANDROID__) || defined(PATHIE_ASSUME_UTF8_ON_UNIX)
+@@ -209 +221 @@ std::string Pathie::filename_to_utf8(const std::string& native_filename)
+-#if defined(__APPLE__) || defined(PATHIE_ASSUME_UTF8_ON_UNIX)
++#if defined(__APPLE__) || defined(__ANDROID__) || defined(PATHIE_ASSUME_UTF8_ON_UNIX)
 diff --git a/inference/marian-fork/src/3rd_party/fbgemm/CMakeLists.txt b/inference/marian-fork/src/3rd_party/fbgemm/CMakeLists.txt
 --- a/inference/marian-fork/src/3rd_party/fbgemm/CMakeLists.txt
 +++ b/inference/marian-fork/src/3rd_party/fbgemm/CMakeLists.txt

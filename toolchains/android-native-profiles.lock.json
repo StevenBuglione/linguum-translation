@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "ndkVersion": "28.2.13676358",
+  "buildToolsVersion": "36.0.0",
+  "minSdk": 26,
+  "emulatorApiLevels": [
+    26,
+    36
+  ],
+  "physicalArm64RunnerLabels": [
+    "self-hosted",
+    "linux",
+    "arm64",
+    "android-device"
+  ],
+  "profiles": [
+    {
+      "id": "android-arm64-v8a",
+      "abi": "arm64-v8a",
+      "elfMachine": "aarch64",
+      "buildArch": "armv8-a",
+      "accelerationProfile": "ruy-neon-arm64",
+      "matrixMultiplicationBackend": "Ruy",
+      "requiredCpuFeatures": [
+        "ARMv8-A",
+        "NEON"
+      ],
+      "physicalDeviceRequired": true,
+      "intgemmBaselineOnly": false,
+      "prohibitedInstructionFamilies": []
+    },
+    {
+      "id": "android-x86_64",
+      "abi": "x86_64",
+      "elfMachine": "x86_64",
+      "buildArch": "x86-64-v2",
+      "accelerationProfile": "intgemm-ssse3-onnx-sgemm-baseline",
+      "matrixMultiplicationBackend": "ONNX-SGEMM",
+      "requiredCpuFeatures": [
+        "SSE4.2",
+        "POPCNT"
+      ],
+      "physicalDeviceRequired": false,
+      "intgemmBaselineOnly": true,
+      "prohibitedInstructionFamilies": [
+        "AVX",
+        "AVX2",
+        "AVX-512"
+      ]
+    }
+  ]
+}

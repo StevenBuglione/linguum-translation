@@ -50,6 +50,7 @@ case "$scope" in
     python3 -m json.tool toolchains/linux-native-profiles.lock.json >/dev/null
     python3 -m json.tool toolchains/macos-native-profiles.lock.json >/dev/null
     python3 -m json.tool toolchains/windows-native-profiles.lock.json >/dev/null
+    python3 -m json.tool toolchains/android-native-profiles.lock.json >/dev/null
     python3 scripts/upstream/snapshot.py verify
     ./gradlew architectureCheck --warning-mode=fail
     ;;
@@ -88,7 +89,19 @@ case "$scope" in
       --sanitizers address,undefined
     ./gradlew architectureCheck --warning-mode=fail
     ;;
-  android|ios|swift|consumers|performance|release)
+  android)
+    # M1-WP06 always builds the exact android-arm64-v8a and android-x86_64 pair.
+    android_device_mode="${LINGUUM_ANDROID_DEVICE_MODE:-none}"
+    python3 -m unittest scripts.native.tests.test_android_profiles -v
+    python3 -m json.tool toolchains/android-native-profiles.lock.json >/dev/null
+    python3 scripts/native/android_profiles.py \
+      --profile all \
+      --clean \
+      --iterations 100 \
+      --device-mode "$android_device_mode"
+    ./gradlew architectureCheck --warning-mode=fail
+    ;;
+  ios|swift|consumers|performance|release)
     ./gradlew architectureCheck --warning-mode=fail
     ;;
   models)

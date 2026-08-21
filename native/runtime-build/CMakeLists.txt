@@ -100,6 +100,14 @@ else()
   set(LINGUUM_ARM_NATIVE OFF)
 endif()
 
+if(ANDROID AND
+   CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64)$")
+  # API 26 emulators expose the official x86-64-v2 baseline. Apply the
+  # negative feature flags before upstream targets are created so no private
+  # archive can introduce an AVX-family instruction into the single JNI .so.
+  add_compile_options(-mno-avx -mno-avx2)
+endif()
+
 add_subdirectory("${LINGUUM_TRANSLATIONS_SOURCE}/inference" upstream SYSTEM)
 
 if(MSVC AND LINGUUM_INTGEMM_BASELINE_ONLY)
@@ -137,9 +145,18 @@ if(LINGUUM_ARM_NATIVE)
   endif()
 endif()
 
-add_library(linguum_translation SHARED
-  ../mozilla-adapter/src/linguum_translation.cpp
-)
+if(ANDROID)
+  # The Android AAR exposes one JNI shared object. Keep the C ABI and every
+  # private upstream dependency inside that bridge rather than shipping a
+  # second .so with a public native surface.
+  add_library(linguum_translation STATIC
+    ../mozilla-adapter/src/linguum_translation.cpp
+  )
+else()
+  add_library(linguum_translation SHARED
+    ../mozilla-adapter/src/linguum_translation.cpp
+  )
+endif()
 if(MSVC AND LINGUUM_INTGEMM_BASELINE_ONLY)
   # Keep the VC runtime static while resolving UCRT math/string functions
   # through the Windows 10+ system UCRT. The small scalar object supplies the
@@ -199,7 +216,27 @@ set_target_properties(linguum_translation PROPERTIES
   OUTPUT_NAME linguum_translation
 )
 
-if(APPLE)
+if(ANDROID)
+  add_library(linguum_translation_jni SHARED
+    ../../testing/native/android_canary_jni.cpp
+  )
+  target_include_directories(linguum_translation_jni PRIVATE
+    ../abi/include
+  )
+  target_link_libraries(linguum_translation_jni PRIVATE linguum_translation)
+  target_compile_options(linguum_translation_jni PRIVATE
+    -Wall -Wextra -Wpedantic -Werror
+  )
+  target_link_options(linguum_translation_jni PRIVATE
+    "LINKER:--version-script=${CMAKE_CURRENT_SOURCE_DIR}/exports/android.map"
+  )
+  set_target_properties(linguum_translation_jni PROPERTIES
+    C_VISIBILITY_PRESET hidden
+    CXX_VISIBILITY_PRESET hidden
+    VISIBILITY_INLINES_HIDDEN YES
+    OUTPUT_NAME linguum_translation_jni
+  )
+elseif(APPLE)
   target_link_options(linguum_translation PRIVATE
     "LINKER:-exported_symbols_list,${CMAKE_CURRENT_SOURCE_DIR}/exports/macos.exports"
   )

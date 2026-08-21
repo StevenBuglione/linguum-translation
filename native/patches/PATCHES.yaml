@@ -32,9 +32,12 @@
     "inference/marian-fork/src/3rd_party/intgemm/intgemm/intgemm.cc",
     "inference/marian-fork/src/3rd_party/intgemm/intgemm/intgemm.h",
     "inference/marian-fork/src/3rd_party/ExceptionWithCallStack.cpp",
+    "inference/marian-fork/src/3rd_party/faiss/VectorTransform.cpp",
     "inference/marian-fork/src/3rd_party/fbgemm/CMakeLists.txt",
     "inference/marian-fork/src/3rd_party/fbgemm/src/Utils.cc",
     "inference/marian-fork/src/3rd_party/onnxjs/CMakeLists.txt",
+    "inference/marian-fork/src/3rd_party/pathie-cpp/src/path.cpp",
+    "inference/marian-fork/src/3rd_party/pathie-cpp/src/pathie.cpp",
     "inference/marian-fork/src/3rd_party/sentencepiece/src/unicode_script.h",
     "inference/marian-fork/src/3rd_party/simd_utils/simd_utils.h",
     "inference/marian-fork/src/3rd_party/zlib/zutil.h",
@@ -49,5 +52,5 @@
   "license": "MPL-2.0",
   "approvedBy": "Steven Buglione",
   "approvalReference": "Repository-owner standing delivery and patch authorization in Codex task 01a01dba-bb5f-7272-b179-7a6e6db206f3 on 2026-08-20",
-  "patchSha256": "3bfccac778cdde6af3460e00b032a99963d2e092a536d2fd0df91d1ccde5d317"
+  "patchSha256": "d54b9999c65e918dc01035c079acd351eab1a86f0ab4452c0af77270490774dc"
 }
